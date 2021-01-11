@@ -1,0 +1,160 @@
+パッケージ @code{ratpow}は
+CRE多項式の分母の指数を見つける関数を提供します。
+もし分母の指数が必要なら、代わりに @mref{ratdenom}を使って先に分母を抽出できます。
+戻り値の係数は数を除いて CRE形式です。
+
+CRE多項式の変数のリストを取得するには、 @mref{showratvars}が使えます。
+
+CREに関する情報については @mref{rat}, @mref{ratdisrep} @mref{showratvars}を参照してください。
+@menu
+* Functions and Variables for ratpow::
+@end menu
+
+@node Functions and Variables for ratpow, , Top, Top
+@section Functions and Variables for ratpow
+
+
+
+@anchor{ratp_hipow}
+@deffn {関数} ratp_hipow (@var{expr}, @var{x})
+
+@code{ratnumer(expr)}の主変数の最大指数を見つけます。
+
+@c ===beg===
+@c load("ratpow")$
+@c ratp_hipow( x^(5/2) + x^2 , x);
+@c ratp_hipow( x^(5/2) + x^2 , sqrt(x));
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) ratp_hipow( x^(5/2) + x^2 , x);
+(%o2)                           2
+@end group
+@group
+(%i3) ratp_hipow( x^(5/2) + x^2 , sqrt(x));
+(%o3)                           5
+@end group
+@end example
+
+@opencatbox
+@category{Rational expressions}
+@category{Package ratpow}
+@closecatbox
+@end deffn
+
+
+@anchor{ratp_lopow}
+@deffn {関数} ratp_lopow (@var{expr}, @var{x})
+
+@code{ratnumer(expr)}の主変数の最小指数を見つけます。
+
+@c ===beg===
+@c load("ratpow")$
+@c ratp_lopow( x^5 + x^2 , x);
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) ratp_lopow( x^5 + x^2 , x);
+(%o2)                           2
+@end group
+@end example
+
+@code{1}は @code{x^0}に等しいので、以下の例は0を返します:
+@c ===beg===
+@c load("ratpow")$
+@c ratp_lopow( x^5 + x^2 + 1, x);
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) ratp_lopow( x^5 + x^2 + 1, x);
+(%o2)                           0
+@end group
+@end example
+
+以下の等式のCRE形式は　@code{sqrt(x)}と @code{x}を含みます。
+それらは独立変数として解釈されるので、
+この場合、 @code{ratp_lopow}は @code{0}を返します:
+@c ===beg===
+@c load("ratpow")$
+@c g:sqrt(x)^5 + sqrt(x)^2;
+@c showratvars(g);
+@c ratp_lopow( g, x);
+@c ratp_lopow( g, sqrt(x));
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) g:sqrt(x)^5 + sqrt(x)^2;
+                             5/2
+(%o2)                       x    + x
+@end group
+@group
+(%i3) showratvars(g);
+                              1/2
+(%o3)                       [x   , x]
+@end group
+@group
+(%i4) ratp_lopow( g, x);
+(%o4)                           0
+@end group
+@group
+(%i5) ratp_lopow( g, sqrt(x));
+(%o5)                           0
+@end group
+@end example
+
+
+@opencatbox
+@category{Rational expressions}
+@category{Package ratpow}
+@closecatbox
+@end deffn
+
+
+@anchor{ratp_coeffs}
+@deffn {関数} ratp_coeffs (@var{expr}, @var{x})
+
+@code{ratnumer(expr)}の主変数の指数と係数のリストを生成します。
+@c ===beg===
+@c load("ratpow")$
+@c ratp_coeffs( 4*x^3 + x + sqrt(x), x);
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) ratp_coeffs( 4*x^3 + x + sqrt(x), x);
+(%o2)/R/         [[3, 4], [1, 1], [0, sqrt(x)]]
+@end group
+@end example
+@opencatbox
+@category{Rational expressions}
+@category{Package ratpow}
+@closecatbox
+@end deffn
+
+@anchor{ratp_dense_coeffs}
+@deffn {関数} ratp_dense_coeffs (@var{expr}, @var{x})
+
+@code{ratnumer(expr)}の係数のリストを生成します;
+戻り値の係数は数を除いて CRE形式です。
+
+@c ===beg===
+@c load("ratpow")$
+@c ratp_dense_coeffs( 4*x^3 + x + sqrt(x), x);
+@c ===end===
+@example
+(%i1) load("ratpow")$
+@group
+(%i2) ratp_dense_coeffs( 4*x^3 + x + sqrt(x), x);
+(%o2)/R/               [4, 0, 1, sqrt(x)]
+@end group
+@end example
+
+@opencatbox
+@category{Rational expressions}
+@category{Package ratpow}
+@closecatbox
+@end deffn

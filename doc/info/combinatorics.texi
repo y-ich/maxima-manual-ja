@@ -1,0 +1,710 @@
+@menu
+* Package combinatorics::
+* Functions and Variables for Combinatorics::       
+@end menu
+
+@node Package combinatorics, Functions and Variables for Combinatorics, combinatorics-pkg, combinatorics-pkg
+@section Package combinatorics
+
+@code{combinatorics}パッケージは、置換と合わせて機能したりリストの要素を置換するいくつかの関数を提供します。
+次数 @emph{n}の置換は
+最初の @emph{n}個の正の整数 1, 2, @dots{}, @emph{n}の
+@emph{n}!個の可能な順序すべてです。
+このパッケージの関数は置換がこれらの整数のリストで表現されると仮定します。
+
+循環は、すべて異なる2つ以上の整数 @emph{i_1}, @emph{i_2}, @dots{}, @emph{i_m}のリストで表現されます。
+そんなリストは
+整数 @emph{i_2}が @emph{i_1}番目の位置に現れ、
+整数 @emph{i_3}が @emph{i_2}番目の位置に現れ、
+整数 @emph{i_1}が @emph{i_m}番目の位置に現れる置換を表現します。
+
+例えば、 [4, 2, 1, 3]は次数4の24個の置換の1つです。
+これは、循環 [1, 4, 3]としても表現することができます。
+循環が置換を表現するのに使う関数は曖昧さを避けるために置換の次数も要求します。
+例えば、
+同じ循環 [1, 4, 3]は次数6の置換: [4, 2, 1, 3, 5, 6]も表します。
+循環の積は循環のリストで表現されなければいけません:
+リストの最後の循環が最初に適用されます。
+例えば、 [[2, 4], [1, 3, 6, 5]]は置換 [3, 4, 6, 2, 1, 5]と同値です。
+
+循環はいくつかの方法で書くことができます。
+例えば、 [1, 3, 6, 5]と [3, 6, 5, 1], [6, 5, 1, 3]はすべて同値です。
+パッケージで使われる標準形は最小インデックスを最初に置くものです。
+インデックス2つだけの循環は互換とも呼ばれます。
+2つのインデックスが連続なものなら、隣接互換と呼ばれます。
+
+インタラクティブなチュートリアルを走らせるには、
+コマンド @code{demo(combinatorics)}を使ってください。
+これは追加パッケージなので、
+コマンド @code{load("combinatorics")}でロードしなければいけません。
+
+
+@opencatbox
+@category{Share packages} @category{Package combinatorics}
+@closecatbox
+
+@node Functions and Variables for Combinatorics,  , Package combinatorics, combinatorics-pkg
+@section Functions and Variables for Combinatorics
+
+@anchor{apply_cycles}
+@deffn {関数} apply_cycles (@var{cl},@var{l})
+
+リストか集合 @var{l}を、循環のリスト @var{cl}を適用して置換します。
+リストの最後の循環が最初に適用され、リスト @var{cl}の最初の循環が最後に適用されます。
+
+@mref{permute}も参照ください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c lis1:[a,b*c^2,4,z,x/y,1/2,ff23(x),0];
+@c apply_cycles ([[1, 6], [2, 6, 5, 7]], lis1);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) lis1:[a,b*c^2,4,z,x/y,1/2,ff23(x),0];
+                        2        x  1
+(%o2)            [a, b c , 4, z, -, -, ff23(x), 0]
+                                 y  2
+@end group
+@group
+(%i3) apply_cycles ([[1, 6], [2, 6, 5, 7]], lis1);
+                  x  1                       2
+(%o3)            [-, -, 4, z, ff23(x), a, b c , 0]
+                  y  2
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{cyclep}
+@deffn {関数} cyclep (@var{c}, @var{n})
+
+もし @var{c}が次数 @var{n}の有効な循環、すなわち
+繰り返しのない @var{n}以下の正の整数のリストなら
+trueを返します。
+そうでなければ falseを返します。
+
+@mref{permp}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c cyclep ([-2,3,4], 5);
+@c cyclep ([2,3,4,2], 5);
+@c cyclep ([6,3,4], 5);
+@c cyclep ([6,3,4], 6);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) cyclep ([-2,3,4], 5);
+(%o2)                          false
+@end group
+@group
+(%i3) cyclep ([2,3,4,2], 5);
+(%o3)                          false
+@end group
+@group
+(%i4) cyclep ([6,3,4], 5);
+(%o4)                          false
+@end group
+@group
+(%i5) cyclep ([6,3,4], 6);
+(%o5)                          true
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_cycles}
+@deffn {関数} perm_cycles (@var{p})
+
+置換 @var{p}を循環の積として返します。
+循環は、循環の中の最小インデックスが最初に来る標準形で書かれます。
+
+@mref{perm_decomp}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_cycles ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_cycles ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                 [[1, 4], [2, 6, 5, 7]]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_decomp}
+@deffn {関数} perm_decomp (@var{p})
+
+その積が与えられた置換 @var{p}に等しい隣接互換の最小集合を返します。
+
+@mref{perm_cycles}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_decomp ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_decomp ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2) [[6, 7], [5, 6], [6, 7], [3, 4], [4, 5], [2, 3], [3, 4], 
+                            [4, 5], [5, 6], [1, 2], [2, 3], [3, 4]]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_inverse}
+@deffn {関数} perm_inverse (@var{p})
+
+置換 @var{p}の逆、すなわち、
+積 @var{pq}と積 @var{qp}が恒等置換: [1, 2, 3, @dots{}, @var{n}]に等しくなるような
+置換 @var{q}を返します。
+ここで、 @var{n}は @var{p}の長さです。
+
+@mref{permult}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_inverse ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_inverse ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                [4, 7, 3, 1, 6, 2, 5, 8]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_length}
+@deffn {関数} perm_length (@var{p})
+
+置換 @var{p}を
+隣接互換の積として書くのに必要な隣接互換の最小数を決定します。
+隣接互換は連続する2つの数だけの循環です。
+
+@mref{perm_decomp}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_length ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_length ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                           12
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_lex_next}
+@deffn {関数} perm_lex_next (@var{p})
+
+辞書式順序での置換の列で、
+与えられた置換 @var{p}のあとに来る置換を返します。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_lex_next ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_lex_next ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                [4, 6, 3, 1, 7, 5, 8, 2]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_lex_rank}
+@deffn {関数} perm_lex_rank (@var{p})
+
+辞書式順序での置換の列で、
+置換 @var{p}の位置を見つけます。
+1から次数 @var{n}の置換までの整数です。
+
+@mref{perm_lex_unrank}と @mref{perms_lex}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_lex_rank ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_lex_rank ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                          18255
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_lex_unrank}
+@deffn {関数} perm_lex_unrank (@var{n}, @var{i})
+
+辞書式順序での置換の列で、
+(1から @emph{n}!までの)位置 @var{i}の @emph{n}-次数の置換を返します。
+
+@mref{perm_lex_rank}と @mref{perms_lex}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_lex_unrank (8, 18255);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_lex_unrank (8, 18255);
+(%o2)                [4, 6, 3, 1, 7, 5, 2, 8]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_next}
+@deffn {関数} perm_next (@var{p})
+
+Trotter-Johnson順序での置換の列で、
+与えられた置換 @var{p}のあとに来る置換を返します。
+
+@mref{perms}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_next ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_next ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                [4, 6, 3, 1, 7, 5, 8, 2]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_parity}
+@deffn {関数} perm_parity (@var{p})
+
+置換 @var{p}の偶奇性を見つけます:
+置換 @var{p}を隣接互換の積として書く隣接互換の最小数が偶数なら0を、
+奇数なら1を返します。
+
+@mref{perm_decomp}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_parity ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_parity ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                            0
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_rank}
+@deffn {関数} perm_rank (@var{p})
+
+
+辞書式順序での置換の列で、
+置換 @var{p}の位置、1から次数 @var{n}の置換の整数、を見つけます。
+
+@mref{perm_unrank}と @mref{perms}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_rank ([4, 6, 3, 1, 7, 5, 2, 8]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_rank ([4, 6, 3, 1, 7, 5, 2, 8]);
+(%o2)                          19729
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_undecomp}
+@deffn {関数} perm_undecomp (@var{cl}, @var{n})
+
+次数 @var{n}の循環のリスト @var{cl}を
+それらの積に等しい @var{n}次数置換に変換します。
+
+@mref{perm_decomp}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_undecomp ([[1,6],[2,6,5,7]], 8);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_undecomp ([[1,6],[2,6,5,7]], 8);
+(%o2)                [5, 6, 3, 4, 7, 1, 2, 8]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perm_unrank}
+@deffn {関数} perm_unrank (@var{n}, @var{i})
+
+Trotter-Johnson順序での置換の列で、
+(1から @emph{n}!までの)位置 @var{i}の @emph{n}-次数置換を返します。
+
+@mref{perm_rank}と @mref{perms}も返します。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perm_unrank (8, 19729);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perm_unrank (8, 19729);
+(%o2)                [4, 6, 3, 1, 7, 5, 2, 8]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{permp}
+@deffn {関数} permp (@var{p})
+
+もし @var{p}が有効な置換なら、すなわち
+要素が1から @var{n}までの整数すべてである、繰り返しのない長さ @var{n}のリストなら
+trueを返します。
+そうでなければfalseを返します。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c permp ([2,0,3,1]);
+@c permp ([2,1,4,3]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) permp ([2,0,3,1]);
+(%o2)                          false
+@end group
+@group
+(%i3) permp ([2,1,4,3]);
+(%o3)                          true
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perms}
+@deffn {関数} perms @
+@fname{perms} (@var{n}) @
+@fname{perms} (@var{n}, @var{i}) @
+@fname{perms} (@var{n}, @var{i}, @var{j})
+
+@code{perms(@var{n})}は
+@emph{n}-次数置換すべてのリストをTrotter-Johnson順序と呼ばれる順で返します。
+
+
+@code{perms(@var{n}, @var{i})}は
+置換の辞書式順序(訳注: Trotter-Johnson順序の間違い？)で
+(1から @emph{n}!までの)@emph{i}番目の位置の@emph{n}-次数置換を返します。
+
+@code{perms(@var{n}, @var{i}, @var{j})}は
+置換の辞書式順序(訳注: Trotter-Johnson順序の間違い？)で
+位置 @var{i}と位置 @var{j}の間にある@emph{n}-次数置換のリストを返します。
+
+Trotter-Johnson順序での置換の列は
+恒等置換で始まり、
+隣の置換が直前の置換から隣接互換1つで得られます。
+
+@mref{perm_next}, @mref{perm_rank}, @mref{perm_unrank}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perms (4);
+@c perms (4, 12);
+@c perms (4, 12, 14);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perms (4);
+(%o2) [[1, 2, 3, 4], [1, 2, 4, 3], [1, 4, 2, 3], [4, 1, 2, 3], 
+[4, 1, 3, 2], [1, 4, 3, 2], [1, 3, 4, 2], [1, 3, 2, 4], 
+[3, 1, 2, 4], [3, 1, 4, 2], [3, 4, 1, 2], [4, 3, 1, 2], 
+[4, 3, 2, 1], [3, 4, 2, 1], [3, 2, 4, 1], [3, 2, 1, 4], 
+[2, 3, 1, 4], [2, 3, 4, 1], [2, 4, 3, 1], [4, 2, 3, 1], 
+[4, 2, 1, 3], [2, 4, 1, 3], [2, 1, 4, 3], [2, 1, 3, 4]]
+@end group
+@group
+(%i3) perms (4, 12);
+(%o3)                     [[4, 3, 1, 2]]
+@end group
+@group
+(%i4) perms (4, 12, 14);
+(%o4)       [[4, 3, 1, 2], [4, 3, 2, 1], [3, 4, 2, 1]]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{perms_lex}
+@deffn {関数} perms_lex @
+@fname{perms_lex} (@var{n}) @
+@fname{perms_lex} (@var{n}, @var{i}) @
+@fname{perms_lex} (@var{n}, @var{i}, @var{j})
+
+@code{perms_lex(@var{n})}は
+@emph{n}-次数置換すべてのリストを辞書式順序と呼ばれる順で返します。
+
+@code{perms_lex(@var{n}, @var{i})}は
+置換の辞書式順序で
+(1から @emph{n}!までの)@emph{i}番目の位置の@emph{n}-次数置換を返します。
+
+@code{perms_lex(@var{n}, @var{i}, @var{j})}は
+置換の辞書式順序で
+位置 @var{i}と位置 @var{j}の間にある@emph{n}-次数置換のリストを返します。
+
+辞書式順序での置換の列は
+最小インデックスが1のすべての置換で始まり、
+次のインデックスが2で始まるすべての置換が続きます。
+インデックス @emph{i}で始まる置換は
+@emph{i}と異なる最初の @emph{n}個の整数の置換であり、
+それらもまた
+それらの整数の最小が最初に来る辞書式順序で置かれます。
+
+@mref{perm_lex_next}, @mref{perm_lex_rank}, @mref{perm_lex_unrank}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c perms_lex (4);
+@c perms_lex (4, 12);
+@c perms_lex (4, 12, 14);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) perms_lex (4);
+(%o2) [[1, 2, 3, 4], [1, 2, 4, 3], [1, 3, 2, 4], [1, 3, 4, 2], 
+[1, 4, 2, 3], [1, 4, 3, 2], [2, 1, 3, 4], [2, 1, 4, 3], 
+[2, 3, 1, 4], [2, 3, 4, 1], [2, 4, 1, 3], [2, 4, 3, 1], 
+[3, 1, 2, 4], [3, 1, 4, 2], [3, 2, 1, 4], [3, 2, 4, 1], 
+[3, 4, 1, 2], [3, 4, 2, 1], [4, 1, 2, 3], [4, 1, 3, 2], 
+[4, 2, 1, 3], [4, 2, 3, 1], [4, 3, 1, 2], [4, 3, 2, 1]]
+@end group
+@group
+(%i3) perms_lex (4, 12);
+(%o3)                     [[2, 4, 3, 1]]
+@end group
+@group
+(%i4) perms_lex (4, 12, 14);
+(%o4)       [[2, 4, 3, 1], [3, 1, 2, 4], [3, 1, 4, 2]]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{permult}
+@deffn {関数} permult (@var{p_1}, @dots{}, @var{p_m})
+
+2つ以上の置換 @var{p_1}, @dots{}, @var{p_m}の積を返します。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c permult ([2,3,1], [3,1,2], [2,1,3]);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) permult ([2,3,1], [3,1,2], [2,1,3]);
+(%o2)                        [2, 1, 3]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{permute}
+@deffn {関数} permute (@var{p}, @var{l})
+
+置換 @var{p}をリスト(または集合) @var{l}の要素に適用します。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c lis1: [a,b*c^2,4,z,x/y,1/2,ff23(x),0];
+@c permute ([4, 6, 3, 1, 7, 5, 2, 8], lis1);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) lis1: [a,b*c^2,4,z,x/y,1/2,ff23(x),0];
+                        2        x  1
+(%o2)            [a, b c , 4, z, -, -, ff23(x), 0]
+                                 y  2
+@end group
+@group
+(%i3) permute ([4, 6, 3, 1, 7, 5, 2, 8], lis1);
+                     1                 x     2
+(%o3)            [z, -, 4, a, ff23(x), -, b c , 0]
+                     2                 y
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+
+@anchor{random_perm}
+@deffn {関数} random_perm (@var{n})
+
+次数 @var{n}のランダムな置換を返します。
+
+@mref{random_permutation}も参照してください。
+
+例:
+
+@c ===beg===
+@c load("combinatorics")$
+@c random_perm (7);
+@c ===end===
+@example
+(%i1) load("combinatorics")$
+@group
+(%i2) random_perm (7);
+(%o2)                  [6, 3, 4, 7, 5, 1, 2]
+@end group
+@end example
+
+@opencatbox
+@category{Package combinatorics}
+@closecatbox
+
+@end deffn
+

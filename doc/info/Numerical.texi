@@ -1,0 +1,1078 @@
+@menu
+* Introduction to fast Fourier transform::
+* Functions and Variables for fast Fourier transform::
+* Functions for numerical solution of equations::
+* Introduction to numerical solution of differential equations::
+* Functions for numerical solution of differential equations::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Introduction to fast Fourier transform, Functions and Variables for fast Fourier transform, Numerical, Numerical
+@section Introduction to fast Fourier transform
+@c -----------------------------------------------------------------------------
+
+@code{fft}パッケージは高速Fourier変換の（数式計算ではなく）数値計算に関する関数を含みます。
+
+@opencatbox
+@category{Fourier transform} @category{Numerical methods} @category{Share packages} @category{Package fft}
+@closecatbox
+
+@c end concepts Numerical
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for fast Fourier transform, Functions for numerical solution of equations, Introduction to fast Fourier transform, Numerical
+@section Functions and Variables for fast Fourier transform
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+@anchor{polartorect}
+@deffn {関数} polartorect (@var{r}, @var{t})
+
+形式 @code{r %e^(%i t)}の複素値を形式 @code{a + b %i}に変換します。
+ここで、@var{r}は大きさで @var{t}は位相です。
+@var{r}と @var{t}は、同じサイズの１次元配列です。
+配列のサイズは2のべき乗である必要はありません。
+
+関数から戻ると、入力配列の元の値は実部 @code{a}と虚部 @code{b}に置き換えられます。
+出力は以下のように計算されます。
+
+@example
+a = r cos(t)
+b = r sin(t)
+@end example
+
+@mref{polartorect}は @mref{recttopolar}の逆関数です。
+
+@code{load(fft)}はこの関数をロードします。
+@mref{fft}も参照してください。
+
+@opencatbox
+@category{Package fft} @category{Complex variables}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{recttopolar}
+@deffn {関数} recttopolar (@var{a}, @var{b})
+
+形式 @code{a + b %i}の複素値を形式 @code{r %e^(%i t)}に変換します。
+ここで、@var{a}は実部で @var{b}は虚部です。
+@var{a}と @var{b}は同じサイズの１次元配列です。
+配列のサイズは2のべき乗である必要はありません。
+
+関数から戻ると、入力配列の元の値は大きさ @code{r}と偏角 @code{t}に置き換えられます。
+出力は以下のように計算されます。
+
+@example
+r = sqrt(a^2 + b^2)
+t = atan2(b, a)
+@end example
+
+計算された偏角は @code{-%pi}から @code{%pi}の範囲の中にあります。
+
+@code{recttopolar}は @mref{polartorect}の逆関数です。
+
+@code{load(fft)}はこの関数をロードします。
+@mref{fft}も参照してください。
+
+@opencatbox
+@category{Package fft} @category{Complex variables}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{inverse_fft}
+@deffn {関数} inverse_fft (@var{y})
+
+複素逆高速Fourier変換を計算します。
+@var{y}は変換されるデータを含むリストもしくは配列です。
+要素の数は2のべき乗でなければいけません。
+要素は、数リテラル（整数、有理数、浮動小数点、多倍長浮動小数点）、シンボル定数、
+もしくは、 @code{a}と @code{b}が数リテラルもしくはシンボル定数である式
+@code{a + b*%i}でなければいけません。
+
+@code{inverse_fft}は @var{y}と同じタイプの新しいオブジェクトを返します。
+@var{y}は変更されません。
+結果はいつも浮動小数点か @code{a}と @code{b}が浮動小数点であるところの式
+@code{a + b*%i}として計算されます。
+もし多倍長浮動小数点精度が必要なら、
+@code{inverse_fft}の完全互換品として代わりに関数
+@mref{bf_inverse_fft}を使うことができます。
+これは遅くなりますが、多倍長浮動小数点をサポートします。
+
+逆離散Fourier変換は以下のように定義されます。
+@code{x}を逆変換の出力とします。
+@code{j}が0から @code{n - 1}まで変わる中、
+
+@example
+x[j] = sum(y[k] exp(-2 %i %pi j k / n), k, 0, n - 1)
+@end example
+
+様々な符号、正規化変換があり得るので、
+変換のこの定義は他の数学ソフトウエアが使うものと違うかもしれません。
+
+@code{load(fft)}はこの関数をロードします。
+
+@mref{fft} (正変換), @mref{recttopolar}, @mref{polartorect}も参照してください。
+
+例:
+
+実数データ。
+
+@c ===beg===
+@c load ("fft") $
+@c fpprintprec : 4 $
+@c L : [1, 2, 3, 4, -1, -2, -3, -4] $
+@c L1 : inverse_fft (L);
+@c L2 : fft (L1);
+@c lmax (abs (L2 - L));
+@c ===end===
+@example
+(%i1) load ("fft") $
+(%i2) fpprintprec : 4 $
+(%i3) L : [1, 2, 3, 4, -1, -2, -3, -4] $
+(%i4) L1 : inverse_fft (L);
+(%o4) [0.0, 14.49 %i - .8284, 0.0, 2.485 %i + 4.828, 0.0,
+                       4.828 - 2.485 %i, 0.0, - 14.49 %i - .8284]
+(%i5) L2 : fft (L1);
+(%o5) [1.0, 2.0 - 2.168L-19 %i, 3.0 - 7.525L-20 %i,
+4.0 - 4.256L-19 %i, - 1.0, 2.168L-19 %i - 2.0,
+7.525L-20 %i - 3.0, 4.256L-19 %i - 4.0]
+(%i6) lmax (abs (L2 - L));
+(%o6)                       3.545L-16
+@end example
+
+複素数データ。
+
+@c ===beg===
+@c load ("fft") $
+@c fpprintprec : 4 $
+@c L : [1, 1 + %i, 1 - %i, -1, -1, 1 - %i, 1 + %i, 1] $
+@c L1 : inverse_fft (L);
+@c L2 : fft (L1);
+@c lmax (abs (L2 - L));
+@c ===end===
+@example
+(%i1) load ("fft") $
+(%i2) fpprintprec : 4 $
+(%i3) L : [1, 1 + %i, 1 - %i, -1, -1, 1 - %i, 1 + %i, 1] $
+(%i4) L1 : inverse_fft (L);
+(%o4) [4.0, 2.711L-19 %i + 4.0, 2.0 %i - 2.0,
+- 2.828 %i - 2.828, 0.0, 5.421L-20 %i + 4.0, - 2.0 %i - 2.0,
+2.828 %i + 2.828]
+(%i5) L2 : fft (L1);
+(%o5) [4.066E-20 %i + 1.0, 1.0 %i + 1.0, 1.0 - 1.0 %i,
+1.55L-19 %i - 1.0, - 4.066E-20 %i - 1.0, 1.0 - 1.0 %i,
+1.0 %i + 1.0, 1.0 - 7.368L-20 %i]
+(%i6) lmax (abs (L2 - L));
+(%o6)                       6.841L-17
+@end example
+
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{fft}
+@deffn {関数} fft (@var{x})
+
+複素高速 Fourier変換を計算します。
+@var{x}は変換されるデータを含むリストもしくは配列です。
+要素の数は2のべき乗でなければいけません。
+要素は、数リテラル（整数、有理数、浮動小数点、多倍長浮動小数点）、シンボル定数、
+もしくは @code{a}と @code{b}が数リテラルもしくはシンボル定数である式
+@code{a + b*%i}でなければいけません。
+
+@code{fft}は @var{x}と同じタイプの新しいオブジェクトを返します。
+@var{x}は変更されません。
+結果はいつも浮動小数点か、 @code{a}と @code{b}が浮動小数点であるところの式
+@code{a + b*%i}として計算されます。
+もし多倍長浮動小数点精度が必要なら、
+@code{fft}の完全互換品として代わりに関数
+@mref{bf_fft}を使うことができます。
+これは遅くなりますが、多倍長浮動小数点をサポートします。
+また、もし入力が(虚数部を持たない)実数値だけで構成されているとわかっている場合、
+@mref{real_fft}を使うことができます。これは潜在的には速くなります。
+
+離散Fourier変換は以下のように定義されます。
+@code{y}を変換の出力とします。
+@code{k}が0から @code{n - 1}まで変わる中、
+
+@example
+y[k] = (1/n) sum(x[j] exp(+2 %i %pi j k / n), j, 0, n - 1)
+@end example
+
+様々な符号、正規化変換があり得るので、
+変換のこの定義は他の数学ソフトウエアが使うものと違うかもしれません。
+
+データ @var{x}が実数の時、
+実係数 @code{a}と @code{b}は以下のように計算することができます。
+@example
+x[j] = sum(a[k]*cos(2*%pi*j*k/n)+b[k]*sin(2*%pi*j*k/n), k, 0, n/2)
+@end example
+
+ここで、
+
+@example
+a[0] = realpart (y[0])
+b[0] = 0
+@end example
+
+そして @code{k}が1からn/2 - 1まで変わる中、
+
+@example
+a[k] = realpart (y[k] + y[n - k])
+b[k] = imagpart (y[n - k] - y[k])
+@end example
+
+そして、
+
+@example
+a[n/2] = realpart (y[n/2])
+b[n/2] = 0
+@end example
+
+@code{load(fft)}はこの関数をロードします。
+
+@mref{inverse_fft} (逆変換), @mref{recttopolar},
+@mref{polartorect}も参照してください。
+実数値入力のFFTに関しては @mref{real_fft}を、
+多倍長浮動小数点の演算に関しては @mref{bf_real_fft}を参照してください。
+
+例:
+
+実数データ。
+
+@c ===beg===
+@c load ("fft") $
+@c fpprintprec : 4 $
+@c L : [1, 2, 3, 4, -1, -2, -3, -4] $
+@c L1 : fft (L);
+@c L2 : inverse_fft (L1);
+@c lmax (abs (L2 - L));
+@c ===end===
+@example
+(%i1) load ("fft") $
+(%i2) fpprintprec : 4 $
+(%i3) L : [1, 2, 3, 4, -1, -2, -3, -4] $
+(%i4) L1 : fft (L);
+(%o4) [0.0, - 1.811 %i - .1036, 0.0, .6036 - .3107 %i, 0.0,
+                         .3107 %i + .6036, 0.0, 1.811 %i - .1036]
+(%i5) L2 : inverse_fft (L1);
+(%o5) [1.0, 2.168L-19 %i + 2.0, 7.525L-20 %i + 3.0,
+4.256L-19 %i + 4.0, - 1.0, - 2.168L-19 %i - 2.0,
+- 7.525L-20 %i - 3.0, - 4.256L-19 %i - 4.0]
+(%i6) lmax (abs (L2 - L));
+(%o6)                       3.545L-16
+@end example
+
+複素数データ。
+
+@c ===beg===
+@c load ("fft") $
+@c fpprintprec : 4 $
+@c L : [1, 1 + %i, 1 - %i, -1, -1, 1 - %i, 1 + %i, 1] $
+@c L1 : fft (L);
+@c L2 : inverse_fft (L1);
+@c lmax (abs (L2 - L));
+@c ===end===
+@example
+(%i1) load ("fft") $
+(%i2) fpprintprec : 4 $
+(%i3) L : [1, 1 + %i, 1 - %i, -1, -1, 1 - %i, 1 + %i, 1] $
+(%i4) L1 : fft (L);
+(%o4) [0.5, .3536 %i + .3536, - 0.25 %i - 0.25,
+0.5 - 6.776L-21 %i, 0.0, - .3536 %i - .3536, 0.25 %i - 0.25,
+0.5 - 3.388L-20 %i]
+(%i5) L2 : inverse_fft (L1);
+(%o5) [1.0 - 4.066E-20 %i, 1.0 %i + 1.0, 1.0 - 1.0 %i,
+- 1.008L-19 %i - 1.0, 4.066E-20 %i - 1.0, 1.0 - 1.0 %i,
+1.0 %i + 1.0, 1.947L-20 %i + 1.0]
+(%i6) lmax (abs (L2 - L));
+(%o6)                       6.83L-17
+@end example
+
+サインとコサイン係数の計算。
+
+@c ===beg===
+@c load ("fft") $
+@c fpprintprec : 4 $
+@c L : [1, 2, 3, 4, 5, 6, 7, 8] $
+@c n : length (L) $
+@c x : make_array (any, n) $
+@c fillarray (x, L) $
+@c y : fft (x) $
+@c a : make_array (any, n/2 + 1) $
+@c b : make_array (any, n/2 + 1) $
+@c a[0] : realpart (y[0]) $
+@c b[0] : 0 $
+@c for k : 1 thru n/2 - 1 do
+@c    (a[k] : realpart (y[k] + y[n - k]),
+@c     b[k] : imagpart (y[n - k] - y[k]));
+@c a[n/2] : y[n/2] $
+@c b[n/2] : 0 $
+@c listarray (a);
+@c listarray (b);
+@c f(j) := sum (a[k] * cos (2*%pi*j*k / n) + b[k] * sin (2*%pi*j*k / n), k, 0, n/2) $
+@c makelist (float (f (j)), j, 0, n - 1);
+@c ===end===
+@example
+(%i1) load ("fft") $
+(%i2) fpprintprec : 4 $
+(%i3) L : [1, 2, 3, 4, 5, 6, 7, 8] $
+(%i4) n : length (L) $
+(%i5) x : make_array (any, n) $
+(%i6) fillarray (x, L) $
+(%i7) y : fft (x) $
+(%i8) a : make_array (any, n/2 + 1) $
+(%i9) b : make_array (any, n/2 + 1) $
+(%i10) a[0] : realpart (y[0]) $
+(%i11) b[0] : 0 $
+(%i12) for k : 1 thru n/2 - 1 do
+   (a[k] : realpart (y[k] + y[n - k]),
+    b[k] : imagpart (y[n - k] - y[k]));
+(%o12)                        done
+(%i13) a[n/2] : y[n/2] $
+(%i14) b[n/2] : 0 $
+(%i15) listarray (a);
+(%o15)          [4.5, - 1.0, - 1.0, - 1.0, - 0.5]
+(%i16) listarray (b);
+(%o16)           [0, - 2.414, - 1.0, - .4142, 0]
+(%i17) f(j) := sum (a[k]*cos(2*%pi*j*k/n) + b[k]*sin(2*%pi*j*k/n),
+                    k, 0, n/2) $
+(%i18) makelist (float (f (j)), j, 0, n - 1);
+(%o18)      [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+@end example
+
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{real_fft}
+@deffn {関数} real_fft (@var{x})
+
+実数値列 @var{x}の高速 Fourier変換を計算します。
+これは、先頭の @code{N/2+1}個の結果だけを返すことを除いて、
+@code{fft(x)}を実行することと等価です。
+ここで @code{N}は @var{x}の長さです。
+@code{N}は2のべきでなければいけません。
+
+@var{x}が実数値だけを含むことをチェックしません。
+
+実数列の Fourier変換の対称性は複雑さを減らします。
+特に @code{real_fft}の出力の最初と最後は純粋に実数です。
+より大きな数列では @code{real_fft}は @code{fft}より速く計算できるかもしれません。
+
+出力長が短いので、通常の @mref{inverse_fft}を直接使えません。
+逆をへいさんするには @mref{inverse_real_fft}を使ってください。
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{inverse_real_fft}
+@deffn {関数} inverse_real_fft (@var{y})
+@var{y}のFourier逆変換を計算します。
+@var{y}の長さは @code{N/2+1}でなければいけません。
+ここで @code{N}は2のべきです。
+入力 @var{x}(原文まま)は @code{real_fft}の出力と一致すると期待されます。
+
+入力が正しい形式か(最初と最後の要素が純粋に実数であること)を確認するようなチェックはしません。
+
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{bf_inverse_fft}
+@deffn {関数} bf_inverse_fft (@var{y})
+
+複素高速 Fourier逆変換を計算します。
+これは @mref{inverse_fft}の多倍長浮動小数点版で、
+入力を多倍長浮動小数点に変換して、多倍長浮動小数点の結果を返します。
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@anchor{bf_fft}
+@deffn {関数} bf_fft (@var{y})
+
+複素高速 Fourier順変換を計算します。
+これは @mref{fft}の多倍長浮動小数点版で、
+入力を多倍長浮動小数点に変換して、多倍長浮動小数点の結果を返します。
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@anchor{bf_real_fft}
+@deffn {関数} bf_real_fft (@var{x})
+
+多倍長浮動小数点の結果を返す実数値入力の高速 Fourier順変換を計算します。
+これは @code{real_fft}の多倍長浮動小数点版です。
+
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@anchor{bf_inverse_real_fft}
+@deffn {関数} bf_inverse_real_fft (@var{y})
+実数値の多倍長浮動小数点の出力で高速Fourier逆変換を計算します。
+これは @code{inverse_real_fft}の多倍長浮動小数点版です。
+
+@opencatbox
+@category{Package fft}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node Functions for numerical solution of equations, Introduction to numerical solution of differential equations, Functions and Variables for fast Fourier transform, Numerical
+@section Functions for numerical solution of equations
+@c -----------------------------------------------------------------------------
+
+@anchor{horner}
+@deffn  {関数} horner @
+@fname{horner} (@var{expr}, @var{x}) @
+@fname{horner} (@var{expr})
+
+Horner規則に従って、もし指定されないなら @var{x}を主変数として使い、
+@var{expr}の再配列された表現を返します。
+@code{x}は @var{expr}の標準有理式形の主変数が使われる場合には省略できます。
+
+もし @code{expr}が数値的に評価されるものなら、
+@code{horner}は時々、安定性が改善されます。
+また、もし Maximaが Fortranで走らせるプログラムを生成するのに使われるなら、
+役に立ちます。
+@mref{stringout}も参照してください。
+
+@c ===beg===
+@c expr: 1e-155*x^2 - 5.5*x + 5.2e155;
+@c expr2: horner (%, x), keepfloat: true;
+@c ev (expr, x=1e155);
+@c ev (expr2, x=1e155);
+@c ===end===
+@example
+(%i1) expr: 1e-155*x^2 - 5.5*x + 5.2e155;
+                           2
+(%o1)             1.e-155 x  - 5.5 x + 5.2e+155
+(%i2) expr2: horner (%, x), keepfloat: true;
+(%o2)         1.0 ((1.e-155 x - 5.5) x + 5.2e+155)
+(%i3) ev (expr, x=1e155);
+Maxima encountered a Lisp error:
+
+ arithmetic error FLOATING-POINT-OVERFLOW signalled
+
+Automatically continuing.
+To enable the Lisp debugger set *debugger-hook* to nil.
+(%i4) ev (expr2, x=1e155);
+(%o4)                 7.00000000000001e+154
+@end example
+
+@opencatbox
+@category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{find_root}
+@anchor{bf_find_root}
+@anchor{find_root_error}
+@anchor{find_root_abs}
+@anchor{find_root_rel}
+@deffn  {関数} find_root (@var{expr}, @var{x}, @var{a}, @var{b}, [@var{abserr}, @var{relerr}])
+@deffnx {関数} find_root (@var{f}, @var{a}, @var{b}, [@var{abserr}, @var{relerr}])
+@deffnx {関数} bf_find_root (@var{expr}, @var{x}, @var{a}, @var{b}, [@var{abserr}, @var{relerr}])
+@deffnx {関数} bf_find_root (@var{f}, @var{a}, @var{b}, [@var{abserr}, @var{relerr}])
+@deffnx {オプション変数} find_root_error
+@deffnx {オプション変数} find_root_abs
+@deffnx {オプション変数} find_root_rel
+
+式 @var{expr}もしくは関数 @var{f}の根を閉区間
+@math{[@var{a}, @var{b}]}上で見つけます。
+式 @var{expr}は等式でも問題ありません。
+その場合、 @mref{find_root}は
+@code{lhs(@var{expr}) - rhs(@var{expr})}の根を探します。
+
+Maximaが @var{expr}もしくは @var{f}を @math{[@var{a}, @var{b}]}上で評価できて
+@var{expr}もしくは @var{f}は連続という仮定の下、
+@code{find_root}が根を見つけるか、あるいはもし複数の根があるなら根の１つを見つけることが保証されます。
+
+@code{find_root}は始め、２分木探索を適用します。
+もし対象の関数が十分滑らかなら @code{find_root}は代わりに線形内挿を適用します。
+
+@code{f_find_root}は @code{find_root}の多倍長浮動小数点版です。
+関数は多倍長浮動小数点数値を使って計算され、多倍長浮動小数点の結果が返されます。
+他の点では @code{bf_find_root}は @code{find_root}と同一であり、以下の記述は
+@code{bf_find_root}に同様に適用されます。
+
+@code{find_root}の精度は @code{abserr}と @code{relerr}に支配されます。
+それらは @code{fine_root}へのオプションのキーワード引数です。
+これらのキーワード引数は形式 @code{key=val}を取ります。
+キーワード引数は
+@table @code
+@item abserr
+根での関数値の望まれる絶対エラー。デフォルトは @code{find_root_abs}です。
+@item relerr
+根の望まれる相対エラー。デフォルトは @code{find_root_rel}です。
+@end table
+
+懸案の関数が @code{abserr}以下の何かに評価されるか、
+近似値 @var{x_0}, @var{x_1}の差が
+@code{relerr * max(abs(x_0), abs(x_1))}以下になるなら
+@code{find_root}は停止します。
+
+@code{find_root_abs}と @code{find_root_rel}のデフォルト値はともに零です。
+
+@code{find_root}は探索区間の端で対象の関数が異なる符号を持つことを期待します。
+関数の両方の終端での評価値が同じ符号を持つ時、
+@code{find_root}の振る舞いは @code{find_root_error}に支配されます。
+@code{find_root_error}が @code{true}の時、
+@code{find_root}はエラーメッセージを出力します。
+そうでないなら @code{find_root}は @code{find_root_error}の値を返します。
+@code{find_root_error}のデフォルト値は @code{true}です。
+
+もし @var{f}が探索アルゴリズムの中のどのステップでも数以外の何かに評価されるなら、
+@code{find_root}は部分的に評価された @code{find_root}式を返します。
+
+@var{a}と @var{b}の順序は無視されます;
+根が探索される区間は @math{[min(@var{a}, @var{b}), max(@var{a}, @var{b})]}です。
+
+例:
+@c PREVIOUS EXAMPLE STUFF -- MAY WANT TO BRING TRANSLATE BACK INTO THE EXAMPLE
+@c f(x):=(mode_declare(x,float),sin(x)-x/2.0);
+@c interpolate(sin(x)-x/2,x,0.1,%pi)       time= 60 msec
+@c interpolate(f(x),x,0.1,%pi);            time= 68 msec
+@c translate(f);
+@c interpolate(f(x),x,0.1,%pi);            time= 26 msec
+@c interpolate(f,0.1,%pi);                 time=  5 msec
+
+@c ===beg===
+@c f(x) := sin(x) - x/2;
+@c find_root (sin(x) - x/2, x, 0.1, %pi);
+@c find_root (sin(x) = x/2, x, 0.1, %pi);
+@c find_root (f(x), x, 0.1, %pi);
+@c find_root (f, 0.1, %pi);
+@c find_root (exp(x) = y, x, 0, 100);
+@c find_root (exp(x) = y, x, 0, 100), y = 10;
+@c log (10.0);
+@c fpprec:32;
+@c 32;
+@c bf_find_root (exp(x) = y, x, 0, 100), y = 10;
+@c log(10b0);
+@c ===end===
+@example
+(%i1) f(x) := sin(x) - x/2;
+                                        x
+(%o1)                  f(x) := sin(x) - -
+                                        2
+(%i2) find_root (sin(x) - x/2, x, 0.1, %pi);
+(%o2)                   1.895494267033981
+(%i3) find_root (sin(x) = x/2, x, 0.1, %pi);
+(%o3)                   1.895494267033981
+(%i4) find_root (f(x), x, 0.1, %pi);
+(%o4)                   1.895494267033981
+(%i5) find_root (f, 0.1, %pi);
+(%o5)                   1.895494267033981
+(%i6) find_root (exp(x) = y, x, 0, 100);
+                            x
+(%o6)           find_root(%e  = y, x, 0.0, 100.0)
+(%i7) find_root (exp(x) = y, x, 0, 100), y = 10;
+(%o7)                   2.302585092994046
+(%i8) log (10.0);
+(%o8)                   2.302585092994046
+(%i9) fpprec:32;
+(%o9)                           32
+(%i10) bf_find_root (exp(x) = y, x, 0, 100), y = 10;
+(%o10)                  2.3025850929940456840179914546844b0
+(%i11) log(10b0);
+(%o11)                  2.3025850929940456840179914546844b0
+@end example
+
+@opencatbox
+@category{Algebraic equations} @category{Numerical methods}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{newton}
+@deffn {関数} newton (@var{expr}, @var{x}, @var{x_0}, @var{eps})
+
+@var{expr}を @var{x}の１変数関数と考えて、
+Newton法による @code{@var{expr} = 0}の近似解を返します。
+探索は @code{@var{x} = @var{x_0}}で始まり、
+(@var{x}の現在値で評価された @var{expr}を使った)
+@code{abs(@var{expr}) < @var{eps}}が成り立つまで続きます。
+
+終了テスト @code{abs(@var{expr}) < @var{eps}}が
+@code{true}か @code{false}に評価される限り、
+@code{newton}は未定義変数が @var{expr}の中に現れることを許します。
+
+このように @var{expr}は数に評価される必要はありません。
+
+@code{load(newton1)}はこの関数をロードします。
+
+@mref{realroots}, @mref{allroots}, @mref{find_root},
+@mref{mnewton-pkg}も参照してください。
+
+例:
+
+@c ===beg===
+@c load ("newton1");
+@c newton (cos (u), u, 1, 1/100);
+@c ev (cos (u), u = %);
+@c assume (a > 0);
+@c newton (x^2 - a^2, x, a/2, a^2/100);
+@c ev (x^2 - a^2, x = %);
+@c ===end===
+@example
+(%i1) load ("newton1");
+(%o1)  /maxima/share/numeric/newton1.mac
+(%i2) newton (cos (u), u, 1, 1/100);
+(%o2)                   1.570675277161251
+(%i3) ev (cos (u), u = %);
+(%o3)                 1.2104963335033529e-4
+(%i4) assume (a > 0);
+(%o4)                        [a > 0]
+(%i5) newton (x^2 - a^2, x, a/2, a^2/100);
+(%o5)                  1.00030487804878 a
+(%i6) ev (x^2 - a^2, x = %);
+                                           2
+(%o6)                6.098490481853958e-4 a
+@end example
+
+@opencatbox
+@category{Algebraic equations} @category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node Introduction to numerical solution of differential equations, Functions for numerical solution of differential equations, Functions for numerical solution of equations, Numerical
+@section Introduction to numerical solution of differential equations
+@c -----------------------------------------------------------------------------
+
+このセクションで関数が解く常微分方程式(ODE)は以下の形でなければいけません。
+@ifnottex
+@example
+       dy
+       -- = F(x,y)
+       dx
+@end example
+@end ifnottex
+@tex
+$${{dy}\over{dx}} = F(x,y)$$
+@end tex
+つまり一階ODEです。
+@var{n}階の高階微分方程式は @var{n}個の一階微分方程式系で書かなくてはいけません。
+例えば、二階ODEは以下の2つの方程式系で書かれなくてはいけません。
+@ifnottex
+@example
+       dx               dy
+       -- = G(x,y,t)    -- = F(x,y,t)
+       dt               dt
+@end example
+@end ifnottex
+@tex
+$${{dx}\over{dt}} = G(x,y,t) \qquad {{dy}\over{dt}} = F(x,y,t)$$
+@end tex
+
+関数の一番目の引数はODEの右辺の式のリストです。
+それらの式が導関数を表す変数は二番目のリストに与えます。
+上の例の場合、それらの変数は@var{x}と @var{y}です。
+上の例では @var{t}に該当する独立変数は別のオプションの中に与えます。
+もし与えられた式がその独立変数に依存しないなら系は自律的と呼ばれます。
+
+@opencatbox
+@category{Differential equations} @category{Numerical methods} @category{Plotting}
+@closecatbox
+
+
+@c -----------------------------------------------------------------------------
+@node Functions for numerical solution of differential equations, , Introduction to numerical solution of differential equations, Numerical
+@section Functions for numerical solution of differential equations
+@c -----------------------------------------------------------------------------
+@deffn {関数} plotdf @
+@fname{plotdf} (@var{dydx}, options@dots{}) @
+@fname{plotdf} (@var{dvdu}, [@var{u},@var{v}], options@dots{}) @
+@fname{plotdf} ([@var{dxdt},c@var{dydt}], options@dots{}) @
+@fname{plotdf} ([@var{dudt},c@var{dvdt}], [@var{u},c@var{v}], options@dots{})
+
+関数@code{plotdf}は、 一階常微分方程式(ODE)や2つの自律 一階
+ODE系の方向場(勾配場とも呼ばれる)のプロットを生成します。
+
+たとえコンソールのMaximaセッションから走らせても、plotdfは Xmaximaを必要とします。
+XmaximaのTkスクリプトがプロットを生成するためです。
+Xmaximaがインストールされていないなら、plotdfは動きません。
+
+@var{dydx}, @var{dxdt}, @var{dydt}は @var{x}と @var{y}に依存する式です。
+@var{dvdu}, @var{dudt}, @var{dvdt}は @var{u}と @var{v}に依存する式です。
+それら 2つの変数に加えて、
+@code{parameters}オプションで与えられる数値を持つか
+(オプション構文法は以下に与えられます)、
+@var{sliders}オプションで指定される許される値の範囲のパラメータ一式にも、
+式は依存するかもしれません。
+
+コマンド内やメニューで選択して、いくつかの他のオプションを与えることができます。
+プロット上でクリックしたり、オプション
+@code{trajectory_at}を使って積分曲線を得ることができます。
+@code{direction}オプションを使って積分の方向を制御できます。
+オプションは、 @emph{forward}, @emph{backward},
+@emph{both}のいずれかの値を取り得ます。
+積分ステップの数は@code{nsteps}で与えます。
+それぞれの積分ステップで時間増分は、プロットウィンドウのサイズより十分小さい置き換えを生成するように自動的に調整されます。
+使われる数値法は可変時間ステップの4次の適応 Runge-Kutta法です。
+
+@b{プロットウィンドウメニュー:}
+
+プロットウィンドウのメニューバーは以下の7つのアイコンを持ちます:
+
+X。プロットウィンドウを閉じるのに使えます。
+
+レンチとドライバ。使用中のODEと様々な設定を表示する欄を持つ設定メニューを開きます。
+欄 @emph{Trajectory at}に座標の組を入力して @key{enter}キーを押すと、既に表示されたものに加えて新しい積分曲線を表示します。
+
+円に続く2つの矢印。設定メニューで定義された新しい設定で方向場を再プロットし、以前にプロットされた最後の積分曲線だけを再プロットします。
+
+矢印付きハードディスクドライブ。アイコンをクリックした時現れるボックス欄で指定したファイルにプロットのコピーをポストスクリプト形式で保存するのに使います。
+
+プラス記号付き拡大鏡。プロットをズームします。
+
+マイナス記号付き拡大鏡。プロットをズームアウトします。
+マウスの右ボタンを押したままマウスを動かすことでプロットを置き換えることができます。
+
+プロットアイコン。最後にプロットされた積分曲線の2つの変数の時間プロットを含む別のウィンドウを開きます。
+
+@b{プロットオプション:}
+
+オプションを @code{plotdf}自身に与えることもできます。
+それぞれは複数の要素のリストです。
+それぞれのオプションの最初の要素はオプション名で、残りはオプションに割り当てられる値です。
+
+@code{plotdf}が認識するオプションは以下の通りです:
+
+@itemize @bullet
+@item
+@dfn{nsteps}は、積分曲線を計算するのに、独立変数に対して使われる長さ
+@code{tstep}のステップ回数を定義します。
+デフォルト値は 100です。
+
+@item
+@dfn{direction}は積分曲線を計算する際に従う独立変数の方向を定義します。
+可能な値は、
+@code{forward}―これは増分 @code{tstep}で独立変数を @code{nsteps}回増やします―
+@code{backward}―これは独立変数を減らします―
+または @code{both}―これは
+@code{nsteps}回前進、 @code{nsteps}回後進で拡げた積分曲線に導きます―
+キーワード @code{right}と @code{left}を、
+@code{forward}と @code{backward}の別称として使うことができます。
+デフォルト値は @code{both}です。
+
+@item
+@dfn{tinitial}は積分曲線を計算するために使われる変数 @var{t}の初期値です。
+微分方程式が自律なので、その設定は @var{t}の関数として曲線のプロットでだけ現れます。
+デフォルト値は 0です。
+
+@item
+@dfn{versus_t}は独立変数 @var{t}の 2つの関数 @var{x},
+@var{y}としての積分曲線のプロットを使って二番目のプロットウィンドウを生成するために
+使われます。
+もし @code{versus_t}が 0と異なる任意の値を与えられたら、
+二番目のプロットウィンドウが表示されます。
+二番目のプロットウィンドウはメインプロットウィンドウのメニューに似た別のメニューを含みます。
+デフォルト値は 0です。
+
+@item
+@dfn{trajectory_at}は積分曲線の開始点のための座標 @var{xinitial}と
+@var{yinitial}を定義します。
+オプションはデフォルトで空です。
+
+@item
+@dfn{parameters}は
+微分方程式の定義の中で使われるパラメータとその数値のリストを定義します。
+パラメータの名前と値は、コンマで分離された組
+@code{name=value}の列を持つ文字列で与えなければいけません。
+
+@item
+@dfn{sliders}はスライダーボタンを使って対話的に変更されるパラメータと
+それらのパラメータの変動範囲のリストです。
+パラメータの名前と範囲は、コンマで分離された要素
+@code{name=min:max}の列を持つ文字列で与えなければいけません。
+
+@item
+@dfn{xfun}は方向場の上にセミコロンで分離された表示される
+@var{x}の関数の列を持つ文字列を定義します。
+これらの関数は Maximaではなく Tclでパースされます。
+
+@item
+@dfn{x}には2つの数が続かなければいけません。
+2つの数は水平軸上で表示される最小値と最大値を設定します。
+もし水平軸上の変数が @var{x}でないなら、
+このオプションは水平軸上の変数名を持たなければいけません。
+デフォルトの水平範囲は -10から 10です。
+
+@item
+@dfn{y}には 2つの数が続かなければいけません。
+2つの数は垂直軸上で表示される最小値と最大値を設定します。
+もし垂直軸上の変数が @var{y}でないなら、
+このオプションは垂直軸上の変数名を持たなければいけません。
+デフォルトの垂直範囲は -10から 10です。
+
+@item
+@dfn{xaxislabel}は水平軸を特定するのに使われます。
+デフォルト値は一番目の状態変数名です。
+
+@item
+@dfn{yaxislabel}を垂直軸を特定するのに使われます。
+デフォルト値は二番目の状態変数名です。
+
+@item
+@dfn{number_of_arrows}は平方数に設定しなければいけません。
+これは描画される矢印のおおよその密度を定義します。
+デフォルト値は225です。
+@end itemize
+
+@strong{例:}
+
+@itemize @bullet
+@item
+微分方程式 @math{y' = exp(-x) + y}の方向場と
+@math{(2, -0.1)}を通過する解を表示するために:
+@c ===beg===
+@c plotdf(exp(-x)+y,[trajectory_at,2,-0.1])$
+@c ===end===
+@example
+(%i1) plotdf(exp(-x)+y,[trajectory_at,2,-0.1])$
+@end example
+
+@ifnotinfo
+@image{figures/plotdf1,8cm}
+@end ifnotinfo
+
+@item
+方程式 @math{diff(y,x) = x - y^2}の方向場と初期条件
+@math{y(-1) = 3}の解を得るために以下のコマンドを使うことができます:
+@c ===beg===
+@c plotdf(x-y^2,[xfun,"sqrt(x);-sqrt(x)"],
+@c          [trajectory_at,-1,3], [direction,forward],
+@c          [y,-5,5], [x,-4,16])$
+@c ===end===
+@example
+@group
+(%i1) plotdf(x-y^2,[xfun,"sqrt(x);-sqrt(x)"],
+         [trajectory_at,-1,3], [direction,forward],
+         [y,-5,5], [x,-4,16])$
+@end group
+@end example
+
+グラフは関数 @math{y = sqrt(x)}も表示します。
+
+@ifnotinfo
+@image{figures/plotdf2,8cm}
+@end ifnotinfo
+
+@item
+以下の例は、2つの方程式 @math{dz/dt = v}と
+@math{dv/dt = -k*z/m}で定義される調和振動子の方向場と、
+@math{(z,v) = (6,0)}を通る積分曲線を、
+(@math{k}は 2に固定で) @math{m}の値を対話的に変えられるスライダーと一緒に、
+表示します。
+@c ===beg===
+@c plotdf([v,-k*z/m], [z,v], [parameters,"m=2,k=2"],
+@c            [sliders,"m=1:5"], [trajectory_at,6,0])$
+@c ===end===
+@example
+@group
+(%i1) plotdf([v,-k*z/m], [z,v], [parameters,"m=2,k=2"],
+           [sliders,"m=1:5"], [trajectory_at,6,0])$
+@end group
+@end example
+
+@ifnotinfo
+@image{figures/plotdf3,8cm}
+@end ifnotinfo
+
+@item
+Duffing方程式 @math{m*x''+c*x'+k*x+b*x^3 = 0}の方向場をプロットするために変数
+@math{y=x'}を導入し、以下のように使います:
+@c ===beg===
+@c plotdf([y,-(k*x + c*y + b*x^3)/m],
+@c              [parameters,"k=-1,m=1.0,c=0,b=1"],
+@c              [sliders,"k=-2:2,m=-1:1"],[tstep,0.1])$
+@c ===end===
+@example
+@group
+(%i1) plotdf([y,-(k*x + c*y + b*x^3)/m],
+             [parameters,"k=-1,m=1.0,c=0,b=1"],
+             [sliders,"k=-2:2,m=-1:1"],[tstep,0.1])$
+@end group
+@end example
+
+@ifnotinfo
+@image{figures/plotdf4,8cm}
+@end ifnotinfo
+
+@item
+質量 @math{m}の値を変更するのに使うことができるスライダーと一緒に
+与えられた初期条件の解と減衰振り子の方向場と
+時間の関数として2つの状態変数のプロットを一緒に:
+
+@c ===beg===
+@c plotdf([w,-g*sin(a)/l - b*w/m/l], [a,w],
+@c         [parameters,"g=9.8,l=0.5,m=0.3,b=0.05"],
+@c         [trajectory_at,1.05,-9],[tstep,0.01],
+@c         [a,-10,2], [w,-14,14], [direction,forward],
+@c         [nsteps,300], [sliders,"m=0.1:1"], [versus_t,1])$
+@c ===end===
+@example
+@group
+(%i1) plotdf([w,-g*sin(a)/l - b*w/m/l], [a,w],
+        [parameters,"g=9.8,l=0.5,m=0.3,b=0.05"],
+        [trajectory_at,1.05,-9],[tstep,0.01],
+        [a,-10,2], [w,-14,14], [direction,forward],
+        [nsteps,300], [sliders,"m=0.1:1"], [versus_t,1])$
+@end group
+@end example
+
+@ifnotinfo
+@image{figures/plotdf5,8cm}@image{figures/plotdf6,8cm}
+@end ifnotinfo
+
+@end itemize
+
+@opencatbox
+@category{Differential equations} @category{Plotting} @category{Numerical methods}
+@closecatbox
+
+@end deffn
+
+@deffn {関数} ploteq (@var{exp}, ...options...)
+
+@var{exp}の等電位曲線をプロットします。
+@var{exp}は二変数に依存する式です。
+曲線は直交切線を定義する微分方程式を与えられた式の勾配から得られる自律系の解に積分することで得られます。
+プロットは勾配系の積分曲線(オプションfieldlines)を見せることもできます。
+
+このプログラムも、たとえコンソールのMaximaセッションから走らせても、 Xmaximaを必要とします。
+XmaximaのTkスクリプトがプロットを生成するためです。
+デフォルトでは、ユーザーがある点をクリックする(か設定メニューかtrajectory_atオプションで座標を与える)まで、プロット領域は空です。
+
+plotdfがほとんどのオプションはploteqでも使うことができ、
+プロットインターフェースはplotdfで記述したものと同じです。
+
+例:
+
+@c ===beg===
+@c V: 900/((x+1)^2+y^2)^(1/2)-900/((x-1)^2+y^2)^(1/2)$
+@c ploteq(V,[x,-2,2],[y,-2,2],[fieldlines,"blue"])$
+@c ===end===
+@example
+(%i1) V: 900/((x+1)^2+y^2)^(1/2)-900/((x-1)^2+y^2)^(1/2)$
+(%i2) ploteq(V,[x,-2,2],[y,-2,2],[fieldlines,"blue"])$
+@end example
+
+ある点をクリックすると、その点(赤)と直交切線(青)を通る等電位曲線をプロットします。
+
+@opencatbox
+@category{Differential equations} @category{Plotting} @category{Numerical methods}
+@closecatbox
+
+@end deffn
+
+@deffn {関数} rk @
+@fname{rk} (@var{ODE}, @var{var}, @var{initial}, @var{domain}) @
+@fname{rk} ([@var{ODE1}, @dots{}, @var{ODEm}], [@var{v1}, @dots{}, @var{vm}], [@var{init1}, @dots{}, @var{initm}], @var{domain})
+
+4次の Runge-Kutta法を使って、
+最初の形式は一階常微分方程式一つを数値的に解き、二番目の形式はそれら
+m個の方程式系を解きます。
+@var{var}は従属変数を表します。
+@var{ODE}は独立変数と従属変数にだけ依存する式でなければいけません。
+そして、独立変数に関する従属変数の導関数を定義します。
+
+独立変数は @code{domain}で指定されます。
+それは 4つの要素のリストでなければいけません。
+例えば:
+@example
+[t, 0, 10, 0.1]
+@end example
+リストの最初の要素は独立変数を特定し、二番目と三番目の要素はその変数の初期値と最終値であり、
+最後の要素はその区間内で使用されるべき増加分を設定します。
+
+もし @var{m}この方程式が解かれようとしているなら、
+@var{m}個の従属変数 @var{v1}, @var{v2}, ..., @var{vm}が存在しなければいけません。
+それらの変数の初期値は @var{init1}, @var{init2}, ..., @var{initm}となります。
+以前の場合と同様、 @code{domain}で定義されたただ 1つの独立変数が残っています。
+@var{ODE1}, ..., @var{ODEm}は独立変数に関する従属変数それぞれの導関数を定義する式です。
+それらの式に現れるかもしれない変数は独立変数と任意の従属変数だけです。
+従属変数と厳密に同じ順序でリストの中に導関数
+@var{ODE1}, ..., @var{ODEm}を与えることが重要です;
+例えば、リストの三番目の要素は三番目の従属変数の導関数と解釈されます。
+
+プログラムは
+方程式を独立変数の初期値から最終値まで一定の増加分を使って積分しようとします。
+もしあるステップで従属変数の1つが大きすぎる絶対値を取ったら、積分はその点で中断されます。
+結果は、なされた繰り返しの回数と同じ数の要素を持つリストです。
+結果リストの中のそれぞれの要素は、それ自身 @var{m}+1個の要素を持つもう一つのリストです:
+独立変数の値にその点に対応する従属変数の値が続きます。
+
+以下の微分方程式を数値的に解く。
+
+@ifnottex
+@example
+          dx/dt = t - x^2
+@end example
+@end ifnottex
+@tex
+$${{dx}\over{dt}} = t - x^2$$
+@end tex
+
+初期値は x(t=0) = 1で、tの区間は0から8まで、tの増分は0.1。
+コマンドは:
+
+@c ===beg===
+@c results: rk(t-x^2,x,1,[t,0,8,0.1])$
+@c plot2d ([discrete, results])$
+@c ===end===
+@example
+(%i1) results: rk(t-x^2,x,1,[t,0,8,0.1])$
+(%i2) plot2d ([discrete, results])$
+@end example
+
+結果はリスト @code{results}に保存され、プロットは、水平軸に @var{t}、垂直軸に @var{x}で得られた解を表示します。
+
+以下の系を数値的に解く。
+
+@ifnottex
+@example
+        dx/dt = 4-x^2-4*y^2     dy/dt = y^2-x^2+1
+@end example
+@end ifnottex
+@tex
+$$\cases{{\displaystyle{dx}\over\displaystyle{dt}} = 4-x^2-4y^2 &\cr &\cr {\displaystyle{dy}\over\displaystyle{dt}} = y^2-x^2+1}$$
+@end tex
+
+tは0から4の間、t=0でxが-1.25、yが0.75という条件:
+
+@c ===beg===
+@c sol: rk([4-x^2-4*y^2,y^2-x^2+1],[x,y],[-1.25,0.75],[t,0,4,0.02])$
+@c plot2d ([discrete,makelist([p[1],p[3]],p,sol)], [xlabel,"t"],[ylabel,"y"])$
+@c ===end===
+@example
+(%i1) sol: rk([4-x^2-4*y^2,y^2-x^2+1],[x,y],[-1.25,0.75],[t,0,4,0.02])$
+(%i2) plot2d ([discrete,makelist([p[1],p[3]],p,sol)], [xlabel,"t"],[ylabel,"y"])$
+@end example
+
+プロットは @var{t}の関数として変数 @var{y}を表示します。
+
+@opencatbox
+@category{Differential equations} @category{Numerical methods}
+@closecatbox
+
+@end deffn

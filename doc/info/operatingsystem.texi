@@ -1,0 +1,88 @@
+@menu
+* Introduction to operatingsystem::
+* Directory operations::
+* File operations::
+* Environment operations::
+@end menu
+
+@node Introduction to operatingsystem, Directory operations, operatingsystem-pkg, operatingsystem-pkg
+@section Introduction to operatingsystem
+
+パッケージ @code{operatingsystem}は、
+ファイルシステム操作のようなオペレーティングシステムのタスクのための関数を含みます。
+
+
+@node Directory operations, File operations, Introduction to operatingsystem, operatingsystem-pkg
+@section Directory operations
+
+
+@anchor{chdir}
+@deffn {関数} chdir (@var{dir})
+ディレクトリ @var{dir}に変えます。
+@end deffn
+
+@anchor{mkdir}
+@deffn {関数} mkdir (@var{dir})
+ディレクトリ @var{dir}を作ります。
+@end deffn
+
+@anchor{rmdir}
+@deffn {関数} rmdir (@var{dir})
+ディレクトリ @var{dir}を削除します。
+@end deffn
+
+@anchor{getcurrentdirectory}
+@deffn {関数} getcurrentdirectory ()
+現在のワーキングディレクトリを返します。
+
+@mref{directory}も参照して下さい。
+
+@end deffn
+
+例:
+
+@example
+(%i1) load("operatingsystem")$
+(%i2) mkdir("testdirectory")$
+(%i3) chdir("testdirectory")$
+(%i4) chdir("..")$
+(%i5) rmdir("testdirectory")$
+@end example
+
+@node File operations, Environment operations, Directory operations, operatingsystem-pkg
+@section File operations
+
+
+@anchor{copy_file}
+@deffn {関数} copy_file (@var{file1}, @var{file2})
+ファイル @var{file1}を @var{file2}にコピーします。
+@end deffn
+
+@anchor{rename_file}
+@deffn {関数} rename_file (@var{file1}, @var{file2})
+ファイル @var{file1}を @var{file2}にリネームします。
+@end deffn
+
+@anchor{delete_file}
+@deffn {関数} delete_file (@var{file1})
+ファイル @var{file1}を削除します。
+@end deffn
+
+
+@node Environment operations, , File operations, operatingsystem-pkg
+@section Environment operations
+
+
+@anchor{getenv}
+@deffn {関数} getenv (@var{env})
+環境変数 @var{env}の値を取得します。
+
+例:
+
+@example
+(%i1) load("operatingsystem")$
+(%i2) getenv("PATH");
+(%o2) /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+@end example
+
+@end deffn

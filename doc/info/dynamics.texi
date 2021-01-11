@@ -1,0 +1,894 @@
+@menu
+* The dynamics package::
+* Graphical analysis of discrete dynamical systems::
+* Visualization with VTK::
+@end menu
+
+@node The dynamics package, Graphical analysis of discrete dynamical systems, dynamics-pkg, dynamics-pkg
+@section The dynamics package
+
+パッケージ @code{dynamics}には、
+3D可視化と、アニメーション、微分差分方程式のグラフィックス解析、微分方程式の数値解のための関数が含まれています。
+微分方程式用の関数については @mxref{Numerical, Numerical Methods}の節で記述します。
+離散力学系とフラクタルの様々なグラフィックス表現を生成するためのいくつかの関数と、
+Mandelbrotと Julia集合については  @mref{Plotting}の節で記述します。
+
+このパッケージのすべての関数は初めて使われる時自動的にロードされます。
+
+@opencatbox
+@category{Dynamical systems} @category{Share packages} @category{Package dynamics}
+@closecatbox
+
+@node Graphical analysis of discrete dynamical systems,  Visualization with VTK, The dynamics package, dynamics-pkg
+@section Graphical analysis of discrete dynamical systems
+
+@anchor{chaosgame}
+@deffn {関数} chaosgame ([[@var{x1}, @var{y1}]@dots{}[@var{xm}, @var{ym}]], [@var{x0}, @var{y0}], @var{b}, @var{n}, @var{options}, @dots{});
+
+いわゆるカオスゲームを実装します:
+初期点 (@var{x0}, @var{y0})をプロットし、
+@var{m}個の点 [@var{x1}, @var{y1}]@dots{}@var{xm}, @var{ym}]の１つをランダムに選択します。
+プロットする次の点はプロットした以前の点からランダムに選ばれた点までの線分上で、
+ランダム点からその線分の長さに @var{b}を掛けた距離にあります。
+手続きは @var{n}回繰り返されます。
+オプションは @mref{plot2d}と同じです。
+
+@strong{例}. Sierpinsky三角形のプロット:
+
+@example
+(%i1) chaosgame([[0, 0], [1, 0], [0.5, sqrt(3)/2]], [0.1, 0.1], 1/2,
+                 30000, [style, dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics7}
+@end ifnotinfo
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@anchor{evolution}
+@deffn {関数} evolution (@var{F}, @var{y0}, @var{n},  @dots{}, @var{options}, @dots{});
+
+２次元グラフに、点の水平座標が整数 0, 1, 2, ..., @var{n}、
+垂直座標が再帰関係
+@ifnottex
+@example
+        y(n+1) = F(y(n))
+@end example
+@end ifnottex
+@tex
+$$y_{n+1} = F(y_n)$$
+@end tex
+で定義された数列の対応する値 @var{y(n)}である @var{n+1}個の点を描きます。
+ここで、初期値 @var{y(0)}は @var{y0}に等しいです。
+@var{F}は１変数にだけ依存する式でなければいけません。
+(例の中では @var{y}に依存していますが、他のいかなる変数を使うことができます),
+@var{y0}は実数でなければいけなく、 @var{n}は正の整数でなければいけません。
+この関数は @mref{plot2d}と同じオプションを受け付けます。
+
+@strong{例}。
+
+@example
+(%i1) evolution(cos(y), 2, 11);
+@end example
+@ifnotinfo
+@figure{dynamics1}
+@end ifnotinfo
+
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@anchor{evolution2d}
+@deffn {関数} evolution2d ([@var{F}, @var{G}], [@var{u}, @var{v}], [@var{u0}, @var{y0}], @var{n}, @var{options}, @dots{});
+
+再帰関係を伴う二次元離散力学系によって定義された点列の中の最初の
+@var{n+1}点を二次元プロットで表示します。
+初期値 @var{u0}と @var{v0}を持つ
+@ifnottex
+@example
+        u(n+1) = F(u(n), v(n))    v(n+1) = G(u(n), v(n))
+@end example
+@end ifnottex
+@tex
+$$\cases{u_{n+1} = F(u_n, v_n) &\cr v_{n+1} = G(u_n, v_n)}$$
+@end tex
+
+@var{F}と @var{G}は 2変数 @var{u}と @var{v}のみに依存する式 2つでなければいけません。
+変数はリストの中に明示的に指名されなければいけません。
+オプションは@mref{plot2d}と同じです。
+
+@strong{例}。 2次元離散力学系の発展:
+
+@example
+(%i1) f: 0.6*x*(1+2*x)+0.8*y*(x-1)-y^2-0.9$
+(%i2) g: 0.1*x*(1-6*x+4*y)+0.1*y*(1+9*y)-0.4$
+(%i3) evolution2d([f,g], [x,y], [-0.5,0], 50000, [style,dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics5}
+@end ifnotinfo
+
+そしてそのフラクタルの小領域の拡大:
+
+@example
+(%i9) evolution2d([f,g], [x,y], [-0.5,0], 300000, [x,-0.8,-0.6],
+                  [y,-0.4,-0.2], [style, dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics6}
+@end ifnotinfo
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@anchor{ifs}
+@deffn {関数} ifs ([@var{r1}, @dots{}, @var{rm}], [@var{A1},@dots{}, @var{Am}], [[@var{x1}, @var{y1}], @dots{}, [@var{xm}, @var{ym}]], [@var{x0}, @var{y0}], @var{n}, @var{options}, @dots{});
+
+反復関数系法を実装します。
+この方法は関数 @mref{chaosgame}で記述した方法に似ていますが、
+現在点からランダムに選ばれた点にセグメントを縮める代わりに、
+そのセグメントの2成分はランダムに選ばれた点に対応する 2行 2列行列 @var{Ai}を乗算されます。
+
+@var{m}個のアトラクティブな点の１つのランダムな選択を重み
+@var{r1},...,@var{rm}で定義された非均一な確率分布で作ることができます。
+それらの重みは累積形で与えられます;
+例えばもし確率0.2, 0.5, 0.3を持つ3点があるなら、
+重み @var{r1}, @var{r2}と @var{r3}は 2, 7, 10とできます。
+オプションは@mref{plot2d}と同じです。
+
+@strong{例}。 4つの行列と4点で得られたBarnsleyのシダ:
+
+@example
+(%i1) a1: matrix([0.85,0.04],[-0.04,0.85])$
+(%i2) a2: matrix([0.2,-0.26],[0.23,0.22])$
+(%i3) a3: matrix([-0.15,0.28],[0.26,0.24])$
+(%i4) a4: matrix([0,0],[0,0.16])$
+(%i5) p1: [0,1.6]$
+(%i6) p2: [0,1.6]$
+(%i7) p3: [0,0.44]$
+(%i8) p4: [0,0]$
+(%i9) w: [85,92,99,100]$
+(%i10) ifs(w, [a1,a2,a3,a4], [p1,p2,p3,p4], [5,0], 50000, [style,dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics8}
+@end ifnotinfo
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@anchor{orbits}
+@deffn {関数} orbits (@var{F}, @var{y0}, @var{n1}, @var{n2}, [@var{x}, @var{x0}, @var{xf}, @var{xstep}], @var{options}, @dots{});
+
+パラメータ @var{x}を持つ一次元離散力学系の族に関する軌道図を描画します;
+この種の図は一次元離散系の分岐の研究に使われます。
+
+関数 @var{F(y)}は、
+関数 @code{evolution}の場合と同様に値 @var{y0}で始まる数列を定義しますが、
+この場合、その関数は @var{x0}から @var{xf}までの区間内の値を取り、
+@var{xstep}の増分を持つパラメータ @var{x}にも依存します。
+パラメータ @var{x}に使われるそれぞれの値は水平軸に示されます。
+垂直軸は、数列に @var{n1}回の時間発展させた後得られる数列
+@var{y(n1+1)},..., @var{y(n1+n2+1)}の @var{n2}個の値を示します。
+@mref{plot2d}が受け付けるオプションに加えて、
+垂直方向に表現された異なる点の最大数を設定するオプション @var{pixels}を受け付けます。
+
+@strong{例}。パラメータ @var{a}を持つ2次写像の軌道グラフ:
+
+@example
+(%i1) orbits(x^2+a, 0, 50, 200, [a, -2, 0.25], [style, dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics3}
+@end ifnotinfo
+
+x @code{=} -1.25近傍の下位分岐周りの領域を拡大するために使用:
+@example
+(%i2) orbits(x^2+a, 0, 100, 400, [a,-1,-1.53], [x,-1.6,-0.8],
+             [nticks, 400], [style,dots]);
+@end example
+
+@ifnotinfo
+@figure{dynamics4}
+@end ifnotinfo
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+
+@anchor{staircase}
+@deffn {関数} staircase (@var{F}, @var{y0}, @var{n},@var{options},@dots{});
+
+再帰関係によって定義された数列に関する階段図形を描画します。
+@ifnottex
+@example
+        y(n+1) = F(y(n))
+@end example
+@end ifnottex
+@tex
+$$y_{n+1} = F(y_n)$$
+@end tex
+
+入力パラメータの解釈と許される値は
+関数 @mref{evolution}に関するものと同じです。
+階段図形は線 @var{G(y)} @code{=} @var{y}と共に関数
+@var{F(y)}のプロットから構成されます。
+垂直区間は、その線上の点 (@var{y0}, @var{y0})から関数
+@var{F}と交差する点まで描画されます。
+水平区間はその点から線上の点 (@var{y1}, @var{y1})に届くまで描画されます。
+手続きは点 (@var{yn}, @var{yn})に届くまで @var{n}回繰り返されます。
+オプションは @mref{plot2d}と同じです。
+
+@strong{例}。
+
+@example
+(%i1) staircase(cos(y), 1, 11, [y, 0, 1.2]);
+@end example
+@ifnotinfo
+@figure{dynamics2}
+@end ifnotinfo
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@node Visualization with VTK, , Graphical analysis of discrete dynamical systems, dynamics-pkg
+@section Visualization with VTK
+
+関数 sceneは、 @emph{Visualization ToolKit} (VTK)ソフトウエアを使って3D画像とアニメーションを生成します。
+この関数を使うためには、 Xmaximaと VTKを(あるシステムでは別のパッケージに含まれる VTKの TCLバインディングを含めて)システムにインストールしなければいけません。
+
+@anchor{scene}
+@deffn {関数} scene (@var{objects}, @dots{}, @var{options}, @dots{});
+
+空のリストもしくは いくつかの @mxref{scene_objects,objects}と @mxref{scene_options,options}のリストを受け付けます。
+プログラムはXmaximaを起動し、Xmaximaが3次元空間内に与えられたオブジェクトを表現し与えられたオプションを適用した外部ウィンドウを開きます。
+それぞれのオブジェクトは以下の4つのクラスの1つに属さなければいけません: 球、立法、円柱、円錐 (@mxref{scene_objects,Scene objects}を参照してください)
+オブジェクトは名前を与えることか、最初の要素がクラス名で続く要素がそのオブジェクトのオプションであるリストで識別されます
+
+@strong{例}。 青の背景を持つ六角形ピラミッド:
+@c ===beg===
+@c scene(cone, [background,"#9980e5"])$
+@c ===end===
+@example
+(%i1) scene(cone, [background,"#9980e5"])$
+@end example
+@ifnotinfo
+@figure{scene1}
+@end ifnotinfo
+
+マウスの左ボタンを押しながらグラフィックスウィンドウ上を動かすことによって、
+ピラミッドの別のビューを見せるようにカメラを回すことができます。
+2つのプロットオプション @mxref{scene_elevation,elevation}と @mxref{scene_azimuth,azimuth}を
+ビュー用カメラの初期の向きを変えるのに使うことができます。
+マウスの中央ボタンを押しながら動かすとカメラを動かすことができ、
+マウスの右ボタンを押しながら上下に動かすとズームイン/アウトします。
+
+それぞれのオブジェクトオプションはオプション名で始まるリストでなければいけません。
+許されるオプションのリストは @mxref{object_options,Scene object's options}節で見つけられます。
+
+@strong{例}。これは、地面に落下してエネルギーを失うことなしに跳ね返る球を示します。
+アニメーションを開始したり止めたりするには、play/pauseボタンを押してください。
+@c ===beg===
+@c p: makelist ([0,0,2.1- 9.8*t^2/2], t, 0, 0.64, 0.01)$
+@c p: append (p, reverse(p))$
+@c ball: [sphere, [radius,0.1], [thetaresolution,20],
+@c   [phiresolution,20],[position,0,0,2.1], [color,red],
+@c   [animate,position,p]]$
+@c ground: [cube, [xlength,2], [ylength,2], [zlength,0.2],
+@c   [position,0,0,-0.1],[color,violet]]$
+@c scene (ball, ground, restart);
+@c ===end===
+
+@example
+(%i1) p: makelist ([0,0,2.1- 9.8*t^2/2], t, 0, 0.64, 0.01)$
+
+(%i2) p: append (p, reverse(p))$
+
+(%i3) ball: [sphere, [radius,0.1], [thetaresolution,20],
+  [phiresolution,20], [position,0,0,2.1], [color,red],
+  [animate,position,p]]$
+
+(%i4) ground: [cube, [xlength,2], [ylength,2], [zlength,0.2],
+  [position,0,0,-0.1],[color,violet]]$
+
+(%i5) scene (ball, ground, restart)$
+@end example
+@ifnotinfo
+@figure{scene2}
+@end ifnotinfo
+
+@var{restart}オプションは
+位置リストの最後の点に届く度に自動的にアニメーションを再始動するのに使われます。
+色に関して受け付けられる値はplot2dの @mref{color}オプションのものと同じです。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+
+@end deffn
+
+@anchor{scene_options}
+@subsection Scene options
+
+@anchor{scene_azimuth}
+@defvr {シーンオプション} azimuth [azimuth, @var{angle}]
+デフォルト値: @code{135}
+
+カメラの水平(x, y)平面上の回転。
+@var{angle}は実数でなければいけません; 角度0は
+カメラがy軸の方向を示し、x軸が右に現れることを意味します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_background}
+@defvr {シーンオプション} background [background, @var{color}]
+デフォルト値: @code{black}
+
+グラフィックスウインドウの背景色。
+カラー名と16進数の赤-緑-青文字列を受け付けます (plot2dの @mref{color}オプションを参照してください)。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_elevation}
+@defvr {シーンオプション} elevation [elevation, @var{angle}]
+デフォルト値: @code{30}
+
+カメラの垂直回転。
+@var{angle}は実数でなければいけません;
+角度0はカメラが水平面上を指すことを意味し、
+デフォルト角度の30度はカメラが水平面から30度下向きを示していることを意味します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_height}
+@defvr {シーンオプション} height [height, @var{pixels}]
+デフォルト値: @code{500}
+
+グラフィックスウィンドウの高さ(ピクセル)です。
+@var{pixels}は正の整数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_restart}
+@defvr {シーンオプション} restart [restart, @var{value}]
+デフォルト値: @code{false}
+
+true値は、リストの終わりに至った時アニメーションが自動的に再スタートすることを意味します。
+``restart''とだけ書くのは、[restart, @var{true}]と等価です。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_tstep}
+@defvr {シーンオプション} tstep [tstep, @var{time}]
+デフォルト値: @code{10}
+
+連続アニメーションフレームの間の繰り返しの間の時間(ミリ秒単位)です。
+@var{time}は実数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_width}
+@defvr {シーンオプション} width [width, @var{pixels}]
+デフォルト値: @code{500}
+
+グラフィックスウインドウの幅(ピクセル)です。
+@var{pixels}は正の整数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_windowname}
+@defvr {シーンオプション} windowname [windowtitle, @var{name}]
+デフォルト値: @code{.scene}
+
+@var{name}は文字列でなければいけません。
+Xmaximaが @code{scene}グラフィックス用に生成した Tkウインドウの名前として使われます。
+デフォルト値 @code{.scene}は新たなトップレベルウィンドウが生成されることを意味します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_windowtitle}
+@defvr {シーンオプション} windowtitle [windowtitle, @var{name}]
+デフォルト値: @code{Xmaxima: scene}
+
+@var{name}は 文字列でなければいけません。
+@code{scene}が生成するウィンドウのタイトルに書かれます。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{scene_objects}
+@subsection Scene objects
+
+@anchor{cone}
+@defvr {シーンオブジェクト} cone [cone, @var{options}]
+
+高さが1で、軸から0.5単位離れた頂点を持つ六角形の底面を持つ正角錐を生成します。
+オプション @mxref{object_height,height}と @mxref{object_radius,radius}は
+それらのデフォルト値を変えるのに使い、オプション @mxref{object_resolution, resolution}は
+底面の辺の数を変えるのに使います; より大きな値にするとコーンらしく見えます。
+デフォルトでは軸はx軸に沿っていて、軸の中点は原点にあり、頂点はx軸の正側にあります;
+それらのデフォルトを変えるには、オプション @mxref{object_orientation,orientation}と @mxref{object_center,center}を使ってください。
+
+@strong{例}. これは、プレイボタンを押すとz軸の周りを回転し始める角錐を示します。
+
+@example
+(%i1) scene([cone, [orientation,0,30,0], [tstep,100],
+   [animate,orientation,makelist([0,30,i],i,5,360,5)]], restart)$
+@end example
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{cube}
+@defvr {シーンオブジェクト} cube [cube, @var{options}]
+
+単位1の辺でxy, xz, yz面と平行な面を持つ正立方体。
+オプション @mxref{object_xlength,xlength}, @mxref{object_ylength,ylength}, @mxref{object_zlength,zlength} で3つの辺の長さを変えることができ、長方形の箱に変えます。
+オプション @mxref{object_orientation,orientation}で表面を回転させることができます。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{cylinder}
+@defvr {シーンオブジェクト} cylinder [cylinder, @var{options}]
+
+高さが1で、軸から0.5単位離れた頂点を持つ六角形の底面を持つ正角柱を生成します。
+オプション @mxref{object_height,height}, @mxref{object_radius,radius}でそれらのデフォルトを変えることができ、
+オプション @mxref{object_resolution, resolution}で底面の辺の数を変えることができます;
+より大きな値にすると円柱らしく見えます。
+オプション @mxref{object_height,height}でデフォルトの高さを変えることができます。
+デフォルトでは軸はx軸に沿っていて、軸の中点が原点に来ます; それらのデフォルトを変えるにはオプション @mxref{object_orientation,orientation}, @mxref{object_center,center}を使ってください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{sphere}
+@defvr {シーンオブジェクト} sphere [sphere, @var{options}]
+
+0.5単位のデフォルト半径を持ち、原点に中心がある球。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_options}
+@subsection Scene object's options
+
+@anchor{object_animation}
+@defvr {オブジェクトオプション} animation [animation, @var{property}, @var{positions}]
+
+@var{property}は以下の 4つのオプジェクトのプロパティの1つでなければいけません:
+@mxref{object_origin,origin}, @mxref{object_scale,scale}, @mxref{object_position,position}, @mxref{object_orientation,orientation}
+そして @var{positions}は点のリストでなければいけません。
+再生ボタンを押すと、オプション @mxref{scene_tstep,tstep}が与える時間感覚で
+オブジェクトプロパティを連続的にリストのすべての値をとるように変化させます。
+一連の始めに戻すには巻き戻しボタンを使います。再度再生ボタンを押せばアニメーションが再スタートするようになります。
+
+@mxref{object_track,track}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_capping}
+@defvr {オブジェクトオプション} capping [capping, @var{number}]
+デフォルト値: @code{1}
+
+円錐か円柱に対して、底面を描くかどうかを決めます。
+@var{number}の値 1で底面を描き、値 0では描きません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_center}
+@defvr {オブジェクトオプション} center [center, @var{point}]
+デフォルト値: @code{[0, 0, 0]}
+
+@mxref{object_position, position}に関するオブジェクトの幾何中心の座標。
+@var{point}は3つの実数のリストか、コンマで区切られた3つの実数をとることができます。
+円柱や円錐、立方体では、高さの半分にあり、球では中心にあります。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_color}
+@defvr {オブジェクトオプション} color [color, @var{colorname}]
+デフォルト値: @code{white}
+
+オブジェクトの色。
+カラーネームか16進の赤緑青文字列を受け付けます。
+(polot2dの @mref{color}オプションを参照してください。)
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_endphi}
+@defvr {オブジェクトオプション} endphi [endphi, @var{angle}]
+デフォルト値: @code{180}
+
+球に関して、phiはz軸を通る垂直面上の角度です。
+z軸の正の部分から測ります。
+@var{angle}は0と180の間の数でなければいけません。
+表面が終わるphiの最終値を設定します。
+180より小さな値の時、球の表面の一部が消えます。
+
+@mxref{object_startphi,startphi}, @mxref{object_phiresolution,phiresolution}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_endtheta}
+@defvr {オブジェクトオプション} endtheta [endtheta, @var{angle}]
+デフォルト値: @code{360}
+
+球に関して、thetaは水平面上の角度(経度)です。
+x軸の正の部分から測ります。
+@var{angle}は0と360の間の数でなければいけません。
+表面が終わるthetaの最終値を設定します。
+360より小さな値の時、球の表面の一部が消えます。
+
+@mxref{object_starttheta,starttheta}, @mxref{object_thetaresolution,thetaresolution}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_height}
+@defvr {オブジェクトオプション} height [height, @var{value}]
+デフォルト値: @code{1}
+
+@var{value}は正の数字でなければいけません。
+円錐や円柱の高さを設定します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_linewidth}
+@defvr {オブジェクトオプション} linewidth [linewidth, @var{value}]
+デフォルト値: @code{1}
+
+オプション @mxref{object_wireframe,wireframe}が使われる時の線の幅。
+@var{value}は正の数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_opacity}
+@defvr {オブジェクトオプション} opacity [opacity, @var{value}]
+デフォルト値: @code{1}
+
+@var{value}は0と1の間の数でなければいけません。
+数が小さいと、オブジェクトが透明になっていきます。
+デフォルト値1は完全に不透明なオブジェクトを意味します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_orientation}
+@defvr {オブジェクトオプション} orientation [orientation, @var{angles}]
+デフォルト値: @code{[0, 0, 0]}
+
+3つの軸に対するオブジェクトの回転角度。
+@var{angles}は3つの実数のリストか、コンマで区切られた3つの実数を取ることができます。
+@strong{例}: @code{[0, 0, 90]}はオブジェクトのx軸を参照系のy軸に回します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_origin}
+@defvr {オブジェクトオプション} origin [origin, @var{point}]
+デフォルト値: @code{[0, 0, 0]}
+
+オブジェクトの他の寸法を決めるのに使われるオブジェクトの原点の座標。
+@var{point}は3つの実数のリストか、コンマで区切られた3つの実数を取ることができます。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_phiresolution}
+@defvr {オブジェクトオプション} phiresolution [phiresolution, @var{num}]
+デフォルト値: @code{}
+
+@mxref{object_startphi,startphi}から @mxref{object_endphi,endphi}までの phi角度区間が分割される部分区間の数。
+@var{num}は正の整数でなければいけません。
+
+@mxref{object_startphi,startphi}, @mxref{object_endphi,endphi}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_points}
+@defvr {オブジェクトオプション} points  [points]
+
+表面を描画するのに使われる三角測量の頂点のみを表示します。
+@strong{例}: @code{[sphere, [points]]}
+
+@mxref{object_surface,surface}, @mxref{object_wireframe,wireframe}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_pointsize}
+@defvr {オブジェクトオプション} pointsize [pointsize, @var{value}]
+デフォルト値: @code{1}
+
+オプション @mxref{object_points,points}を使う時の点の大きさ
+@var{value}は正の数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_position}
+@defvr {オブジェクトオプション} position [position, @var{point}]
+デフォルト値: @code{[0, 0, 0]}
+
+オブジェクトの位置の座標。
+@var{point}は3つの実数のリストかコンマで区切られた3つの実数を取ることができます。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_radius}
+@defvr {オブジェクトオプション} radius [radius, @var{value}]
+デフォルト値: @code{0.5}
+
+円柱や円錐の底面の頂点と軸の距離、半径。
+@var{value}は正の数でなければいけません。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_resolution}
+@defvr {オブジェクトオプション} resolution [resolution, @var{number}]
+デフォルト値: @code{6}
+
+@var{number}は2より大きな整数でなければいけません。
+円錐や円柱の底面の辺の数を設定します。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_scale}
+@defvr {オブジェクトオプション} scale [scale, @var{factors}]
+デフォルト値: @code{[1, 1, 1]}
+
+3つの軸に関してオブジェクトをスケールするのに使う3つの数字。
+@var{factors}は3つの実数のリストかコンマで区切られた3つの実数を取ることができます。
+@strong{例}: @code{[2, 0.5, 1]}
+はオブジェクトをx軸方向に2倍に拡大し、y軸方向に半分に縮小し、z軸方向はそのままにします。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_startphi}
+@defvr {オブジェクトオプション} startphi [startphi, @var{angle}]
+デフォルト値: @code{0}
+
+球に関して、phyはz軸を含む垂直面上の角度です。
+z軸の正の部分から測られます。
+@var{angle}0と180の間の数でなければいけません。
+表面が始まるphiの初期値を設定します。
+0より大きな値の時、球の表面の一部が消えます。
+
+@mxref{object_endphi,endphi}, @mxref{object_phiresolution,phiresolution}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_starttheta}
+@defvr {オブジェクトオプション} starttheta [starttheta, @var{angle}]
+デフォルト値: @code{0}
+
+球に関して、thetaは水平面の角度(経度)です。
+x軸の正の部分から測られます。
+@var{angle}0と360の間の数でなければいけません。
+表面が始まるthetaの初期値を設定します。
+0より大きな値の時、球の表面の一部が消えます。
+
+@mxref{object_endtheta,endtheta}, @mxref{object_thetaresolution,thetaresolution}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_surface}
+@defvr {オブジェクトオプション} surface [surface]
+
+オブジェクトの表面を描画します。
+表面を構築するのに使われる三角測量の線と点を表示します。
+これはデフォルトの振る舞いです。
+オプション @mxref{object_points,points}や @mxref{object_wireframe,wireframe}でこの振る舞いを変えることができます。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_thetaresolution}
+@defvr {オブジェクトオプション} thetaresolution [thetaresolution, @var{num}]
+デフォルト値: @code{}
+
+@mxref{object_starttheta,starttheta}から @mxref{object_endtheta,endtheta}までの theta角度区間を分割する部分区間の数。
+@var{num}は正の整数でなければいけません。
+
+@mxref{object_starttheta,starttheta}, @mxref{object_endtheta,endtheta}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_track}
+@defvr {オブジェクトオプション} track [track, @var{positions}]
+
+@var{positions}は点のリストでなければいけません。
+再生ボタンを押した時、オプション @mxref{scene_tstep,tstep}で与えられた時間感覚でオプジェクト位置がリストの点すべてに連続的に変わります。
+オブジェクトの軌跡の後を残します。
+一連の始めに戻すには巻き戻しボタンを使います。再度再生ボタンを押せばアニメーションが再スタートするようになります。
+
+@strong{例}. これは、5 m/sのスピード、45度の角度で投げられたボールの軌跡を表示します。空気抵抗は無視されます:
+
+@example
+(%i1) p: makelist ([0,4*t,4*t- 9.8*t^2/2], t, 0, 0.82, 0.01)$
+
+(%i2) ball: [sphere, [radius,0.1], [color,red], [track,p]]$
+
+(%i3) ground: [cube, [xlength,2], [ylength,4], [zlength,0.2],
+      [position,0,1.5,-0.2],[color,green]]$
+
+(%i4) scene (ball, ground)$
+@end example
+
+@mxref{object_animation,animation}も参照してください。
+
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_xlength}
+@defvr {オブジェクトオプション} xlength [xlength, @var{length}]
+デフォルト値: @code{1}
+
+立方体のx方向の高さ。
+@var{length}は正の数でなければいけません。
+@mxref{object_ylength,ylength}, @mxref{object_zlength,zlength}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_ylength}
+@defvr {オブジェクトオプション} ylength [ylength, @var{length}]
+デフォルト値: @code{1}
+
+立方体のy方向の高さ。
+@var{length}は正の数でなければいけません。
+@mxref{object_xlength,xlength}, @mxref{object_zlength,zlength}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_zlength}
+@defvr {オブジェクトオプション} zlength [zlength, @var{length}]
+デフォルト値: @code{1}
+
+立方体のz方向の高さ。
+@var{length}は正の数でなければいけません。
+@mxref{object_xlength,xlength}, @mxref{object_ylength,ylength}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr
+
+@anchor{object_wireframe}
+@defvr {オブジェクトオプション} wireframe  [wireframe]
+
+表面を描画するの使われる三角測量の辺だけを表示します。
+@strong{例}: @code{[cube, [wireframe]]}
+
+@mxref{object_surface,surface}, @mxref{object_points,points}も参照してください。
+
+@opencatbox
+@category{Package dynamics} @category{Plotting}
+@closecatbox
+@end defvr

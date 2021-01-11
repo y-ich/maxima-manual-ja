@@ -1,0 +1,1497 @@
+@menu
+* Functions and Variables for Equations::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for Equations,  , Equations, Equations
+@section Functions and Variables for Equations
+@c -----------------------------------------------------------------------------
+
+@anchor{%rnum}
+@defvr {システム変数} %rnum
+デフォルト値: @code{0}
+
+@code{%rnum}は
+@mref{solve}と @mref{algsys}が階の中で導入する @code{%r}変数のカウンタです。
+次の @code{%r}変数は @code{%rnum+1}に番号付けされます。
+
+@mref{%rnum_list}も参照してください。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{%rnum_list}
+@defvr {システム変数} %rnum_list
+デフォルト値: @code{[]}
+
+@code{%rnum_list}は @mref{solve}や @mref{algsys}による解で導入された変数のリストです。
+@code{%r}変数はそれらが生成された順に @code{%rnum_list}に追加されます。
+これはあとで解への代入を行うのに便利です。
+@c WHAT DOES THIS STATEMENT MEAN ??
+@code{concat ('%r, j)}とするより このリストを使うことを推奨します。
+
+@c ===beg===
+@c solve ([x + y = 3], [x,y]);
+@c %rnum_list;
+@c sol : solve ([x + 2*y + 3*z = 4], [x,y,z]);
+@c %rnum_list;
+@c for i : 1 thru length (%rnum_list) do
+@c   sol : subst (t[i], %rnum_list[i], sol)$
+@c sol;
+@c ===end===
+@example
+@group
+(%i1) solve ([x + y = 3], [x,y]);
+(%o1)              [[x = 3 - %r1, y = %r1]]
+@end group
+@group
+(%i2) %rnum_list;
+(%o2)                       [%r1]
+@end group
+@group
+(%i3) sol : solve ([x + 2*y + 3*z = 4], [x,y,z]);
+(%o3)   [[x = - 2 %r3 - 3 %r2 + 4, y = %r3, z = %r2]]
+@end group
+@group
+(%i4) %rnum_list;
+(%o4)                     [%r2, %r3]
+@end group
+@group
+(%i5) for i : 1 thru length (%rnum_list) do
+        sol : subst (t[i], %rnum_list[i], sol)$
+@end group
+@group
+(%i6) sol;
+(%o6)     [[x = - 2 t  - 3 t  + 4, y = t , z = t ]]
+                     2      1           2       1
+@end group
+@end example
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{algepsilon}
+@defvr {オプション変数} algepsilon
+デフォルト値: 10^8
+
+@c WHAT IS algepsilon, EXACTLY ??? describe ("algsys") IS NOT VERY INFORMATIVE !!!
+@code{algsys}が @mref{algepsilon}を使います。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{algexact}
+@defvr {オプション変数} algexact
+デフォルト値: @code{false}
+
+@code{algexact}は以下のように @mref{algsys}の振る舞いに影響を与えます:
+
+もし @code{algexact}が @code{true}なら、
+@code{algsys}はいつも @mref{solve}をコールし、
+@code{solve}の失敗時には @mref{realroots}を使います。
+
+もし @code{algexact}が @code{false}なら、
+問題が１変数でないときだけ、または方程式が二次か四次なら
+(only if the eliminant was not univaririate, or if it was a quadratic or biquadratic)
+@code{solve}がコールされます。
+
+
+このように @code{algexact: true}は厳密解だけを保証しません。
+ただ、 @code{algsys}は最初に厳密解を与えるように最大限努力して、
+他のすべてが失敗した時近似をもたらすことだけを保証します。
+
+@c ABOVE DESCRIPTION NOT TOO CLEAR -- MAYBE EXAMPLES WILL HELP
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{algsys}
+@deffn  {関数} algsys @
+@fname{algsys} ([@var{expr_1}, @dots{}, @var{expr_m}], [@var{x_1}, @dots{}, @var{x_n}]) @
+@fname{algsys} ([@var{eqn_1}, @dots{}, @var{eqn_m}], [@var{x_1}, @dots{}, @var{x_n}])
+
+同時多項式 @var{expr_1}, @dots{}, @var{expr_m}
+または多項式方程式 @var{eqn_1}, @dots{}, @var{eqn_m}
+を変数 @var{x_1}, @dots{}, @var{x_n}について解きます。
+式 @var{expr}は等式 @code{@var{expr} = 0}と同値です。
+変数より等式が多い場合も逆もあります。
+
+@code{algsys}は解のリストを返します。
+ここで、それぞれの解は方程式系を満たす変数
+@var{x_1}, @dots{}, @var{x_n}の値を指定する等式のリストとして与えられます。
+もし @code{algsys}が解を見つけられないなら、
+空のリスト @code{[]}が返されます。
+
+シンボル @code{%r1}, @code{%r2}, @dots{}が
+解の任意パラメータを表すために必要に応じて導入されます;
+これらの変数はリスト @mref{%rnum_list}にも追加されます。
+
+方法は以下の通りです:
+
+@enumerate
+@item
+最初に方程式は因数分解され、サブシステムに分割されます。
+
+@item
+それぞれのサブシステム @var{S_i}に関して等式 @var{E}と変数 @var{x}を選択します。
+変数をゼロでない最低次を持つよう選びます。
+そして、
+@var{x}に関する @var{E}と @var{E_j}の終結式を
+サブシステム @var{S_i}の中の残っている等式群 @var{E_j}のそれぞれに関して計算します。
+
+@var{x}が消去されるので１つ変数の少ない新しいサブシステム @var{S_i'}が得られます。
+ここでプロセスは(1)に戻ります。
+
+@item
+そのうち１つの等式からなるサブシステムが得られます。
+もし等式が多変数なら、浮動小数点数の形式の近似は導入されず、
+厳密解を見つけるために @mref{solve}をコールします。
+
+いくつかの場合、 @code{solve}が解を見つけることができないか、
+もし見つけたても、解が非常に大きな式になるかもしれません。
+
+@c REMAINDER OF (3) IS PRETTY COMPLEX. HOW CAN IT BE CLARIFIED ??
+等式が１変数で、線形か二次か四次の場合、
+もし近似が導入されないなら、再び @code{solve}をコールします。
+もし近似が導入されるか、等式が１変数でなく、線形でも二次でも、四次でもない場合、
+もしスイッチ @mref{realonly}が @code{true}なら、
+実数解を見つけるため関数 @mref{realroots}をコールします。
+もし @code{realonly}が @code{false}なら、
+実数解と複素数解を探す @mref{allroots}をコールします。
+
+もし @code{algsys}が要求よりも有効数字が少ない解を生成するなら、
+ユーザーは @mref{algepsilon}の値をより高い値に変更できます。
+
+もし @code{algexact}が @code{true}に設定されているなら、
+いつも @code{solve}をコールします。
+@c algepsilon IS IN Floating.texi -- MAY WANT TO BRING IT INTO THIS FILE
+
+@item
+最終的にステップ(3)で得られた解は以前のレベルに代入され、解処理は(1)に戻ります。
+@c "PREVIOUS LEVELS" -- WHAT ARE THOSE ??
+@end enumerate
+
+@code{algsys}が（通常、初期の段階での厳密解発見の失敗による）
+浮動小数点近似を含む多変数方程式に出会う時、
+厳密な方法をそんな方程式に適用しようとせず、かわりにメッセージを表示します:
+"@code{algsys} cannot solve - system too complicated."
+
+@mref{radcan}を使うと大きな式や複雑な式を生成することができます。
+この場合、 @mref{pickapart}か
+@mref{reveal}を使って結果の一部を分離することができるかもしれません。
+
+@code{radcan}は時々、実際には実数値の解に虚数単位@code{%i}を導入するかもしれません。
+
+例:
+
+@c ===beg===
+@c e1: 2*x*(1 - a1) - 2*(x - 1)*a2;
+@c e2: a2 - a1;
+@c e3: a1*(-y - x^2 + 1);
+@c e4: a2*(y - (x - 1)^2);
+@c algsys ([e1, e2, e3, e4], [x, y, a1, a2]);
+@c e1: x^2 - y^2;
+@c e2: -1 - y + 2*y^2 - x + x^2;
+@c algsys ([e1, e2], [x, y]);
+@c ===end===
+@example
+(%i1) e1: 2*x*(1 - a1) - 2*(x - 1)*a2;
+(%o1)              2 (1 - a1) x - 2 a2 (x - 1)
+(%i2) e2: a2 - a1;
+(%o2)                        a2 - a1
+(%i3) e3: a1*(-y - x^2 + 1);
+                                   2
+(%o3)                   a1 (- y - x  + 1)
+(%i4) e4: a2*(y - (x - 1)^2);
+                                       2
+(%o4)                   a2 (y - (x - 1) )
+(%i5) algsys ([e1, e2, e3, e4], [x, y, a1, a2]);
+(%o5) [[x = 0, y = %r1, a1 = 0, a2 = 0],
+
+                                  [x = 1, y = 0, a1 = 1, a2 = 1]]
+(%i6) e1: x^2 - y^2;
+                              2    2
+(%o6)                        x  - y
+(%i7) e2: -1 - y + 2*y^2 - x + x^2;
+                         2        2
+(%o7)                 2 y  - y + x  - x - 1
+(%i8) algsys ([e1, e2], [x, y]);
+                 1            1
+(%o8) [[x = - -------, y = -------],
+              sqrt(3)      sqrt(3)
+
+        1              1             1        1
+[x = -------, y = - -------], [x = - -, y = - -], [x = 1, y = 1]]
+     sqrt(3)        sqrt(3)          3        3
+@end example
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{allroots}
+@deffn  {関数} allroots @
+@fname{allroots} (@var{expr}) @
+@fname{allroots} (@var{eqn})
+
+1変数多項式 @var{expr}もしくは1変数多項式方程式
+@var{eqn}の実数と複素数の根の数値近似を計算します。
+
+フラグ @mref{polyfactor}が @code{true}の時、
+@code{allroots}は多項式が実数なら多項式を実数上で因数分解し、
+多項式が複素数なら複素数上で因数分解します。
+
+@code{allroots}は多重根の場合、不正確な結果をもたらすことがあります。
+もし多項式が実数なら、@code{allroots (%i*@var{p})}は
+@code{allroots (@var{p})}より精確な近似を生成します。
+@code{allroots}はこの場合異なるアルゴリズムを呼ぶからです。
+
+@code{allroots}は非多項式を却下します。
+@code{rat}された分子が多項式であることを要求し、
+分母はせいぜい複素数であることを要求します。
+この結果、もし @code{polyfactor}が @code{true}なら、
+@code{allroots}はいつも（因数分解された）同値の式を返します。
+
+複素多項式のために、JenkinsとTraubのアルゴリズムが使われます
+（Algorithm 419, Comm. ACM, vol. 15, (1972), @.97)。
+実多項式のために、Jenkinsのアルゴリズム
+(Algorithm 493, ACM TOMS, vol. 1, (1975), p.178)が使われます。
+
+例:
+
+@c ===beg===
+@c eqn: (1 + 2*x)^3 = 13.5*(1 + x^5);
+@c soln: allroots (eqn);
+@c for e in soln
+@c         do (e2: subst (e, eqn), disp (expand (lhs(e2) - rhs(e2))));
+@c polyfactor: true$
+@c allroots (eqn);
+@c ===end===
+@example
+(%i1) eqn: (1 + 2*x)^3 = 13.5*(1 + x^5);
+                            3          5
+(%o1)              (2 x + 1)  = 13.5 (x  + 1)
+(%i2) soln: allroots (eqn);
+(%o2) [x = .8296749902129361, x = - 1.015755543828121,
+
+x = .9659625152196369 %i - .4069597231924075,
+
+x = - .9659625152196369 %i - .4069597231924075, x = 1.0]
+(%i3) for e in soln
+        do (e2: subst (e, eqn), disp (expand (lhs(e2) - rhs(e2))));
+                      - 3.5527136788005E-15
+
+                     - 5.32907051820075E-15
+
+         4.44089209850063E-15 %i - 4.88498130835069E-15
+
+        - 4.44089209850063E-15 %i - 4.88498130835069E-15
+
+                       3.5527136788005E-15
+
+(%o3)                         done
+(%i4) polyfactor: true$
+(%i5) allroots (eqn);
+(%o5) - 13.5 (x - 1.0) (x - .8296749902129361)
+
+                           2
+ (x + 1.015755543828121) (x  + .8139194463848151 x
+
+ + 1.098699797110288)
+@end example
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{bfallroots}
+@deffn  {関数} bfallroots @
+@fname{bfallroots} (@var{expr}) @
+@fname{bfallroots} (@var{eqn})
+
+１変数の多項式 @var{expr}または多項式方程式
+@var{eqn}の実数根と複素数根の数値近似を計算します。
+
+@code{bfallroots}は多倍長浮動小数点を使って根を計算する以外のすべての点で
+@code{allroots}と同一です。
+詳しい情報については @mref{allroots}を参照してください。
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{backsubst}
+@defvr {オプション変数} backsubst
+デフォルト値: @code{true}
+
+@c WHAT IS THE CONTEXT HERE ?? (TO WHICH OTHER FUNCTION DOES THIS APPLY ??)
+@c --- According to the documentation, to linsolve
+@code{backsubst}が @code{false}の時、
+方程式を三角行列化した後 @mref{linsolve}の後退代入を抑制します。
+これは
+後退代入が極端に大きな式の生成のもととなる非常に大きな問題に対して役立つかもしれません。
+
+@example
+(%i1) eq1 : x + y + z = 6$
+(%i2) eq2 : x - y + z = 2$
+(%i3) eq3 : x + y - z = 0$
+(%i4) backsubst : false$
+@group
+(%i5) linsolve ([eq1, eq2, eq3], [x,y,z]);
+(%o5)             [x = z - y, y = 2, z = 3]
+@end group
+(%i6) backsubst : true$
+@group
+(%i7) linsolve ([eq1, eq2, eq3], [x,y,z]);
+(%o7)               [x = 1, y = 2, z = 3]
+@end group
+@end example
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{breakup}
+@defvr {オプション変数} breakup
+デフォルト値: @code{true}
+
+@code{breakup}が @code{true}の時、
+@mref{solve}は三次と四次の方程式の解を共通部分式を使って表現します。
+共通部分式は中間式ラベル(@code{%t1}, @code{%t2}, など)に割り当てられます。
+そうでないなら共通部分式は同定されません。
+
+@code{breakup: true}は
+@mref{programmode}が @code{false}の時だけ効果を持ちます。
+
+例:
+
+@example
+(%i1) programmode: false$
+(%i2) breakup: true$
+(%i3) solve (x^3 + x^2 - 1);
+
+                        sqrt(23)    25 1/3
+(%t3)                  (--------- + --)
+                        6 sqrt(3)   54
+Solution:
+
+                                      sqrt(3) %i   1
+                                      ---------- - -
+                sqrt(3) %i   1            2        2   1
+(%t4)    x = (- ---------- - -) %t3 + -------------- - -
+                    2        2            9 %t3        3
+
+                                      sqrt(3) %i   1
+                                    - ---------- - -
+              sqrt(3) %i   1              2        2   1
+(%t5)    x = (---------- - -) %t3 + ---------------- - -
+                  2        2             9 %t3         3
+
+                                   1     1
+(%t6)                  x = %t3 + ----- - -
+                                 9 %t3   3
+(%o6)                    [%t4, %t5, %t6]
+(%i6) breakup: false$
+(%i7) solve (x^3 + x^2 - 1);
+Solution:
+
+             sqrt(3) %i   1
+             ---------- - -
+                 2        2        sqrt(23)    25 1/3
+(%t7) x = --------------------- + (--------- + --)
+             sqrt(23)    25 1/3    6 sqrt(3)   54
+          9 (--------- + --)
+             6 sqrt(3)   54
+
+                                              sqrt(3) %i   1    1
+                                           (- ---------- - -) - -
+                                                  2        2    3
+@group
+           sqrt(23)    25 1/3  sqrt(3) %i   1
+(%t8) x = (--------- + --)    (---------- - -)
+           6 sqrt(3)   54          2        2
+
+                                            sqrt(3) %i   1
+                                          - ---------- - -
+                                                2        2      1
+                                      + --------------------- - -
+                                           sqrt(23)    25 1/3   3
+                                        9 (--------- + --)
+                                           6 sqrt(3)   54
+@end group
+            sqrt(23)    25 1/3             1             1
+(%t9)  x = (--------- + --)    + --------------------- - -
+            6 sqrt(3)   54          sqrt(23)    25 1/3   3
+                                 9 (--------- + --)
+                                    6 sqrt(3)   54
+(%o9)                    [%t7, %t8, %t9]
+@end example
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{dimension}
+@deffn  {関数} dimension @
+@fname{dimension} (@var{eqn}) @
+@fname{dimension} (@var{eqn_1}, @dots{}, @var{eqn_n})
+
+@code{dimen}は、次元解析パッケージです。
+@code{load ("dimen")}はこのパッケージをロードします。
+@code{demo ("dimen")}は短いデモンストレーションを表示します。
+@c I GUESS THIS SHOULD BE EXPANDED TO COVER EACH FUNCTION IN THE PACKAGE
+
+@opencatbox
+@category{Share packages}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{dispflag}
+@defvr {オプション変数} dispflag
+デフォルト値: @code{true}
+
+@c WHAT DOES THIS MEAN ??
+もし @code{block}内で @code{false}に設定されたら
+@code{block}内でコールされた解法関数が生成する出力の表示を抑制します。
+@code{block}をドル記号$で終端すると、
+@code{dispflag}を @code{false}に設定します。
+
+@opencatbox
+@category{Algebraic equations} @category{Display flags and variables}
+@closecatbox
+@end defvr
+
+@c THIS COULD BENEFIT FROM REPHRASING
+
+@c -----------------------------------------------------------------------------
+@anchor{funcsolve}
+@deffn {関数} funcsolve (@var{eqn}, @var{g}(@var{t}))
+
+@var{eqn}を満たす有理関数 @code{@var{g}(@var{t})}が存在するかどうかに依存して、
+@code{[@var{g}(@var{t}) = ...]}か @code{[]}を返します。
+ここで、 @var{eqn}は（この場合）
+@code{@var{g}(@var{t})}と@code{@var{g}(@var{t}+1)}に関して
+一次、線形多項式(first order, linear polynomial)でなければいけません。
+
+@example
+(%i1) eqn: (n + 1)*f(n) - (n + 3)*f(n + 1)/(n + 1) =
+      (n - 1)/(n + 2);
+                            (n + 3) f(n + 1)   n - 1
+(%o1)        (n + 1) f(n) - ---------------- = -----
+                                 n + 1         n + 2
+(%i2) funcsolve (eqn, f(n));
+
+Dependent equations eliminated:  (4 3)
+                                   n
+(%o2)                f(n) = ---------------
+                            (n + 1) (n + 2)
+@end example
+
+警告: これはとても未完成な実装です
+-- 多くの安全性チェックや明らかな一般化が忘れられています。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{globalsolve}
+@defvr {オプション変数} globalsolve
+デフォルト値: @code{false}
+
+@code{globalsolve}が @code{true}の場合、
+２つ以上の線形方程式を解く時、
+解くべき変数が @code{linsolve}や @mref{solve}が見つけた解の値に割り当てられます。
+
+@code{globalsolve}が @code{false}の時、
+２つ以上の線形方程式を解く時、
+@mref{linsolve}や @code{solve}が見つけた解は等式として表現され、
+解くべき変数は割り当てられません。
+
+２つ以上の線形方程式以外の何かを解く時には、
+@code{solve}は @code{globalsolve}を無視します。
+方程式を解く他の関数(例えば @mref{algsys})はいつも @code{globalsolve}を無視します。
+
+例:
+
+@example
+(%i1) globalsolve: true$
+(%i2) solve ([x + 3*y = 2, 2*x - y = 5], [x, y]);
+Solution
+
+                                 17
+(%t2)                        x : --
+                                 7
+
+                                   1
+(%t3)                        y : - -
+                                   7
+(%o3)                     [[%t2, %t3]]
+(%i3) x;
+                               17
+(%o3)                          --
+                               7
+(%i4) y;
+                                 1
+(%o4)                          - -
+                                 7
+(%i5) globalsolve: false$
+(%i6) kill (x, y)$
+(%i7) solve ([x + 3*y = 2, 2*x - y = 5], [x, y]);
+Solution
+
+                                 17
+(%t7)                        x = --
+                                 7
+
+                                   1
+(%t8)                        y = - -
+                                   7
+(%o8)                     [[%t7, %t8]]
+(%i8) x;
+(%o8)                           x
+(%i9) y;
+(%o9)                           y
+@end example
+
+@opencatbox
+@category{Linear equations}
+@closecatbox
+@end defvr
+
+@c THIS DESCRIPTION NEEDS WORK AND EXAMPLES
+@c MERGE IN TEXT FROM share/integequations/inteqn.usg
+@c AND EXAMPLES FROM .../intexs.mac
+
+@c --- I'm not sure that all examples from share/integequations/intexs.mac
+@c are handled correctly by ieqn.
+
+@c -----------------------------------------------------------------------------
+@anchor{ieqn}
+@deffn {関数} ieqn (@var{ie}, @var{unk}, @var{tech}, @var{n}, @var{guess})
+
+@code{inteqn}は積分方程式を解くためのパッケージです。
+@code{load ("inteqn")}はこのパッケージをロードします。
+
+@var{ie}は積分方程式です;
+@var{unk}は未知の関数です;
+@var{tech}は上で与えられたこれらから試される手法です;
+ (@var{tech} = @code{first}は次を意味します: 解を見つける最初の手法を試みる;
+@var{tech} = @code{all}は次を意味します: 適用可能な手法すべてを試みる);
+@var{n}は @code{taylor}か, @code{neumann}, @code{firstkindseries},
+@code{fredseries}
+に関して扱う項の最大数です (微分法に関する再帰の最大深度でもあります);
+@var{guess}は @code{neumann}か @code{firstkindseries}に関する初期の推測です。
+
+２番目から５番目までのパラメータのデフォルト値は、以下の通りです:
+
+@var{unk}: @code{@var{p}(@var{x})}。
+ここで @var{p}は被積分関数の中で出会う Maximaが知らない最初の関数であり、
+@var{x}は @code{secondkind}方程式の場合の積分の外側で見つかった
+@var{p}の最初の出現時の引数か
+@code{firstkind}方程式の中の積分変数を除いた唯一の残りの変数です。
+もし @var{x}を探す企てが失敗したら、ユーザーは独立変数を提供するよう尋ねられるでしょう。
+
+tech: @code{first}
+
+n: 1
+
+guess: @code{none}
+とすると、 @code{neumann}と @code{firstkindseries}は初期推測として
+@code{@var{f}(@var{x})}を使うようになります。
+
+@opencatbox
+@category{Integral equations}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ieqnprint}
+@defvr {オプション変数} ieqnprint
+デフォルト値: @code{true}
+
+@code{ieqnprint}は @code{ieqn}コマンドが返す結果の振る舞いを決めます。
+@code{ieqnprint}が @code{false}の時、
+@mref{ieqn}関数が返すリストは形式
+
+   [@var{solution}, @var{technique used}, @var{nterms}, @var{flag}]
+
+を取ります。
+
+ここでもし解が厳密なら @var{flag}はありません。
+
+そうでないなら、厳密でない解か閉じていない形の解かに対応してそれぞれ、単語
+@code{approximate}か @code{incomplete}です。
+もし級数法が使われたら、
+@var{nterms}は取った項の数を与えます。
+（もしエラーが更なる項の生成を防いだなら、項の数は
+@code{ieqn}に与えたnよりも小さいこともあり得ます。）
+
+@opencatbox
+@category{Integral equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{lhs}
+@deffn {関数} lhs (@var{expr})
+
+@var{expr}の演算子が関係演算子 @code{< <= = # equal notequal >= >}の１つか
+@c MENTION -> (MARROW) IN THIS LIST IF/WHEN THE PARSER RECOGNIZES IT
+割り当て演算子 @code{:= ::= : ::}の１つ、
+@mref{infix}で宣言されたユーザー定義の二項中置演算子のいずれかの時、
+式 @var{expr}の左辺(すなわち、最初の項)を返します。
+
+@var{expr}がアトムか、演算子が上で記載したもの以外の何かの時、
+@code{lhs}は @var{expr}を返します。
+
+@mref{rhs}も参照してください。
+
+例:
+
+@c ===beg===
+@c e: aa + bb = cc;
+@c lhs (e);
+@c rhs (e);
+@c [lhs (aa < bb), lhs (aa <= bb), lhs (aa >= bb),
+@c        lhs (aa > bb)];
+@c [lhs (aa = bb), lhs (aa # bb), lhs (equal (aa, bb)),
+@c        lhs (notequal (aa, bb))];
+@c e1: '(foo(x) := 2*x);
+@c e2: '(bar(y) ::= 3*y);
+@c e3: '(x : y);
+@c e4: '(x :: y);
+@c [lhs (e1), lhs (e2), lhs (e3), lhs (e4)];
+@c infix ("][");
+@c lhs (aa ][ bb);
+@c ===end===
+@example
+(%i1) e: aa + bb = cc;
+(%o1)                     bb + aa = cc
+(%i2) lhs (e);
+(%o2)                        bb + aa
+(%i3) rhs (e);
+(%o3)                          cc
+(%i4) [lhs (aa < bb), lhs (aa <= bb), lhs (aa >= bb),
+       lhs (aa > bb)];
+(%o4)                   [aa, aa, aa, aa]
+(%i5) [lhs (aa = bb), lhs (aa # bb), lhs (equal (aa, bb)),
+       lhs (notequal (aa, bb))];
+(%o5)                   [aa, aa, aa, aa]
+(%i6) e1: '(foo(x) := 2*x);
+(%o6)                     foo(x) := 2 x
+(%i7) e2: '(bar(y) ::= 3*y);
+(%o7)                    bar(y) ::= 3 y
+(%i8) e3: '(x : y);
+(%o8)                         x : y
+(%i9) e4: '(x :: y);
+(%o9)                        x :: y
+(%i10) [lhs (e1), lhs (e2), lhs (e3), lhs (e4)];
+(%o10)               [foo(x), bar(y), x, x]
+(%i11) infix ("][");
+(%o11)                         ][
+(%i12) lhs (aa ][ bb);
+(%o12)                         aa
+@end example
+
+@opencatbox
+@category{Expressions}
+@closecatbox
+@end deffn
+
+@c REVISIT -- THERE'S PROBABLY MORE TO SAY HERE
+
+@c -----------------------------------------------------------------------------
+@anchor{linsolve}
+@deffn {関数} linsolve ([@var{expr_1}, @dots{}, @var{expr_m}], [@var{x_1}, @dots{}, @var{x_n}])
+
+変数のリストに関して連立線形方程式のリストを解きます。
+それぞれの式は変数に関する多項式でなければならず、等式も受け付けます。
+もし変数のリストの長さが解くべき線形に独立な方程式の数に一致しないなら
+結果は空のリストになります。
+
+@mref{globalsolve}が @code{true}の時、
+解くべき変数それぞれは方程式の解の値にバインドされます。
+
+@mref{backsubst}が @code{false}の時、
+@code{linsolve}は方程式を三角行列化した後、後退代入を実行しません。
+これは後退代入が極端に大きな式の生成の原因となる非常に大きな問題に対して
+必要とされるかもしれません。
+
+@mref{linsolve_params}が @code{true}の時、
+@code{linsolve}は
+@mref{algsys}の下のマニュアルの中で記述された任意のパラメータを表すのに使われる
+@code{%r}シンボルも生成します。
+そうでないなら、
+@code{linsolve}は他を使って表されたいくつかの変数を使って決定中の方程式系を解きます。
+(solves an under-determined system of equations with some variables expressed in terms of others.)
+
+@mref{programmode}が @code{false}の時、
+@code{linsolve}は中間式(@code{%t})ラベルを使って解を表示し、ラベルのリストを返します。
+
+@mref{algsys}や @mref{eliminate}、 @mref{solve}も参照してください。
+
+例:
+@c ===beg===
+@c e1: x + z = y;
+@c e2: 2*a*x - y = 2*a^2;
+@c e3: y - 2*z = 2;
+@c [globalsolve: false, programmode: true];
+@c linsolve ([e1, e2, e3], [x, y, z]);
+@c [globalsolve: false, programmode: false];
+@c linsolve ([e1, e2, e3], [x, y, z]);
+@c ''%;
+@c [globalsolve: true, programmode: false];
+@c linsolve ([e1, e2, e3], [x, y, z]);
+@c ''%;
+@c [x, y, z];
+@c [globalsolve: true, programmode: true];
+@c linsolve ([e1, e2, e3], '[x, y, z]);
+@c [x, y, z];
+@c ===end===
+@example
+(%i1) e1: x + z = y;
+(%o1)                       z + x = y
+(%i2) e2: 2*a*x - y = 2*a^2;
+                                       2
+(%o2)                   2 a x - y = 2 a
+(%i3) e3: y - 2*z = 2;
+(%o3)                      y - 2 z = 2
+(%i4) [globalsolve: false, programmode: true];
+(%o4)                     [false, true]
+(%i5) linsolve ([e1, e2, e3], [x, y, z]);
+(%o5)            [x = a + 1, y = 2 a, z = a - 1]
+(%i6) [globalsolve: false, programmode: false];
+(%o6)                    [false, false]
+(%i7) linsolve ([e1, e2, e3], [x, y, z]);
+Solution
+
+(%t7)                       z = a - 1
+
+(%t8)                        y = 2 a
+
+(%t9)                       x = a + 1
+(%o9)                    [%t7, %t8, %t9]
+(%i9) ''%;
+(%o9)            [z = a - 1, y = 2 a, x = a + 1]
+(%i10) [globalsolve: true, programmode: false];
+(%o10)                    [true, false]
+(%i11) linsolve ([e1, e2, e3], [x, y, z]);
+Solution
+
+(%t11)                      z : a - 1
+
+(%t12)                       y : 2 a
+
+(%t13)                      x : a + 1
+(%o13)                 [%t11, %t12, %t13]
+(%i13) ''%;
+(%o13)           [z : a - 1, y : 2 a, x : a + 1]
+(%i14) [x, y, z];
+(%o14)                 [a + 1, 2 a, a - 1]
+(%i15) [globalsolve: true, programmode: true];
+(%o15)                    [true, true]
+(%i16) linsolve ([e1, e2, e3], '[x, y, z]);
+(%o16)           [x : a + 1, y : 2 a, z : a - 1]
+(%i17) [x, y, z];
+(%o17)                 [a + 1, 2 a, a - 1]
+@end example
+
+@opencatbox
+@category{Linear equations}
+@closecatbox
+@end deffn
+
+@c DO ANY FUNCTIONS OTHER THAN linsolve RESPECT linsolvewarn ??
+
+@c -----------------------------------------------------------------------------
+@anchor{linsolvewarn}
+@defvr {オプション変数} linsolvewarn
+デフォルト値: @code{true}
+
+@code{linsolvewarn}が @code{true}の時、
+@code{linsolve}はメッセージ"Dependent equations eliminated"を表示します。
+
+@opencatbox
+@category{Linear equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{linsolve_params}
+@defvr {オプション変数} linsolve_params
+デフォルト値: @code{true}
+
+@code{linsolve_params}が @code{true}の時、
+@mref{linsolve}は
+@mref{algsys}の下のマニュアルに記述された任意のパラメータを表すのに使われる
+@code{%r}シンボルも生成します。
+それでないなら、@code{linsolve}は他を使って表されたいくつかの変数を使って
+決定中の方程式系を解きます。
+
+@opencatbox
+@category{Linear equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{multiplicities}
+@defvr {システム変数} multiplicities
+デフォルト値: @code{not_set_yet}
+
+@code{multiplicities}は
+@mref{solve}や @mref{realroots}が返す個々の解の重複度のリストに設定されます。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations} @category{Polynomials}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{nroots}
+@deffn {関数} nroots (@var{p}, @var{low}, @var{high})
+
+半開区間 @code{(@var{low}, @var{high}]}の中の実数一変数多項式
+@var{p}の実根の数を返します。
+区間の端点は @code{minf}か @code{inf}かもしれません。
+
+@code{nroots}は、Sturm列の方法を使います。
+
+@example
+(%i1) p: x^10 - 2*x^4 + 1/2$
+(%i2) nroots (p, -6, 9.1);
+(%o2)                           4
+@end example
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c NEEDS WORK
+
+@c -----------------------------------------------------------------------------
+@anchor{nthroot}
+@deffn {関数} nthroot (@var{p}, @var{n})
+@var{p}は整数係数多項式で、 @var{n}は正の整数です。
+@code{q^n = p}のような整数上の多項式 @code{q}を返すか、
+@var{p}が完全な @var{n}番目のべき
+(a perfect nth pwer)でないことを示すエラーメッセージを表示します。
+このルーチンは @mref{factor}より、また @mref{sqfr}よりさえもっと速いです。
+
+@opencatbox
+@category{Polynomials}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{polyfactor}
+@defvr {オプション変数} polyfactor
+デフォルト値: @code{false}
+
+オプション変数 @code{polyfactor}が @code{true}の時、
+@mref{allroots}と @mref{bfallroots}は
+もし多項式が実数なら実数上で、もし多項式が複素数なら複素数上で多項式を因数分解します。
+
+例は @code{allroots}を参照してください。
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{programmode}
+@defvr {オプション変数} programmode
+デフォルト値: @code{true}
+
+@code{programmode}が @code{true}の時、
+@mref{solve}, @mref{realroots}, @mref{allroots},
+@mref{linsolve}はリストの中の要素として解を返します。
+@c WHAT DOES BACKSUBSTITUTION HAVE TO DO WITH RETURN VALUES ??
+(@mref{backsubst}が @code{false}設定されている時を除きます―
+その場合は@code{programmode: false}が仮定されます―)
+
+@code{programmode}が @code{false}の時、
+@code{solve}などは中間式ラベル @code{%t1},
+@code{%t2}など生成し、解をそれらに割り当てます。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations} @category{Polynomials}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{realonly}
+@defvr {オプション変数} realonly
+デフォルト値: @code{false}
+
+@code{realonly}が @code{true}の時、
+@mref{algsys}は @code{%i}を含まないそれらの解だけを返します。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{realroots}
+@deffn  {関数} realroots @
+@fname{realroots} (@var{expr}, @var{bound}) @
+@fname{realroots} (@var{eqn}, @var{bound}) @
+@fname{realroots} (@var{expr}) @
+@fname{realroots} (@var{eqn})
+
+変数多項式 @var{expr}か1変数多項方程式 @var{eqn}の実根の有理近似を
+@code{bound}の許容誤差の範囲内で計算します。
+@var{expr}か @var{eqn}の係数はリテラル数でなければなりません。
+@code{%pi}のようなシンボル定数は却下されます。
+
+@code{realroots}はみつけた根の重複度をグローバル変数
+@mref{multiplicities}に割り当てます。
+
+@code{realroots}はそれぞれの根を囲むために Sturm列を構成し、
+それから近似を精密化するために二分法を適用します。
+根を探索する前にすべての係数を同値の有理数に変換し、
+計算は正確な有理算術で実行します。
+たとえ係数が浮動小数点でも、
+(@mref{float}か
+@mref{numer}フラグによって浮動小数点が強要されない限り)結果は有理数です。
+
+@var{bound}が1よりも小さい時、全ての整数根は正確に計算されます。
+@var{bound}が指定されない時、グローバル変数 @mref{rootsepsilon}と等しいと仮定されます。
+
+グローバル変数 @mref{programmode}が @code{true}の時、
+@code{realroots}は形式
+@code{[x = @var{x_1}, x = @var{x_2}, @dots{}]}のリストを返します。
+@code{programmode}が @code{false}の時、
+@code{realroots}は中間式ラベル @code{%t1}, @code{%t2}, @dots{}を生成し、
+結果をそれらに割り当て、ラベルのリストを返します。
+
+例:
+
+@c ===beg===
+@c realroots (-1 - x + x^5, 5e-6);
+@c ev (%[1], float);
+@c ev (-1 - x + x^5, %);
+@c ===end===
+
+@example
+(%i1) realroots (-1 - x + x^5, 5e-6);
+                               612003
+(%o1)                     [x = ------]
+                               524288
+(%i2) ev (%[1], float);
+(%o2)                 x = 1.167303085327148
+(%i3) ev (-1 - x + x^5, %);
+(%o3)                - 7.396496210176905E-6
+@end example
+
+@c ===beg===
+@c realroots (expand ((1 - x)^5 * (2 - x)^3 * (3 - x)), 1e-20);
+@c multiplicities;
+@c ===end===
+
+@example
+(%i1) realroots (expand ((1 - x)^5 * (2 - x)^3 * (3 - x)), 1e-20);
+(%o1)                 [x = 1, x = 2, x = 3]
+(%i2) multiplicities;
+(%o2)                       [5, 3, 1]
+@end example
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{rhs}
+@deffn {関数} rhs (@var{expr})
+
+@var{expr}の演算子が関係演算子 @code{< <= = # equal notequal >= >}の１つか、
+@c MENTION -> (MARROW) IN THIS LIST IF/WHEN THE PARSER RECOGNIZES IT
+割り当て演算子@code{:= ::= : ::}の１つ、
+@mref{infix}で宣言されたユーザー定義の二項中置演算子のいずれかの時
+式 @var{expr}の右辺(すなわち、二番目の項)を返します。
+
+@var{expr}がアトムか、演算子が上で記載したもの以外の何かの時、
+@code{rhs}は @var{expr}を返します。
+
+@mref{lhs}も参照してください。
+
+例:
+
+@c ===beg===
+@c e: aa + bb = cc;
+@c lhs (e);
+@c rhs (e);
+@c [rhs (aa < bb), rhs (aa <= bb), rhs (aa >= bb),
+@c        rhs (aa > bb)];
+@c [rhs (aa = bb), rhs (aa # bb), rhs (equal (aa, bb)),
+@c        rhs (notequal (aa, bb))];
+@c e1: '(foo(x) := 2*x);
+@c e2: '(bar(y) ::= 3*y);
+@c e3: '(x : y);
+@c e4: '(x :: y);
+@c [rhs (e1), rhs (e2), rhs (e3), rhs (e4)];
+@c infix ("][");
+@c rhs (aa ][ bb);
+@c ===end===
+@example
+(%i1) e: aa + bb = cc;
+(%o1)                     bb + aa = cc
+(%i2) lhs (e);
+(%o2)                        bb + aa
+(%i3) rhs (e);
+(%o3)                          cc
+(%i4) [rhs (aa < bb), rhs (aa <= bb), rhs (aa >= bb),
+       rhs (aa > bb)];
+(%o4)                   [bb, bb, bb, bb]
+@group
+(%i5) [rhs (aa = bb), rhs (aa # bb), rhs (equal (aa, bb)),
+       rhs (notequal (aa, bb))];
+@end group
+(%o5)                   [bb, bb, bb, bb]
+(%i6) e1: '(foo(x) := 2*x);
+(%o6)                     foo(x) := 2 x
+(%i7) e2: '(bar(y) ::= 3*y);
+(%o7)                    bar(y) ::= 3 y
+(%i8) e3: '(x : y);
+(%o8)                         x : y
+(%i9) e4: '(x :: y);
+(%o9)                        x :: y
+(%i10) [rhs (e1), rhs (e2), rhs (e3), rhs (e4)];
+(%o10)                  [2 x, 3 y, y, y]
+(%i11) infix ("][");
+(%o11)                         ][
+(%i12) rhs (aa ][ bb);
+(%o12)                         bb
+@end example
+
+@opencatbox
+@category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{rootsconmode}
+@defvr {オプション変数} rootsconmode
+デフォルト値: @code{true}
+
+@code{rootsconmode}は @code{rootscontract}コマンドの振る舞いを決定します。
+詳細は @mref{rootscontract}を参照してください。
+
+@opencatbox
+@category{Expressions} @category{Simplification flags and variables}
+@closecatbox
+@end defvr
+
+@c NEEDS WORK
+
+@c -----------------------------------------------------------------------------
+@anchor{rootscontract}
+@deffn {関数} rootscontract (@var{expr})
+
+根の積を積の根に変換します。
+例えば、
+@code{rootscontract (sqrt(x)*y^(3/2))}は @code{sqrt(x*y^3)}となります。
+
+@mref{radexpand}が @code{true}かつ @mref{domain}が @code{real}の時、
+@code{rootscontract}は @mref{abs}を @mref{sqrt}に変換します。
+例えば @code{rootscontract (abs(x)*sqrt(y))}は @code{sqrt(x^2*y)}をもたらします。
+
+以下のように @mref{rootscontract}に影響するオプション @code{rootsconmode}があります:
+
+@example
+問題               rootsconmodeの値　rootscontractを適用した値
+
+x^(1/2)*y^(3/2)      false          (x*y^3)^(1/2)
+x^(1/2)*y^(1/4)      false          x^(1/2)*y^(1/4)
+x^(1/2)*y^(1/4)      true           (x*y^(1/2))^(1/2)
+x^(1/2)*y^(1/3)      true           x^(1/2)*y^(1/3)
+x^(1/2)*y^(1/4)      all            (x^2*y)^(1/4)
+x^(1/2)*y^(1/3)      all            (x^3*y^2)^(1/6)
+@end example
+
+@code{rootsconmode}が @code{false}の時、
+@code{rootscontract}は分母が同じ有理数指数に関してだけ短縮します。
+@code{rootsconmode: true}の例のキーは、
+単に、4は2で割り切れますが4は2で割り切れないということです。
+@code{rootsconmode: all}は指数の分母の最小公倍数を取るようになります。
+
+@code{rootscontract}は @mref{logcontract}と似た方法で
+@mref{ratsimp}を使います。
+
+例:
+
+@c ===beg===
+@c rootsconmode: false$
+@c rootscontract (x^(1/2)*y^(3/2));
+@c rootscontract (x^(1/2)*y^(1/4));
+@c rootsconmode: true$
+@c rootscontract (x^(1/2)*y^(1/4));
+@c rootscontract (x^(1/2)*y^(1/3));
+@c rootsconmode: all$
+@c rootscontract (x^(1/2)*y^(1/4));
+@c rootscontract (x^(1/2)*y^(1/3));
+@c rootsconmode: false$
+@c rootscontract (sqrt(sqrt(x) + sqrt(1 + x))
+@c                     *sqrt(sqrt(1 + x) - sqrt(x)));
+@c rootsconmode: true$
+@c rootscontract (sqrt(5 + sqrt(5)) - 5^(1/4)*sqrt(1 + sqrt(5)));
+@c ===end===
+@example
+(%i1) rootsconmode: false$
+(%i2) rootscontract (x^(1/2)*y^(3/2));
+                                   3
+(%o2)                      sqrt(x y )
+(%i3) rootscontract (x^(1/2)*y^(1/4));
+                                   1/4
+(%o3)                     sqrt(x) y
+(%i4) rootsconmode: true$
+(%i5) rootscontract (x^(1/2)*y^(1/4));
+(%o5)                    sqrt(x sqrt(y))
+(%i6) rootscontract (x^(1/2)*y^(1/3));
+                                   1/3
+(%o6)                     sqrt(x) y
+(%i7) rootsconmode: all$
+(%i8) rootscontract (x^(1/2)*y^(1/4));
+                              2   1/4
+(%o8)                       (x  y)
+(%i9) rootscontract (x^(1/2)*y^(1/3));
+                             3  2 1/6
+(%o9)                      (x  y )
+(%i10) rootsconmode: false$
+(%i11) rootscontract (sqrt(sqrt(x) + sqrt(1 + x))
+                    *sqrt(sqrt(1 + x) - sqrt(x)));
+(%o11)                          1
+(%i12) rootsconmode: true$
+(%i13) rootscontract (sqrt(5+sqrt(5)) - 5^(1/4)*sqrt(1+sqrt(5)));
+(%o13)                          0
+@end example
+
+@opencatbox
+@category{Simplification functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{rootsepsilon}
+@defvr {オプション変数} rootsepsilon
+デフォルト値: 1.0e-7
+
+@code{rootsepsilon}は
+@mref{realroots}関数が見つけた根に関する信頼区間を確立する許容誤差です。
+@c IS IT GUARANTEED THAT |ACTUAL - ESTIMATE| < rootepsilon OR IS IT SOME OTHER NOTION ??
+@c NEED EXAMPLE HERE
+
+@opencatbox
+@category{Polynomials} @category{Numerical methods}
+@closecatbox
+@end defvr
+
+@c NEEDS WORK
+
+@c -----------------------------------------------------------------------------
+@anchor{solve}
+@deffn  {関数} solve @
+@fname{solve} (@var{expr}, @var{x}) @
+@fname{solve} (@var{expr}) @
+@fname{solve} ([@var{eqn_1}, @dots{}, @var{eqn_n}], [@var{x_1}, @dots{}, @var{x_n}])
+
+代数等式 @var{expr}を @var{x}について解き、 @var{x}の解等式のリストを返します。
+もし @var{expr}が等式でなければ、等式 @code{@var{expr} = 0}を仮定します。
+@var{x}は関数(例えば @code{f(x)})でも他のアトムでない式でも問題ありません。
+（sumやproductは除きます。）
+@var{expr}が変数を１つだけ含む場合 @var{x}は省略できます。
+@var{expr}は有理式でもよく、三角関数や指数関数を含むこともできます。
+
+以下の方法を使います:
+
+@var{E}を式、 @var{X}を変数とします。
+もし @var{E}が @var{X}に関して線形なら @var{X}について自明に解きます。
+そうでない場合、もし　@var{E}が　@code{A*X^N + B}の形なら、
+結果は @code{(-B/A)^(1/N)}かける1の @code{N}乗根です。
+
+もし @var{E}が @var{X}について線形でないなら、
+@var{E}の中の @var{X}の指数の gcd(以下 @var{N}とする）で指数を割り、
+根に@var{N}を掛けます。
+その後、結果に対して @code{solve}を再びコールします。
+もし @var{E}が因数分解されるなら、 @code{solve}を因子のそれぞれに対してコールします。
+最後に @code{solve}は２次方程式、３次方程式、4次方程式の解の公式を必要に応じて使います。
+
+@var{E}が解くべき変数のある関数（以下 @code{F(X)})の多項式の場合，
+最初に @code{F(X)}について解き（結果を@var{C}と呼びます）、
+関数 @var{F}の逆関数がわかっている場合、等式 @code{F(X)=C}を@var{X}について解きます。
+
+もし @mref{breakup}が @code{false}なら、
+@code{solve}は３次もしくは４次方程式の解を、
+デフォルトの、いくつかの共通部分式から成る表現ではなく、
+単一の式で表現します。
+
+@code{multiplicities}は @code{solve}や @mref{realroots},
+@mref{allroots}が返す多数の独立の解のリストに設定されます。
+@code{solve}に影響するスイッチについては @code{apropos (solve)}を試してください。
+スイッチの目的がはっきりしない時は、
+@mref{describe}で個々のスイッチ名を調べましょう。
+
+@code{solve ([@var{eqn_1}, ..., @var{eqn_n}], [@var{x_1}, ..., @var{x_n}])}は
+@mref{linsolve}か @mref{algsys}をコールすることで，
+同時（線形もしくは非線形）代数方程式系を解き、変数の解リストのリストを返します。
+@mref{linsolve}の場合、このリストは解の単一リストを含みます。
+引数に２つのリストを取ります。
+最初のリストは解くべき等式を示し、２番目のリストは決定すべき未知数のリストです。
+もし等式の変数の総数が等式の数に等しいなら、２番目の引数リストは省略できます。
+
+@c I think this is not true --hgeyer
+@c
+@c if no unique
+@c solution exists, then @code{singular} will be displayed.
+
+@mref{programmode}が @code{false}の時、
+@code{solve}は中間式 (@code{%t})ラベルを持つ解を表示し、ラベルのリストを返します。
+
+@mref{globalsolve}が @code{true}でかつ、問題が２つ以上の線形方程式を解くことである場合、
+それぞれの解くべき変数は方程式の解の値にバインドされます。
+
+例:
+
+@c FOLLOWING ADAPTED FROM example (solve)
+@c ===beg===
+@c solve (asin (cos (3*x))*(f(x) - 1), x);
+@c ev (solve (5^f(x) = 125, f(x)), solveradcan);
+@c [4*x^2 - y^2 = 12, x*y - x = 2];
+@c solve (%, [x, y]);
+@c solve (1 + a*x + x^3, x);
+@c solve (x^3 - 1);
+@c solve (x^6 - 1);
+@c ev (x^6 - 1, %[1]);
+@c expand (%);
+@c x^2 - 1;
+@c solve (%, x);
+@c ev (%th(2), %[1]);
+@c ===end===
+@example
+(%i1) solve (asin (cos (3*x))*(f(x) - 1), x);
+
+solve: using arc-trig functions to get a solution.
+Some solutions will be lost.
+                            %pi
+(%o1)                  [x = ---, f(x) = 1]
+                             6
+(%i2) ev (solve (5^f(x) = 125, f(x)), solveradcan);
+                                log(125)
+(%o2)                   [f(x) = --------]
+                                 log(5)
+(%i3) [4*x^2 - y^2 = 12, x*y - x = 2];
+                      2    2
+(%o3)             [4 x  - y  = 12, x y - x = 2]
+
+(%i4) solve (%, [x, y]);
+(%o4) [[x = 2, y = 2], [x = .5202594388652008 %i
+ - .1331240357358706, y = .07678378523787788
+ - 3.608003221870287 %i], [x = - .5202594388652008 %i
+ - .1331240357358706, y = 3.608003221870287 %i
+ + .07678378523787788], [x = - 1.733751846381093,
+y = - .1535675710019696]]
+
+(%i5) solve (1 + a*x + x^3, x);
+
+                                       3
+              sqrt(3) %i   1   sqrt(4 a  + 27)   1 1/3
+(%o5) [x = (- ---------- - -) (--------------- - -)
+                  2        2      6 sqrt(3)      2
+
+        sqrt(3) %i   1
+       (---------- - -) a
+            2        2
+ - --------------------------, x =
+              3
+      sqrt(4 a  + 27)   1 1/3
+   3 (--------------- - -)
+         6 sqrt(3)      2
+
+                          3
+ sqrt(3) %i   1   sqrt(4 a  + 27)   1 1/3
+(---------- - -) (--------------- - -)
+     2        2      6 sqrt(3)      2
+
+         sqrt(3) %i   1
+      (- ---------- - -) a
+             2        2
+ - --------------------------, x =
+              3
+      sqrt(4 a  + 27)   1 1/3
+   3 (--------------- - -)
+         6 sqrt(3)      2
+
+         3
+ sqrt(4 a  + 27)   1 1/3               a
+(--------------- - -)    - --------------------------]
+    6 sqrt(3)      2                  3
+                              sqrt(4 a  + 27)   1 1/3
+                           3 (--------------- - -)
+                                 6 sqrt(3)      2
+(%i6) solve (x^3 - 1);
+             sqrt(3) %i - 1        sqrt(3) %i + 1
+(%o6)   [x = --------------, x = - --------------, x = 1]
+                   2                     2
+(%i7) solve (x^6 - 1);
+           sqrt(3) %i + 1      sqrt(3) %i - 1
+(%o7) [x = --------------, x = --------------, x = - 1,
+                 2                   2
+
+                     sqrt(3) %i + 1        sqrt(3) %i - 1
+               x = - --------------, x = - --------------, x = 1]
+                           2                     2
+(%i8) ev (x^6 - 1, %[1]);
+@group
+                                      6
+                      (sqrt(3) %i + 1)
+(%o8)                 ----------------- - 1
+                             64
+@end group
+(%i9) expand (%);
+(%o9)                           0
+(%i10) x^2 - 1;
+                              2
+(%o10)                       x  - 1
+(%i11) solve (%, x);
+(%o11)                  [x = - 1, x = 1]
+(%i12) ev (%th(2), %[1]);
+(%o12)                          0
+@end example
+
+シンボル @code{%r}が解の中で任意定数を示すのに使われます。
+
+@example
+(%i1) solve([x+y=1,2*x+2*y=2],[x,y]);
+
+solve: dependent equations eliminated: (2)
+(%o1)                      [[x = 1 - %r1, y = %r1]]
+@end example
+
+更に知るには @mref{algsys}と @mref{%rnum_list}を参照してください。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{solvedecomposes}
+@defvr {オプション変数} solvedecomposes
+デフォルト値: @code{true}
+
+@code{solvedecomposes}が @code{true}の時、
+もし多項式を解くように頼まれたなら、
+@code{solve}は @mref{polydecomp}をコールします。
+@c OTHERWISE WHAT HAPPENS -- CAN'T SOLVE POLYNOMIALS, OR SOME OTHER METHOD IS USED ??
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{solveexplicit}
+@defvr {オプション変数} solveexplicit
+デフォルト値: @code{false}
+
+@code{solveexplicit}が @code{true}の時、
+@mref{solve}が陰解―すなわち、@code{F}がある関数である形式@code{F(x) = 0}の解―
+を返すことを抑制します。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{solvefactors}
+@defvr {オプション変数} solvefactors
+デフォルト値: @code{true}
+
+@c WHAT IS THIS ABOUT EXACTLY ??
+@code{solvefactors}が @code{false}の時、
+@mref{solve}は式を因数分解しようとしません。
+@code{false}設定は因数分解が不要ないくつかの場合に望まれるかもしれません。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{solvenullwarn}
+@defvr {オプション変数} solvenullwarn
+デフォルト値: @code{true}
+
+@code{solvenullwarn}が @code{true}の時、
+もし空の等式リストか空の変数リストを引数にコールされたら
+@mref{solve}は警告メッセージを表示します。
+例えば @code{solve ([], [])}は２つの警告メッセージを表示し、 @code{[]}を返します。
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{solveradcan}
+@defvr {オプション変数} solveradcan
+デフォルト値: @code{false}
+
+@code{solveradcan}が @code{true}の時、
+@mref{solve}は @code{radcan}をコールします。
+@code{solve}は遅くなりますが、指数と対数を含むある問題が解けるようになります。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{solvetrigwarn}
+@defvr {オプション変数} solvetrigwarn
+デフォルト値: @code{true}
+
+@c MAYBE THIS CAN BE CLARIFIED
+@code{solvetrigwarn}が @code{true}の時、
+@mref{solve}は、方程式を解くために逆三角関数を使い そのため解を失っていることを示す
+メッセージを表示するかもしれません。
+@c NEED AN EXAMPLE HERE
+
+@opencatbox
+@category{Algebraic equations}
+@closecatbox
+@end defvr

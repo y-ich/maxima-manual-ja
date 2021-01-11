@@ -1,0 +1,60 @@
+@menu
+* Functions and Variables for clebsch_gordan::
+@end menu
+
+@node Functions and Variables for clebsch_gordan, , clebsch_gordan-pkg, clebsch_gordan-pkg
+@section Functions and Variables for clebsch_gordan
+
+@deffn {関数} clebsch_gordan (@var{j1}, @var{j2}, @var{m1}, @var{m2}, @var{j}, @var{m})
+
+Clebsch-Gordan 係数 @verb{|<j1, j2, m1, m2 | j, m>|} を計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn
+
+@deffn {関数} racah_v (@var{a}, @var{b}, @var{c}, @var{a1}, @var{b1}, @var{c1})
+
+(関連の Clebsch-Gordan 係数を使って計算される) Racah's V 係数を計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn
+
+@deffn {関数} racah_w (@var{j1}, @var{j2}, @var{j5}, @var{j4}, @var{j3}, @var{j6})
+
+(Wigner @verb{|6j|} シンボルを使って計算される)Racah's W 係数を計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn
+
+@deffn {関数} wigner_3j (@var{j1}, @var{j2}, @var{j3}, @var{m1}, @var{m2}, @var{m3})
+
+(関連の Clebsch-Gordan 係数を使って計算される) Wigner's @verb{|3j|} シンボルを計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn
+
+@deffn {関数} wigner_6j (@var{j1}, @var{j2}, @var{j3}, @var{j4}, @var{j5}, @var{j6})
+
+Wigner's @verb{|6j|} シンボルを計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn
+
+@deffn {関数} wigner_9j (@var{a}, @var{b}, @var{c}, @var{d}, @var{e}, @var{f}, @var{g}, @var{h}, @var{i}, @var{j},)
+
+Wigner's @verb{|9j|} シンボルを計算します。
+
+@opencatbox
+@category{clebsch_gordan}
+@closecatbox
+@end deffn

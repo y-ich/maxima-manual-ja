@@ -1,0 +1,2268 @@
+@menu
+* Introduction to String Processing::
+* Input and Output::
+* Characters::
+* String Processing::
+* Octets and Utilities for Cryptography::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@c -----------------------------------------------------------------------------
+@node Introduction to String Processing, Input and Output, stringproc-pkg, stringproc-pkg
+@section Introduction to String Processing
+
+パッケージ @code{stringproc}はフォーマットやエンコードやデータストリームを含む文字列と文字を処理する関数を含みます。
+例えば base64や hash関数といった暗号のためのいくつかのツールがこのパッケージを締めくくります。
+
+これは @code{load(stringproc)}を介して直接ロードもできますし、関数の1つを使うと自動的にロードされます。
+
+質問やバグレポートは、著者に連絡してください。
+以下のコマンドは著者の eメールアドレスを印字します。
+
+@code{printf(true, "~@{~a~@}@@gmail.com", split(sdowncase("Volker van Nek")))$}
+
+例えば @code{"Text"}とタイプすることで文字列が構成されます。
+オプション変数 @code{stringdisp}がデフォルトの @code{false}に設定されている時、
+ダブルクオートは印字されません。
+@ref{stringp}は オブジェクトが文字列かどうかのテストです。
+
+@example
+(%i1) str: "Text";
+(%o1)                         Text
+(%i2) stringp(str);
+(%o2)                         true
+@end example
+
+文字は、長さ1の文字列で表されます。
+@ref{charp}は対応するテストです。
+
+@example
+(%i1) char: "e";
+(%o1)                           e
+(%i2) charp(char);
+(%o2)                         true
+@end example
+
+Maximaでは文字列の位置インデックスはリストと同様 1から始まり、
+以下の一貫性が成り立ちます。
+
+@example
+(%i1) is(charat("Lisp",1) = charlist("Lisp")[1]);
+(%o1)                         true
+@end example
+
+文字列は Maximaの式を含むかもしれません。
+これらは @ref{parse_string}でパースできます。
+
+@example
+(%i1) map(parse_string, ["42" ,"sqrt(2)", "%pi"]);
+(%o1)                   [42, sqrt(2), %pi]
+(%i2) map('float, %);
+(%o2)        [42.0, 1.414213562373095, 3.141592653589793]
+@end example
+
+文字列は文字として処理したり、オクテットとしてバイナリ形式で処理できます。
+変換の関数は @ref{string_to_octets}と@ref{octets_to_string}です。
+使用できるエンコードはプラットフォームやアプリケーション、裏にあるLispに依存します。
+(以下はSBCLでコンパイルされた GNU/Linux上の Maximaを見せます)
+
+@example
+(%i1) obase: 16.$
+(%i2) string_to_octets("$@pounds{}@euro{}", "cp1252");
+(%o2)                     [24, 0A3, 80]
+(%i3) string_to_octets("$@pounds{}@euro{}", "utf-8");
+(%o3)               [24, 0C2, 0A3, 0E2, 82, 0AC]
+@end example
+
+文字列は文字ストリームに書かれたり、オクテットとしてバイナリストリームに書かれたりします。
+以下の例は文字のファイル入出力を例示します。
+
+@ref{openw}はファイルへの出力ストリームを返します。
+@ref{printf}はそのファイルにフォーマットされたものを書き込みます。
+例えば、@ref{close}で
+ストリームに含まれるすべての文字はファイルに書き込まれます。
+
+@example
+(%i1) s: openw("file.txt");
+(%o1)                #<output stream file.txt>
+(%i2) printf(s, "~%~d ~f ~a ~a ~f ~e ~a~%",
+42, 1.234, sqrt(2), %pi, 1.0e-2, 1.0e-2, 1.0b-2)$
+(%i3) close(s)$
+@end example
+
+そして @ref{openr}は以前使ったファイルから入力ストリームを返します。
+@ref{readline}は文字列として読み込んだ行を返します。
+文字列は、例えば @ref{split}や @ref{tokens}でトークン化され、
+最終的に @ref{parse_string}でパースできます。
+
+@example
+(%i4) s: openr("file.txt");
+(%o4)                 #<input stream file.txt>
+(%i5) readline(s);
+(%o5)          42 1.234 sqrt(2) %pi 0.01 1.0E-2 1.0b-2
+(%i6) map(parse_string, split(%));
+(%o6)       [42, 1.234, sqrt(2), %pi, 0.01, 0.01, 1.0b-2]
+(%i7) close(s)$
+@end example
+
+@opencatbox
+@category{Strings} @category{Share packages} @category{Package stringproc}
+@closecatbox
+
+
+@c -----------------------------------------------------------------------------
+@c -----------------------------------------------------------------------------
+@node Input and Output, Characters, Introduction to String Processing, stringproc-pkg
+@section Input and Output
+
+例: ファイルへのフォーマットされた印字。
+
+@example
+(%i1) s: openw("file.txt");
+(%o1)                      #<output stream file.txt>
+(%i2) control:
+"~2tAn atom: ~20t~a~%~2tand a list: ~20t~@{~r ~@}~%~2t\
+and an integer: ~20t~d~%"$
+(%i3) printf( s,control, 'true,[1,2,3],42 )$
+(%o3)                                false
+(%i4) close(s);
+(%o4)                                true
+(%i5) s: openr("file.txt");
+(%o5)                      #<input stream file.txt>
+(%i6) while stringp( tmp:readline(s) ) do print(tmp)$
+  An atom:          true
+  and a list:       one two three
+  and an integer:   42
+(%i7) close(s)$
+@end example
+
+@c -----------------------------------------------------------------------------
+@anchor{close}
+@deffn {関数} close (@var{stream})
+
+@var{stream}を閉じて、もし @var{stream}が開いていたら
+@code{true}を返します。
+
+@opencatbox
+@category{File input} @category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{flength}
+@deffn {関数} flength (@var{stream})
+
+@var{stream}はファイルからかファイルへの開いたストリームでなかればいけません。
+その時 @code{flength}はこのファイルの中に現在存在するバイト数を返します。
+
+例: @ref{writebyte}を参照してください。
+
+@opencatbox
+@category{File input} @category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{flush_output}
+@deffn {関数} flush_output (@var{stream})
+
+@var{stream}をフラッシュします。
+ここで @var{stream}はファイルへの出力ストリームでなければいけません。
+
+例: @ref{writebyte}を参照してください。
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{fposition}
+@deffn {関数} fposition @
+@fname{fposition} (@var{stream}) @
+@fname{fposition} (@var{stream}, @var{pos})
+
+もし @var{pos}が使われてないなら、 @var{stream}の中の現在位置を返します。
+もし @var{pos}が使われているなら、
+@code{fposition}は @var{stream}の中の位置を設定します。
+@var{pos}は正の数でなければいけません。
+
+データストリームの位置は文字列やリスト同様、1から始まります。
+すなわち、 @var{stream}の最初の要素は位置 1にあります。
+
+@opencatbox
+@category{File input} @category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{freshline}
+@deffn {関数} freshline @
+@fname{freshline} ()  @
+@fname{freshline} (@var{stream})
+
+もし位置が行の最初でないなら
+標準出力ストリームに改行を書き込み、 @code{true}を返します。
+オプション引数 @var{stream}を使うと、そのストリームに改行を書き込みます。
+@code{freshline()}が期待通りに動かない場合がいくつかあります。
+
+@code{newline}も参照してください。
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{get_output_stream_string}
+@deffn {関数} get_output_stream_string (@var{stream})
+
+現在 @var{stream}に存在するすべての文字を含む文字列を返します。
+@var{stream}はオープンな文字列出力ストリームでなければいけません。
+戻り値の文字は @var{stream}から取り除かれます。
+
+例: @ref{make_string_output_stream}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{make_string_input_stream}
+@deffn {関数} make_string_input_stream @
+@fname{make_string_input_stream} (@var{string}) @
+@fname{make_string_input_stream} (@var{string}, @var{start}) @
+@fname{make_string_input_stream} (@var{string}, @var{start}, @var{end})
+
+@var{string}の一部とファイルの終了を含む入力ストリームを返します。
+オプション引数がない場合、ストリームは全体の文字列を含み、一番目の文字の前に位置されます。
+@var{start}と @var{end}はストリームに含まれた部分文字列を定義します。
+一番目の文字は位置 1で得られます。
+
+@example
+(%i1) istream : make_string_input_stream("text", 1, 4);
+(%o1)              #<string-input stream from "text">
+(%i2) (while (c : readchar(istream)) # false do sprint(c), newline())$
+t e x
+(%i3) close(istream)$
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{make_string_output_stream}
+@deffn {関数} make_string_output_stream ()
+
+文字を受け付ける出力ストリームを返します。
+このストリームに現在存在する文字は @ref{get_output_stream_string}を使って取り出すことができます。
+
+@example
+(%i1) ostream : make_string_output_stream();
+(%o1)               #<string-output stream 09622ea0>
+(%i2) printf(ostream, "foo")$
+
+(%i3) printf(ostream, "bar")$
+
+(%i4) string : get_output_stream_string(ostream);
+(%o4)                            foobar
+(%i5) printf(ostream, "baz")$
+
+(%i6) string : get_output_stream_string(ostream);
+(%o6)                              baz
+(%i7) close(ostream)$
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{newline}
+@deffn {関数} newline @
+@fname{newline} ()  @
+@fname{newline} (@var{stream})
+
+標準出力ストリームに改行を書き込みます。
+オプション引数 @var{stream}を使うと、そのストリームに改行を書き込みます。
+@code{newline()}が期待通りに動かないいくつかの場合があります。
+
+@code{newline()}の使用の例に関しては、
+@ref{sprint}を参照してください。
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{opena}
+@deffn {関数} opena (@var{file})
+
+@var{file}への文字出力ストリームを返します。
+もし存在しているファイルを開いたら、
+@code{opena}は @code{file}の終わりに要素を追加します。
+
+バイナリ出力に関しては @ref{Functions and Variables for binary input and output, , opena_binary}を参照してください。
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{openr}
+@deffn {関数} openr @
+@fname{openr} (@var{file}) @
+@fname{openr} (@var{file}, @var{encoding})
+
+
+@var{file}への文字入力ストリームを返します。
+@code{openr}は @var{file}が存在すること仮定します。
+もしファイルを読んでエンコーディングについてのLispエラーが出たら、
+引数 @var{encoding}として正しい文字列を渡すことが役に立つかもしれません。
+利用可能なエンコーディングとそれらの名前は使用しているlispに依存します。
+sbclでは適切な文字列のリストは
+@url{http://www.sbcl.org/manual/#External-Formats}
+で確認することができます。
+
+バイナリ出力に関しては @ref{Functions and Variables for binary input and output, , openr_binary}を参照してください。
+@mref{close}, @mref{openw}も参照してください。
+
+@example
+(%i1) istream : openr("data.txt","EUC-JP");
+(%o1)     #<FD-STREAM for "file /home/gunter/data.txt" @{10099A3AE3@}>
+(%i2) close(istream);
+(%o2)                                true
+@end example
+
+
+@opencatbox
+@category{File input} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{openw}
+@deffn {関数} openw (@var{file})
+
+@var{file}への文字出力ストリームを返します。
+もし @var{file}が存在しないなら、生成されます。
+もし存在しているファイルを開いたら、
+@code{openw}は @var{file}を破壊的に変更します。
+
+バイナリ出力に関しては @ref{Functions and Variables for binary input and output, , openw_binary}を参照してください。
+
+@mref{close}, @mref{openr}も参照してください。
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{printf}
+@deffn {関数} printf @
+@fname{printf} (@var{dest}, @var{string}) @
+@fname{printf} (@var{dest}, @var{string}, @var{expr_1}, ..., @var{expr_n})
+
+制御文字列 @var{string}の文字を出力し、ティルデがディレクティブを導入することを観察することで
+フォーマットされた出力を生成します。
+ティルデの後の文字は、前置パラメータと修飾子が先立つこともありますが、どの種類のフォーマットが望まれているか指定します。
+ほとんどのディレクティブは1つか複数の要素の引数 @var{expr_1}, ..., @var{expr_n}を使い、出力を生成します。
+
+もし @var{dest}がストリームか @code{true}なら、 @code{printf}は @code{false}を返します。
+そうでなければ、 @code{printf}は出力を含む文字列を返します。
+デフォルトでは、ストリーム @var{stdin}, @var{stdout}, @var{stderr}が定義されています。
+もしmaximaがサーバーとして走っているなら
+(これは もし maximaがグラフィカルユーザーインタフェースと通信しているなら通常のケースです)、
+@code{setup-client}は @var{old_stdout}と @var{old_stderr}も定義します。
+
+@code{printf}は Maximaの Common Lisp 関数 @code{format}を提供します。
+以下の例はこれら二つの関数の一般的な関係を具体的に示します。
+
+@example
+(%i1) printf(true, "R~dD~d~%", 2, 2);
+R2D2
+(%o1)                                false
+(%i2) :lisp (format t "R~dD~d~%" 2 2)
+R2D2
+NIL
+@end example
+
+以下の記述は @code{printf}の可能性の雑なスケッチに限定されます。
+
+Lisp関数 @code{format}は詳細は多くの参考書籍に記述されています。
+例えば、 Guy L. Steeleによる無料のオンラインマニュアル "Common Lisp the Language"が役立つでしょう。
+それの chapter 22.3.3を参照してください。
+
+@example
+   ~%       改行
+   ~&       行のフレッシュ
+   ~t       タブ
+   ~$       通貨記号
+   ~d       10進整数
+   ~b       2進整数
+   ~o       8進整数
+   ~x       16進整数
+   ~br      b進整数
+   ~r       整数を一字一字
+   ~p       複数形
+   ~f       浮動小数点
+   ~e       科学的記数法
+   ~g       大きさに応じて~fまたは~e
+   ~h       多倍長浮動小数点
+   ~a       Maxima関数文字列を使う
+   ~s       ~aと同様, しかし"ダブルコーテーション"で囲まれた出力
+   ~~       ~
+   ~<       行揃え, ~> 終端
+   ~(       大文字小文字変換, ~) 終端
+   ~[       選択, ~] 終端
+   ~@{       繰り返し, ~@} 終端
+@end example
+
+多倍長浮動小数点に関するディレクティブ ~hは Lisp標準ではないので、以下に具体的に示します。
+
+ディレクティブ ~*はサポートされていないことに注意してください。
+
+もし @var{dest}がストリームか @code{true}なら、 @code{printf}は @code{false}を返します。
+そうでなければ、 @code{printf}は出力を含む文字列を返します。
+
+@example
+(%i1) printf( false, "~a ~a ~4f ~a ~@@r",
+              "String",sym,bound,sqrt(12),144), bound = 1.234;
+(%o1)                 String sym 1.23 2*sqrt(3) CXLIV
+(%i2) printf( false,"~@{~a ~@}",["one",2,"THREE"] );
+(%o2)                          one 2 THREE
+(%i3) printf(true,"~@{~@{~9,1f ~@}~%~@}",mat ),
+          mat = args(matrix([1.1,2,3.33],[4,5,6],[7,8.88,9]))$
+      1.1       2.0       3.3
+      4.0       5.0       6.0
+      7.0       8.9       9.0
+(%i4) control: "~:(~r~) bird~p ~[is~;are~] singing."$
+(%i5) printf( false,control, n,n,if n=1 then 1 else 2 ), n=2;
+(%o5)                    Two birds are singing.
+@end example
+
+ディレクティブ ~hは多倍長浮動小数点を扱うために導入されました。
+
+@example
+~w,d,e,x,o,p@@H
+ w : width
+ d : decimal digits behind floating point
+ e : minimal exponent digits
+ x : preferred exponent
+ o : overflow character
+ p : padding character
+ @@ : display sign for positive numbers
+@end example
+
+@example
+(%i1) fpprec : 1000$
+(%i2) printf(true, "|~h|~%", 2.b0^-64)$
+|0.0000000000000000000542101086242752217003726400434970855712890625|
+(%i3) fpprec : 26$
+(%i4) printf(true, "|~h|~%", sqrt(2))$
+|1.4142135623730950488016887|
+(%i5) fpprec : 24$
+(%i6) printf(true, "|~h|~%", sqrt(2))$
+|1.41421356237309504880169|
+(%i7) printf(true, "|~28h|~%", sqrt(2))$
+|   1.41421356237309504880169|
+(%i8) printf(true, "|~28,,,,,'*h|~%", sqrt(2))$
+|***1.41421356237309504880169|
+(%i9) printf(true, "|~,18h|~%", sqrt(2))$
+|1.414213562373095049|
+(%i10) printf(true, "|~,,,-3h|~%", sqrt(2))$
+|1414.21356237309504880169b-3|
+(%i11) printf(true, "|~,,2,-3h|~%", sqrt(2))$
+|1414.21356237309504880169b-03|
+(%i12) printf(true, "|~20h|~%", sqrt(2))$
+|1.41421356237309504880169|
+(%i13) printf(true, "|~20,,,,'+h|~%", sqrt(2))$
+|++++++++++++++++++++|
+@end example
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{readbyte}
+@deffn {関数} readbyte (@var{stream})
+
+@var{stream}の中の最初のバイトを削除し返します。
+@var{stream}はバイナリ入力ストリームでなければいけません。
+もしファイルの終端に来たら、@code{readbyte}は @code{false}を返します。
+
+例: OpenSSLのAESで暗号化されたファイルから最初の16バイトを読みます。
+
+@example
+(%i1) ibase: obase: 16.$
+
+(%i2) in: openr_binary("msg.bin");
+(%o2)                       #<input stream msg.bin>
+(%i3) (L:[],  thru 16. do push(readbyte(in), L),  L:reverse(L));
+(%o3) [53, 61, 6C, 74, 65, 64, 5F, 5F, 88, 56, 0DE, 8A, 74, 0FD, 0AD, 0F0]
+(%i4) close(in);
+(%o4)                                true
+(%i5) map(ascii, rest(L,-8));
+(%o5)                      [S, a, l, t, e, d, _, _]
+(%i6) salt: octets_to_number(rest(L,8));
+(%o6)                          8856de8a74fdadf0
+@end example
+
+@opencatbox
+@category{File input} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{readchar}
+@deffn {関数} readchar (@var{stream})
+
+@var{stream}の一番目の文字を取り出し、返します。
+ファイルの終端になったら、 @code{readchar}は @code{false}を返します。
+
+例: @ref{make_string_input_stream}を参照してください。
+
+@opencatbox
+@category{File input} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{readline}
+@deffn {関数} readline (@var{stream})
+
+@var{stream}の現在位置から行の終わりまでの文字を含む文字列か、
+もしファイルの終わりが来たら @code{false}を返します。
+
+@opencatbox
+@category{File input} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sprint}
+@deffn {関数} sprint (@var{expr_1}, @dots{}, @var{expr_n})
+
+引数を順に評価し、一番左から始まる「一行」に表示します。
+式は数の右隣にスペース文字と共に印字され、行の長さを無視します。
+改行には @code{newline()}が役に立つかもしれません。
+
+例:  @code{sprint}を使って連続的に印字。
+@code{newline()}で改行を生成。
+
+@example
+(%i1) for n:0 thru 19 do sprint(fib(n))$
+0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597 2584 4181
+(%i2) for n:0 thru 22 do (
+         sprint(fib(n)),
+         if mod(n,10) = 9 then newline() )$
+0 1 1 2 3 5 8 13 21 34
+55 89 144 233 377 610 987 1597 2584 4181
+6765 10946 17711
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{writebyte}
+@deffn {関数} writebyte (@var{byte}, @var{stream})
+
+@var{stream}に @var{byte}を書き出します。
+@var{stream}はバイナリ出力ストリームでなければいけません。
+@code{writebyte}は @code{byte}を返します。
+
+例: バイナリファイル出力ストリームに数バイト書き出します。
+この例では、バイトすべては印字可能文字に対応していて @code{printfile}で印字されます。
+バイトは @code{flush_outpu}か @code{close}が呼ばれるまでストリームに残ります。
+
+@example
+(%i1) ibase: obase: 16.$
+
+(%i2) bytes: map(cint, charlist("GNU/Linux"));
+(%o2)                [47, 4E, 55, 2F, 4C, 69, 6E, 75, 78]
+(%i3) out: openw_binary("test.bin");
+(%o3)                      #<output stream test.bin>
+(%i4) for i thru 3 do writebyte(bytes[i], out);
+(%o4)                                done
+(%i5) printfile("test.bin")$
+
+(%i6) flength(out);
+(%o6)                                  0
+(%i7) flush_output(out);
+(%o7)                                true
+(%i8) flength(out);
+(%o8)                                  3
+(%i9) printfile("test.bin")$
+GNU
+(%i0A) for b in rest(bytes,3) do writebyte(b, out);
+(%o0A)                               done
+(%i0B) close(out);
+(%o0B)                               true
+(%i0C) printfile("test.bin")$
+GNU/Linux
+@end example
+
+@opencatbox
+@category{File output} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c -----------------------------------------------------------------------------
+@node Characters, String Processing, Input and Output, stringproc-pkg
+@section Characters
+
+文字は長さ 1の文字列です。
+
+@c -----------------------------------------------------------------------------
+@anchor{adjust_external_format}
+@deffn {関数} adjust_external_format ()
+
+Lispリーダーの現在の外部フォーマットに関する情報を印字し、
+外部フォーマットのエンコーディングが
+Maximaを走らせているアプリケーションのエンコーディングと違う場合、
+@code{adjust_external_format}はエンコーディングの調整を試みて、
+ヘルプか指示を印字します。
+@code{adjust_external_format}は、
+外部フォーマットが変更された時 @code{true}を、
+そうでなければ @code{false}を返します。
+
+@ref{cint}, @ref{unicode}, @ref{octets_to_string}, @ref{string_to_octets}
+のような関数は、
+Unicode文字フルレンジで適切に動くために、
+Lispリーダーの外部フォーマットとして UTF-8を必要とします。
+
+例(2016年3月 Windows上の Maxima):
+デフォルトの外部フォーマットがアプリケーションが提供するエンコーディングと等しくない時に
+@code{adjust_external_format}を使用
+
+1. コマンドライン Maxima
+
+端末セッションが好まれる場合、
+SBCLでコンパイルされた Maximaを使うことをお勧めします。
+そうすれば Unicodeがデフォルトでサポートされ、
+@code{adjust_external_format}を呼び出す必要がありません。
+
+もし MaximaがCLISPか GCLでコンパイルされたなら、
+端末エンコーディングを CP850から CP1252に変更することをお勧めします。
+@code{adjust_external_format}がヘルプを印字します。
+
+CCLは UTF-8を読み込む一方、端末入力はデフォルトで CP850です。
+CCLは CP1252をサポートしません。
+@code{adjust_external_format}は
+端末エンコーディングと外部フォーマット両方を iso-8859-1に変更するための指示を印字します。
+
+2. wxMaxima
+
+wxMaximaでは SBCLはデフォルトで CP1252を読み込みますが、
+アプリケーションからの入力は UTF-8エンコードです。
+調整が必要です。
+
+一度、@code{adjust_external_format}を呼び出し、
+Maximaを再起動すると、
+デフォルト外部フォーマットは UTF-0になります。
+
+@example
+(%i1)adjust_external_format();
+The line
+(setf sb-impl::*default-external-format* :utf-8)
+has been appended to the init file
+C:/Users/Username/.sbclrc
+Please restart Maxima to set the external format to UTF-8.
+(%i1) false
+@end example
+
+Maximaを再起動。
+
+@example
+(%i1) adjust_external_format();
+The external format is currently UTF-8
+and has not been changed.
+(%i1) false
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{alphacharp}
+@deffn {関数} alphacharp (@var{char})
+
+もし @var{char}がアルファベット文字なら @code{true}を返します。
+
+非 US-ASCII文字をアルファベット文字か確認するには、
+背後のLispが完全なUnicodeサポートを提供しなければいけません。
+例えば、ドイツ語のウムラウトは
+GNU/Linux上の SBCLではアルファベット文字として検出されますが、
+GCLではそうなりません。
+(Windows Maximaでは、SBCLでコンパイルされた時、
+UTF-8を設定しなければいけません。
+詳しくは @ref{adjust_external_format}を参照してください)
+
+例: 非 US-ASCII文字のテスト
+
+背後のLisp (SBCL, GNU/Linux)は
+タイプされた文字をLisp文字に変換してテストすることができます。
+
+@example
+(%i1) alphacharp("@"u");
+(%o1)                          true
+@end example
+
+GCLではこれはできまsねん。
+エラーが起こります。
+
+@example
+(%i1) alphacharp("u");
+(%o1)                          true
+(%i2) alphacharp("@"u");
+
+package stringproc: @"u cannot be converted into a Lisp character.
+ -- an error.
+@end example
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{alphanumericp}
+@deffn {関数} alphanumericp (@var{char})
+
+もし @var{char}がアルファベット文字か数字なら @code{true}を返します。
+(対応する US-ASCII文字だけが数字とみなされます)
+
+注意: @ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ascii}
+@deffn {関数} ascii (@var{int})
+
+@code{128}未満の整数 @var{int}に対応するUS-ASCII文字を返します。
+
+@code{127}より大きな符号位置を変換するには @ref{unicode}を参照してください。
+
+
+例:
+
+@example
+(%i1) for n from 0 thru 127 do (
+        ch: ascii(n),
+        if alphacharp(ch) then sprint(ch),
+        if n = 96 then newline() )$
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+a b c d e f g h i j k l m n o p q r s t u v w x y z
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{cequal}
+@deffn {関数} cequal (@var{char_1}, @var{char_2})
+
+もし @var{char_1}と @var{char_2}が同じ文字なら @code{true}を返します。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{cequalignore}
+@deffn {関数} cequalignore (@var{char_1}, @var{char_2})
+
+@code{cequal}と同様ですが、文字の大小を無視します。
+背後のLispが文字をアルファベット文字として認識できる時
+非 US-ASCII文字で可能なだけです。
+@ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{cgreaterp}
+@deffn {関数} cgreaterp (@var{char_1}, @var{char_2})
+
+もし @var{char_1}の符号位置が @var{char_2}のそれより大きいなら
+@code{true}を返します。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{cgreaterpignore}
+@deffn {関数} cgreaterpignore (@var{char_1}, @var{char_2})
+
+@code{cgreaterp}と同様ですが、文字の大小を無視します。
+背後のLispが文字をアルファベット文字として認識できる時
+非 US-ASCII文字で可能なだけです。
+@ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{charp}
+@deffn {関数} charp (@var{obj})
+
+もし @var{obj}が Maxima-文字なら @code{true}を返します。
+例えばイントロダクションを参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{cint}
+@deffn {関数} cint (@var{char})
+
+Maxima文字 @var{char}のUnicode符号位置を返します。
+@var{char}は長さ @code{1}でなければいけません。
+
+例: いくつかの文字の16進符号位置。
+(GNU/Linux上の SBCLを使った Maxima)
+
+@example
+(%i1) obase: 16.$
+(%i2) map(cint, ["$","@pounds{}","@euro{}"]);
+(%o2)                           [24, 0A3, 20AC]
+@end example
+
+警告: 外部フォーマットが UTF-8に設定されている時、
+Windows上の SBCLを使った wxMaximaでは
+16ビットより大きな符号位置に対応した文字を入力できません。
+@ref{adjust_external_format}を参照してください。
+
+@c Command @U not supported by texinfo 5.
+@c @example
+@c (%i3) cint("@U{1d538}");
+@c (%o3)                                1D538
+@c @end example
+
+CMUCLはこれらの文字を 1文字として処理しません。
+そして @code{cint}は @code{false}を返します。
+@c Converting to UTF-8-octets and finally to Unicode serves as a workaround.
+回避策として文字をUTF-8オクテットを介して符号位置に変換すればいいかもしれません:
+
+@code{utf8_to_unicode(string_to_octets(character));}
+
+@c Command @U not supported by texinfo 5.
+@c @example
+@c (%i4) utf8_to_unicode(string_to_octets("@U{1d538}"));
+@c (%o4)                                1D538
+@c @end example
+
+@ref{utf8_to_unicode}, @ref{string_to_octets}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{clessp}
+@deffn {関数} clessp (@var{char_1}, @var{char_2})
+
+もし @var{char_1}の符号位置が @var{char_2}のそれより小さいなら
+@code{true}を返します。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{clesspignore}
+@deffn {関数} clesspignore (@var{char_1}, @var{char_2})
+
+@code{clessp}と同様ですが、文字の大小を無視します。
+背後のLispが文字をアルファベット文字として認識できる時
+非 US-ASCII文字で可能なだけです。
+@ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{constituent}
+@deffn {関数} constituent (@var{char})
+
+もし @var{char}が、グラフィック文字ですがスペース文字でないなら、
+@code{true}を返します。
+グラフィック文字は見ることができる文字とスペース文字です。
+(@code{constituent}は Paul Grahamによって定義されています。
+Paul Graham, ANSI Common Lisp, 1996, page 67を参照してください)
+
+@example
+(%i1) for n from 0 thru 255 do (
+tmp: ascii(n), if constituent(tmp) then sprint(tmp) )$
+! " #  %  ' ( ) * + , - . / 0 1 2 3 4 5 6 7 8 9 : ; < = > ? @@ A B
+C D E F G H I J K L M N O P Q R S T U V W X Y Z [ \ ] ^ _ ` a b c
+d e f g h i j k l m n o p q r s t u v w x y z @{ | @} ~
+@end example
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c @deffn {Function} cunlisp (@var{lisp_char})
+@c Converts a Lisp-character into a Maxima-character.
+@c (You won't need it.)
+@c
+@c @opencatbox
+@c @category{Package stringproc}
+@c @closecatbox
+@c
+@c @end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{digitcharp}
+@deffn {関数} digitcharp (@var{char})
+
+対応する US-ASCII文字が数字とみなされるような場合だけ
+もし @var{char}が数字なら @code{true}を返します。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c @deffn {Function} lcharp (@var{obj})
+@c Returns @code{true} if @var{obj} is a Lisp-character.
+@c (You won't need it.)
+@c
+@c @opencatbox
+@c @category{Predicate functions} @category{Package stringproc}
+@c @closecatbox
+@c
+@c @end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{lowercasep}
+@deffn {関数} lowercasep (@var{char})
+もし @var{char}が小文字なら @code{true}を返します。
+
+注意: @ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{newline_variable}
+@defvr {変数} newline
+
+改行文字(ASCII文字 10)。
+
+@opencatbox
+@category{Global variables} @category{Package stringproc}
+@closecatbox
+
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{space_variable}
+@defvr {変数} space
+
+スペース文字。
+
+@opencatbox
+@category{Global variables} @category{Package stringproc}
+@closecatbox
+
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{tab_variable}
+@defvr {変数} tab
+
+タブ文字。
+
+@opencatbox
+@category{Global variables} @category{Package stringproc}
+@closecatbox
+
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{unicode}
+@deffn {関数} unicode (@var{arg})
+
+@var{arg}が定義する文字を返します。
+もし背後の LispがUnicodeのフルサポートを提供するなら
+@var{arg}は Unicode符号位置か名前文字列です。
+
+例: 16進符号位置で定義された文字
+(GNU/Linux上の SBCLを使った Maxima)
+
+@example
+(%i1) ibase: 16.$
+(%i2) map(unicode, [24, 0A3, 20AC]);
+(%o2)                            [$, @pounds{}, @euro{}]
+@end example
+
+警告: 外部フォーマットが UTF-8に設定されている時、
+Windows上の SBCLを使った wxMaximaでは
+16ビットより大きな符号位置に対応した文字を入力できません。
+@ref{adjust_external_format}を参照してください。
+
+@c Command @U not supported by texinfo 5.
+@c @example
+@c (%i3) unicode(1D538);
+@c (%o3)                                  @U{1d538}
+@c @end example
+
+CMUCLはこれらの文字を 1文字として処理しません。
+そして @code{cint}は @code{false}を返します。
+@c Converting to UTF-8-octets and finally to Unicode serves as a workaround.
+回避策として文字をUTF-8オクテットを介して符号位置に変換すればいいかもしれません:
+
+@code{octets_to_string(unicode_to_utf8(code_point));}
+
+@c Command @U not supported by texinfo 5.
+@c @example
+@c (%i4) octets_to_string(unicode_to_utf8(1D538));
+@c (%o4)                                  @U{1d538}
+@c @end example
+
+@ref{octets_to_string}, @ref{unicode_to_utf8}を参照してください。
+
+背後の Lispが Unicodeのフルサポートを提供するなら
+文字は、名前で指定できるかもしれません。
+以下は、ECL, CLISP, SBCLで可能です。
+ここで Windows上のSBCLでは外部フォーマットはUTF-8に設定しなければいけません。
+CMUCLも @code{unicode(name)}をサポートしますが、また 16ビット文字に限定されます。
+
+@code{unicode}の文字列引数は基本的に
+"~@@c"して石を使った @code{printf}が返すのと同じ文字列を返します。
+しかし以下で見るように、接頭辞 "#\"は省略しなければいけません。
+下線はスペースに置き換えられ、大文字は小文字に置き換えられます。
+
+例 (続き): 名前で定義された文字
+(GNU/Linux上の SBCLを使った Maxima)
+
+@example
+(%i3) printf(false, "~@@c", unicode(0DF));
+(%o3)                    #\LATIN_SMALL_LETTER_SHARP_S
+(%i4) unicode("LATIN_SMALL_LETTER_SHARP_S");
+(%o4)                                  @ss{}
+(%i5) unicode("Latin small letter sharp s");
+(%o5)                                  @ss{}
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{unicode_to_utf8}
+@deffn {関数} unicode_to_utf8 (@var{code_point})
+
+Unicode @var{code_point}に対応する UTF-8コードを含むリストを返します。
+
+例: Unicode符号位置をUTF-8に、そしてその逆の変換。
+
+@example
+(%i1) ibase: obase: 16.$
+(%i2) map(cint, ["$","@pounds{}","@euro{}"]);
+(%o2)                           [24, 0A3, 20AC]
+(%i3) map(unicode_to_utf8, %);
+(%o3)                 [[24], [0C2, 0A3], [0E2, 82, 0AC]]
+(%i4) map(utf8_to_unicode, %);
+(%o4)                           [24, 0A3, 20AC]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{uppercasep}
+@deffn {関数} uppercasep (@var{char})
+
+もし @var{char}が大文字なら @code{true}を返します。
+
+注意: @ref{alphacharp}に関する注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{us_ascii_only}
+@defvr {変数} us_ascii_only
+
+このオプション変数は
+Maximaを走らせるアプリケーションが提供する文字エンコーディングが UTF-8なのに
+Lispリーダの外部フォーマットが UTF-8に等しくない時
+Maximaに影響します。
+
+GNU/Linux上では
+Maximaが GCLでビルドされた時にはこれは trueです。
+Windows上でGCLか SBCLでビルドされた場合もそうです。
+
+SBCLを使う場合、外部フォーマットを UTF-8に変更することをお薦めします。
+その場合、 @code{us_ascii_only}は設定不要です。
+詳細は @ref{adjust_external_format}を参照してください。
+
+@code{us_ascii_only}はデフォルトで @code{false}です。
+その時、 Maxima自身が (すなわち上記の状況で) UTF-8エンコーディングをパースします。
+
+@code{us_ascii_only}が @code{true}に設定されている時、
+文字列処理関数の引数に使われるすべての文字列は非US-ASCII文字を含まないと仮定されます。
+その約束の下、Maximaは UTF-8をパースすることを避けて、文字列をより効率よく処理できます。
+
+@opencatbox
+@category{Global variables} @category{Package stringproc}
+@closecatbox
+
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{utf8_to_unicode}
+@deffn {関数} utf8_to_unicode (@var{list})
+
+1文字のUTF-8エンコーディングを含む @var{list}に対応する Unicode符号位置を返します。
+
+例: @ref{unicode_to_utf8}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c -----------------------------------------------------------------------------
+@node String Processing, Octets and Utilities for Cryptography, Characters, stringproc-pkg
+@section String Processing
+
+文字列の位置インデックスは Maximaのリストと同様に 1から始まります。
+@ref{charat}の例を参照してください。
+
+@c -----------------------------------------------------------------------------
+@anchor{charat}
+@deffn {関数} charat (@var{string}, @var{n})
+@var{string}の @var{n}番目の文字を返します。
+@var{string}の一番目の文字は @var{n} = 1で返されます。
+
+@example
+(%i1) charat("Lisp",1);
+(%o1)                           L
+(%i2) charlist("Lisp")[1];
+(%o2)                           L
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{charlist}
+@deffn {関数} charlist (@var{string})
+
+@var{string}の文字すべてのリストを返します。
+
+@example
+(%i1) charlist("Lisp");
+(%o1)                     [L, i, s, p]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{eval_string}
+@deffn {関数} eval_string (@var{str})
+
+文字列 @var{str}を Maxima式としてパースし、評価します。
+文字列 @var{str}は終端子(ドル記号 @code{$}またはセミコロン @code{;})
+を持つかもしれませんし持たないかもしれません。
+
+もし複数あるなら、最初の式だけがパースされ、評価されます。
+
+もし @var{str}が文字列でないならエラーが出力されます。
+
+例:
+
+@example
+(%i1) eval_string ("foo: 42; bar: foo^2 + baz");
+(%o1)                       42
+(%i2) eval_string ("(foo: 42, bar: foo^2 + baz)");
+(%o2)                   baz + 1764
+@end example
+
+@ref{parse_string}も参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{parse_string}
+@deffn {関数} parse_string (@var{str})
+
+文字列 @var{str}を Maxima式としてパースします(評価しません)。
+文字列 @var{str}は終端子(ドル記号 @code{$}またはセミコロン @code{;})
+を持つかもしれませんし持たないかもしれません。
+
+もし複数あるなら、最初の式だけがパースされ、評価されます。
+
+もし @var{str}が文字列でないならエラーが出力されます。
+
+例:
+
+@example
+(%i1) parse_string ("foo: 42; bar: foo^2 + baz");
+(%o1)                    foo : 42
+(%i2) parse_string ("(foo: 42, bar: foo^2 + baz)");
+                                   2
+(%o2)          (foo : 42, bar : foo  + baz)
+@end example
+
+@ref{eval_string}も参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{scopy}
+@deffn {関数} scopy (@var{string})
+
+@var{string}のコピーを新しい文字列として返します。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sdowncase}
+@deffn {関数} sdowncase @
+@fname{sdowncase} (@var{string}) @
+@fname{sdowncase} (@var{string}, @var{start})  @
+@fname{sdowncase} (@var{string}, @var{start}, @var{end})
+
+@ref{supcase}と同様ですが、大文字を小文字に変換します。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sequal}
+@deffn {関数} sequal (@var{string_1}, @var{string_2})
+
+もし @var{string_1}と @var{string_2}が同じ文字の列を含むなら、
+@code{true}を返します。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sequalignore}
+@deffn {関数} sequalignore (@var{string_1}, @var{string_2})
+
+@code{sequal}と同様ですが、文字の大小を無視します。
+背後のLispが文字をアルファベット文字として認識できる時
+非 US-ASCII文字で可能なだけです。
+@ref{alphacharp}の注記を参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sexplode}
+@deffn {関数} sexplode (@var{string})
+
+@code{sexplode}は関数@code{charlist}の別名です。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{simplode}
+@deffn {関数} simplode @
+@fname{simplode} (@var{list})   @
+@fname{simplode} (@var{list}, @var{delim})
+
+@code{simplode}は式のリストを取り、それらを結合して文字列にします。
+もしデリミタ @var{delim}を指定しないなら、
+@code{simplode}はデリミタを使いません。
+@var{delim}は任意の文字列を取り得ます。
+
+例:
+
+@example
+(%i1) simplode(["xx[",3,"]:",expand((x+y)^3)]);
+(%o1)             xx[3]:y^3+3*x*y^2+3*x^2*y+x^3
+(%i2) simplode( sexplode("stars")," * " );
+(%o2)                   s * t * a * r * s
+(%i3) simplode( ["One","more","coffee."]," " );
+(%o3)                   One more coffee.
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sinsert}
+@deffn {関数} sinsert (@var{seq}, @var{string}, @var{pos})
+@code{substring (@var{string}, 1, @var{pos} - 1)}と
+文字列
+@var{seq}、@code{substring (@var{string}, @var{pos})}の結合となる文字列を返します。
+@var{string}の一番目の文字は位置 1にあることに注意してください。
+
+例:
+
+@example
+(%i1) s: "A submarine."$
+(%i2) concat( substring(s,1,3),"yellow ",substring(s,3) );
+(%o2)                  A yellow submarine.
+(%i3) sinsert("hollow ",s,3);
+(%o3)                  A hollow submarine.
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sinvertcase}
+@deffn {関数} sinvertcase @
+@fname{sinvertcase} (@var{string}) @
+@fname{sinvertcase} (@var{string}, @var{start}) @
+@fname{sinvertcase} (@var{string}, @var{start}, @var{end})
+
+位置 @var{start}から @var{end}までのそれぞれの文字を逆順にすることを除いて
+@var{string}を返します。
+もし @var{end}を与えないなら、
+@var{start}から @var{string}の終わりまでのすべての文字列を置き換えます。
+
+例:
+
+@example
+(%i1) sinvertcase("sInvertCase");
+(%o1)                      SiNVERTcASE
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{slength}
+@deffn {関数} slength (@var{string})
+
+@var{string}の中の文字の数を返します。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{smake}
+@deffn {関数} smake (@var{num}, @var{char})
+
+@var{num}個の文字 @var{char}を持つ新しい文字列を返します。
+
+例:
+
+@example
+(%i1) smake(3,"w");
+(%o1)                          www
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{smismatch}
+@deffn {関数} smismatch @
+@fname{smismatch} (@var{string_1}, @var{string_2}) @
+@fname{smismatch} (@var{string_1}, @var{string_2}, @var{test})
+
+@var{string_1}と @var{string_2}が異なる
+@var{string_1}の最初の文字の位置、または @code{false}を返します。
+マッチングのデフォルトのテスト関数は @code{sequal}です。
+もし @code{smismatch}が文字の大小を無視なければいけないなら、
+テストとして @code{sequalignore}を使ってください。
+
+例:
+
+@example
+(%i1) smismatch("seven","seventh");
+(%o1)                           6
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{split}
+@deffn {関数} split @
+@fname{split} (@var{string}) @
+@fname{split} (@var{string}, @var{delim}) @
+@fname{split} (@var{string}, @var{delim}, @var{multiple})
+
+@var{string}のすべてのトークンのリストを返します。
+それぞれのトークンはパースされていない文字列です。
+@code{split}は @var{delim}をデリミタとして使います。
+もし @var{delim}が与えられないなら、
+スペース文字がデフォルトのデリミタです。
+@var{multiple}はデフォルトで @code{true}のブーリアン変数です。
+重複デリミタが 1つとして読まれます。
+これは、もしタブが複数スペース文字として保存されているなら、役立ちます。
+もし@var{multiple}が @code{false}に設定されるなら、
+それぞれのデリミタが有効です。
+
+例:
+
+@example
+(%i1) split("1.2   2.3   3.4   4.5");
+(%o1)                 [1.2, 2.3, 3.4, 4.5]
+(%i2) split("first;;third;fourth",";",false);
+(%o2)               [first, , third, fourth]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sposition}
+@deffn {関数} sposition (@var{char}, @var{string})
+@var{string}の中で @var{char}とマッチする最初の文字の位置を返します。
+@var{string}の一番目の文字は位置 1にあります。
+文字の大小を無視した文字のマッチに関しては，
+@ref{ssearch}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sremove}
+@deffn {関数} sremove @
+@fname{sremove} (@var{seq}, @var{string}) @
+@fname{sremove} (@var{seq}, @var{string}, @var{test}) @
+@fname{sremove} (@var{seq}, @var{string}, @var{test}, @var{start}) @
+@fname{sremove} (@var{seq}, @var{string}, @var{test}, @var{start}, @var{end})
+
+@var{string}同様文字列を返しますが、
+@var{seq}とマッチする部分文字列すべてなしに返します。
+マッチのデフォルトのテスト関数は @code{sequal}です。
+もし @code{sremove}が @var{seq}を検索する間文字の大小を無視しなければいけないなら、
+テストとして @code{sequalignore}を使ってください。
+探索を限定するには @var{start}と @var{end}を使ってください。
+@var{string}の一番目の文字は位置 1にあることに注意してください。
+
+例:
+
+@example
+(%i1) sremove("n't","I don't like coffee.");
+(%o1)                   I do like coffee.
+(%i2) sremove ("DO ",%,'sequalignore);
+(%o2)                    I like coffee.
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sremovefirst}
+@deffn {関数} sremovefirst @
+@fname{sremovefirst} (@var{seq}, @var{string}) @
+@fname{sremovefirst} (@var{seq}, @var{string}, @var{test}) @
+@fname{sremovefirst} (@var{seq}, @var{string}, @var{test}, @var{start}) @
+@fname{sremovefirst} (@var{seq}, @var{string}, @var{test}, @var{start}, @var{end})
+
+@var{seq}とマッチする最初の文字列だけが削除されることを除いて、
+@code{sremove}同様です。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sreverse}
+@deffn {関数} sreverse (@var{string})
+
+@var{string}の文字すべてが逆順の文字列を返します。
+
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ssearch}
+@deffn {関数} ssearch @
+@fname{ssearch} (@var{seq}, @var{string}) @
+@fname{ssearch} (@var{seq}, @var{string}, @var{test}) @
+@fname{ssearch} (@var{seq}, @var{string}, @var{test}, @var{start}) @
+@fname{ssearch} (@var{seq}, @var{string}, @var{test}, @var{start}, @var{end})
+
+文字列@var{seq}とマッチする @var{string}の最初の部分文字列の位置を返します。
+マッチのためのデフォルトのテスト関数は @code{sequal}です。
+もし @code{ssearch}が文字の大小を無視しなければいけないなら、
+テストとして @code{sequalignore}を使ってください。
+検索を限定するには @var{start}と @var{end}を使ってください。
+@var{string}の一番目の文字は位置 1にあることに注意してください。
+
+例:
+
+@example
+(%i1) ssearch("~s","~@{~S ~@}~%",'sequalignore);
+(%o1)                                  4
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ssort}
+@deffn {関数} ssort @
+@fname{ssort} (@var{string}) @
+@fname{ssort} (@var{string}, @var{test})
+
+@code{test (@var{c}, @var{d})}が @code{false}、かつ、
+@code{test (@var{d}, @var{c})}が @code{true}であるような 2つの連続する文字
+@var{c}と @var{d}がないような順で @var{string}の文字すべてを含む文字列を返します。
+
+ソートのためのデフォルトのテスト関数は @var{clessp}です。
+テスト関数一式は
+@code{@{clessp, clesspignore, cgreaterp, cgreaterpignore, cequal, cequalignore@}}です。
+
+例:
+
+@example
+(%i1) ssort("I don't like Mondays.");
+(%o1)                    '.IMaddeiklnnoosty
+(%i2) ssort("I don't like Mondays.",'cgreaterpignore);
+(%o2)                 ytsoonnMlkIiedda.'
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ssubst}
+@deffn {関数} ssubst @
+@fname{ssubst} (@var{new}, @var{old}, @var{string}) @
+@fname{ssubst} (@var{new}, @var{old}, @var{string}, @var{test}) @
+@fname{ssubst} (@var{new}, @var{old}, @var{string}, @var{test}, @var{start}) @
+@fname{ssubst} (@var{new}, @var{old}, @var{string}, @var{test}, @var{start}, @var{end})
+
+@var{string}の中の @var{old}にマッチするすべての部分文字列を
+@var{new}で置き換えた文字列を返します。
+@var{old}と @var{new}は同じ長さである必要はありません。
+マッチのためのデフォルトのテスト関数は @code{sequal}です。
+もし @code{ssubst}が oldを検索する間大文字小文字を無視すべきなら、
+テストとして @code{sequalignore}を使ってください。
+検索を制限するには @var{start}と @var{end}を使ってください。
+@var{string}の一番目の文字は位置 1にあることに注意してください。
+
+例:
+
+@example
+(%i1) ssubst("like","hate","I hate Thai food. I hate green tea.");
+(%o1)          I like Thai food. I like green tea.
+(%i2) ssubst("Indian","thai",%,'sequalignore,8,12);
+(%o2)         I like Indian food. I like green tea.
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ssubstfirst}
+@deffn {関数} ssubstfirst @
+@fname{ssubstfirst} (@var{new}, @var{old}, @var{string}) @
+@fname{ssubstfirst} (@var{new}, @var{old}, @var{string}, @var{test}) @
+@fname{ssubstfirst} (@var{new}, @var{old}, @var{string}, @var{test}, @var{start}) @
+@fname{ssubstfirst} (@var{new}, @var{old}, @var{string}, @var{test}, @var{start}, @var{end})
+
+@var{old}とマッチする最初の部分文字列だけを置き換えることを除いて、
+@code{subst}と同様です。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{strim}
+@deffn {関数} strim (@var{seq},@var{string})
+
+@var{string}の両端から @var{seq}に現れるすべての文字を除いた文字列を返します。
+
+例:
+
+@example
+(%i1) "/* comment */"$
+(%i2) strim(" /*",%);
+(%o2)                        comment
+(%i3) slength(%);
+(%o3)                           7
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{striml}
+@deffn {関数} striml (@var{seq}, @var{string})
+
+@var{string}の左端だけトリムすることを除いて
+@code{strim}と同様です。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{strimr}
+@deffn {関数} strimr (@var{seq}, @var{string})
+
+@var{string}の右端だけトリムすることを除いて
+@code{strim}と同様です。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{stringp}
+@deffn {関数} stringp (@var{obj})
+
+@var{obj}が文字列なら @code{true}を返します。
+例はイントロダクションを参照してください。
+
+@opencatbox
+@category{Predicate functions} @category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{substring}
+@deffn {関数} substring @
+@fname{substring} (@var{string}, @var{start}) @
+@fname{substring} (@var{string}, @var{start}, @var{end})
+
+位置 @var{start}で始まり位置 @var{end}で終わる
+@var{string}の部分文字列を返します。
+位置 @var{end}の文字は含まれません。
+もし @var{end}が与えられないなら、部分文字列は文字列の残りを含みます。
+@var{string}の一番目の文字は位置 1にあることに注意してください。
+
+例:
+
+@example
+(%i1) substring("substring",4);
+(%o1)                        string
+(%i2) substring(%,4,6);
+(%o2)                          in
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{supcase}
+@deffn {関数} supcase @
+@fname{supcase} (@var{string}) @
+@fname{supcase} (@var{string}, @var{start}) @
+@fname{supcase} (@var{string}, @var{start}, @var{end})
+
+@var{string}の位置 @var{start}から
+@var{end}までの小文字を対応する大文字に置き換えた文字列を返します。
+もし @var{end}が与えられないなら、
+@var{start}から @var{string}の終わりまでのすべての小文字が置き換えられます。
+
+例:
+
+@example
+(%i1) supcase("english",1,2);
+(%o1)                        English
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{tokens}
+@deffn {関数} tokens @
+@fname{tokens} (@var{string}) @
+@fname{tokens} (@var{string}, @var{test})
+
+@var{string}から抽出されたトークンのリストを返します。
+トークンは、文字があるテスト関数を満たす部分文字列です。
+もしtestを与えないなら、
+@var{constituent}をデフォルトテストとして使います。
+@code{@{constituent, alphacharp, digitcharp, lowercasep, uppercasep, charp, characterp, alphanumericp@}}はテスト関数一式です。
+(@code{tokens}の LispバージョンはPaul Grahamによって書かれました。
+ ANSI Common Lisp, 1996, page 67.)
+
+例:
+
+@example
+(%i1) tokens("24 October 2005");
+(%o1)                  [24, October, 2005]
+(%i2) tokens("05-10-24",'digitcharp);
+(%o2)                     [05, 10, 24]
+(%i3) map(parse_string,%);
+(%o3)                      [5, 10, 24]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c -----------------------------------------------------------------------------
+@node Octets and Utilities for Cryptography,  , String Processing, stringproc-pkg
+@section Octets and Utilities for Cryptography
+@c -----------------------------------------------------------------------------
+@anchor{base64}
+@deffn {関数} base64 (@var{arg})
+
+@var{arg}の base64表現を文字列として返します。
+引数 @var{arg}は文字列か非負整数かオクテットのリストです。
+
+例:
+
+@example
+(%i1) base64: base64("foo bar baz");
+(%o1)                          Zm9vIGJhciBiYXo=
+(%i2) string: base64_decode(base64);
+(%o2)                            foo bar baz
+(%i3) obase: 16.$
+(%i4) integer: base64_decode(base64, 'number);
+(%o4)                       666f6f206261722062617a
+(%i5) octets: base64_decode(base64, 'list);
+(%o5)            [66, 6F, 6F, 20, 62, 61, 72, 20, 62, 61, 7A]
+(%i6) ibase: 16.$
+(%i7) base64(octets);
+(%o7)                          Zm9vIGJhciBiYXo=
+@end example
+
+もし @var{arg}がウムラウト(127より大きなオクテット)含むなら、
+結果のbase64文字列はプラットフォーム依存であることに注意してください。
+しかし、デコードされた文字列はオリジナルと同じになります。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{base64_decode}
+@deffn {関数} base64_decode @
+@fname{base64_decode} (@var{base64-string}) @
+@fname{base64_decode} (@var{base64-string}, @var{return-type})
+
+デフォルトでは @code{base64_decode}は
+@var{base64-string}を元の文字列にデコードします。
+
+オプション引数 @var{return-type}を与えると
+@code{base64_decode}は代わりに対応する数やオクテットのリストを返します。
+@var{return-type}は @code{string}か @code{number}, @code{list}です。
+
+例: @ref{base64}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+@c -----------------------------------------------------------------------------
+@anchor{crc24sum}
+@deffn {関数} crc24sum @
+@fname{crc24sum} (@var{octets}) @
+@fname{crc24sum} (@var{octets}, @var{return-type})
+
+デフォルトでは @code{crc24sum}は オクテットリストの
+@code{CRC24}チェックサムを文字列として返します。
+
+オプション引数 @var{return-type}を与えると
+@code{crc24sum}は代わりに対応する数かオクテットリストを返します。
+@var{return-type}は @code{string}か @code{number}, @code{list}です。
+
+例:
+
+@example
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (GNU/Linux)
+
+iQEcBAEBAgAGBQJVdCTzAAoJEG/1Mgf2DWAqCSYH/AhVFwhu1D89C3/QFcgVvZTM
+wnOYzBUURJAL/cT+IngkLEpp3hEbREcugWp+Tm6aw3R4CdJ7G3FLxExBH/5KnDHi
+rBQu+I7+3ySK2hpryQ6Wx5J9uZSa4YmfsNteR8up0zGkaulJeWkS4pjiRM+auWVe
+vajlKZCIK52P080DG7Q2dpshh4fgTeNwqCuCiBhQ73t8g1IaLdhDN6EzJVjGIzam
+/spqT/sTo6sw8yDOJjvU+Qvn6/mSMjC/YxjhRMaQt9EMrR1AZ4ukBF5uG1S7mXOH
+WdiwkSPZ3gnIBhM9SuC076gLWZUNs6NqTeE3UzMjDAFhH3jYk1T7mysCvdtIkms=
+=WmeC
+-----END PGP SIGNATURE-----
+@end example
+
+@example
+(%i1) ibase : obase : 16.$
+(%i2) sig64 : sconcat(
+ "iQEcBAEBAgAGBQJVdCTzAAoJEG/1Mgf2DWAqCSYH/AhVFwhu1D89C3/QFcgVvZTM",
+ "wnOYzBUURJAL/cT+IngkLEpp3hEbREcugWp+Tm6aw3R4CdJ7G3FLxExBH/5KnDHi",
+ "rBQu+I7+3ySK2hpryQ6Wx5J9uZSa4YmfsNteR8up0zGkaulJeWkS4pjiRM+auWVe",
+ "vajlKZCIK52P080DG7Q2dpshh4fgTeNwqCuCiBhQ73t8g1IaLdhDN6EzJVjGIzam",
+ "/spqT/sTo6sw8yDOJjvU+Qvn6/mSMjC/YxjhRMaQt9EMrR1AZ4ukBF5uG1S7mXOH",
+ "WdiwkSPZ3gnIBhM9SuC076gLWZUNs6NqTeE3UzMjDAFhH3jYk1T7mysCvdtIkms=" )$
+(%i3) octets: base64_decode(sig64, 'list)$
+(%i4) crc24: crc24sum(octets, 'list);
+(%o4)                          [5A, 67, 82]
+(%i5) base64(crc24);
+(%o5)                              WmeC
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+@c -----------------------------------------------------------------------------
+@anchor{md5sum}
+@deffn {関数} md5sum @
+@fname{md5sum} (@var{arg}) @
+@fname{md5sum} (@var{arg}, @var{return-type})
+
+文字列か非負整数かオクテットのリストの
+@code{MD5}チェックサムを返します。
+デフォルトの戻り値は32ヘックス文字を含む文字列です。
+
+オプション引数 @var{return-type}を与えると
+@code{md5sum}は代わりに対応する数かオクテットリストを返します。
+@var{return-type}は @code{string}か @code{number}, @code{list}です。
+
+例:
+
+@example
+(%i1) ibase: obase: 16.$
+(%i2) msg: "foo bar baz"$
+(%i3) string: md5sum(msg);
+(%o3)                  ab07acbb1e496801937adfa772424bf7
+(%i4) integer: md5sum(msg, 'number);
+(%o4)                 0ab07acbb1e496801937adfa772424bf7
+(%i5) octets: md5sum(msg, 'list);
+(%o5)        [0AB,7,0AC,0BB,1E,49,68,1,93,7A,0DF,0A7,72,42,4B,0F7]
+(%i6) sdowncase( printf(false, "~@{~2,'0x~^:~@}", octets) );
+(%o6)           ab:07:ac:bb:1e:49:68:01:93:7a:df:a7:72:42:4b:f7
+@end example
+
+もし @var{arg}がドイツ語のウムラウトや他の非ASCII文字(127より大きなオクテット)含むなら、
+@code{MD5}チェックサムはプラットフォーム依存であることに注意してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{mgf1_sha1}
+@deffn {関数} mgf1_sha1 @
+@fname{mgf1_sha1} (@var{seed}, @var{len}) @
+@fname{mgf1_sha1} (@var{seed}, @var{len}, @var{return-type})
+
+可変長の擬似乱数を返します。
+デフォルトでは戻り値は @var{len}オクテットの長さの数字です。
+
+オプション引数 @var{return-type}を使って
+@code{mgf1_sha1}は代わりに @var{len}オクテットの対応するリストを返すことができます。
+@var{return-type}は @code{number}か @code{list}です。
+
+戻り値の計算は @code{RFC 3447} appendix @code{B.2.1 MGF1}に記述されています。
+@code{SHA1}はハッシュ関数として使われます。
+すなわち、計算された数字のランダム度は @code{SHA1}ハッシュのランダム度に拠ります。
+
+例:
+
+@example
+(%i1) ibase: obase: 16.$
+(%i2) number: mgf1_sha1(4711., 8);
+(%o2)                        0e0252e5a2a42fea1
+(%i3) octets: mgf1_sha1(4711., 8, 'list);
+(%o3)                  [0E0,25,2E,5A,2A,42,0FE,0A1]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{number_to_octets}
+@deffn {関数} number_to_octets (@var{number})
+
+@var{number}のオクテット表現をオクテットのリストとして返します。
+@var{number}は非負整数でなければいけません。
+
+例:
+
+@example
+(%i1) ibase : obase : 16.$
+(%i2) octets: [0ca,0fe,0ba,0be]$
+(%i3) number: octets_to_number(octets);
+(%o3)                            0cafebabe
+(%i4) number_to_octets(number);
+(%o4)                      [0CA, 0FE, 0BA, 0BE]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+@c -----------------------------------------------------------------------------
+@anchor{octets_to_number}
+@deffn {関数} octets_to_number (@var{octets})
+
+@var{octets}のリストの中のオクテットを連結し、数を返します。
+
+例: @ref{number_to_octets}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{octets_to_oid}
+@deffn {関数} octets_to_oid (@var{octets})
+
+@var{octets}のリストからオブジェクト識別子(OID)を計算します。
+
+例: RSA encryption OID
+
+@example
+(%i1) ibase : obase : 16.$
+(%i2) oid: octets_to_oid([2A,86,48,86,0F7,0D,1,1,1]);
+(%o2)                      1.2.840.113549.1.1.1
+(%i3) oid_to_octets(oid);
+(%o3)               [2A, 86, 48, 86, 0F7, 0D, 1, 1, 1]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{octets_to_string}
+@deffn {関数} octets_to_string @
+@fname{octets_to_string} (@var{octets})  @
+@fname{octets_to_string} (@var{octets}, @var{encoding})
+
+現在のシステムのデフォルトに従って @var{octets}のリストを文字列にデコードします。
+非US-ASCII文字に対応するオクテットをデコードする時、
+結果はプラットフォームやアプリケーション、背後のLispに依存します。
+
+例: システムデフォルトを使う
+(GCLでコンパイルされた Maxima。
+それはフォーマット定義を使わず、
+単にGNU/Linux端末がエンコードした UTF-8オクテットを渡します)
+
+@example
+(%i1) octets: string_to_octets("abc");
+(%o1)                            [61, 62, 63]
+(%i2) octets_to_string(octets);
+(%o2)                                 abc
+(%i3) ibase: obase: 16.$
+(%i4) unicode(20AC);
+(%o4)                                  @euro{}
+(%i5) octets: string_to_octets(%);
+(%o5)                           [0E2, 82, 0AC]
+(%i6) octets_to_string(octets);
+(%o6)                                  @euro{}
+(%i7) utf8_to_unicode(octets);
+(%o7)                                20AC
+@end example
+
+Lispリーダの外部フォーマットが UTF-8に等しい場合、
+オプション引数 @var{encoding}で
+オクテットを文字列に変換するエンコーディングを設定できます。
+もし必要なら
+外部フォーマットの変更に関して@ref{adjust_external_format}を参照してください。
+
+サポートするエンコーディングのいくつかの名前
+(もっと知るには対応する Lispマニュアルを参照してください): @*
+CCL, CLISP, SBCL: @code{utf-8, ucs-2be, ucs-4be, iso-8859-1, cp1252, cp850} @*
+CMUCL: @code{utf-8, utf-16-be, utf-32-be, iso8859-1, cp1252} @*
+ECL: @code{utf-8, ucs-2be, ucs-4be, iso-8859-1, windows-cp1252, dos-cp850}
+
+例 (続き): オプションのエンコーディング引数を使う
+(GNU/Linux端末, SBCLでコンパイルされた Maxima).
+
+@example
+(%i8) string_to_octets("@euro{}", "ucs-2be");
+(%o8)                              [20, 0AC]
+@end example
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{oid_to_octets}
+@deffn {関数} oid_to_octets (@var{oid-string})
+
+オブジェクト識別子(OID)を @var{octets}のリストに変換します。
+
+例: @ref{octets_to_oid}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sha1sum}
+@deffn {関数} sha1sum @
+@fname{sha1sum} (@var{arg}) @
+@fname{sha1sum} (@var{arg}, @var{return-type})
+
+文字列か非負整数かオクテットのリストの @code{SHA1}フィンガープリントを返します。
+デフォルトの戻り値は40ヘックス文字を含む文字列です。
+
+オプション引数 @var{return-type}を与えると
+@code{sha1sum}は代わりに対応する数かオクテットのリストを返します。
+@var{return-type}は @code{string}か @code{number}, @code{list}です。
+
+例:
+
+@example
+(%i1) ibase: obase: 16.$
+(%i2) msg: "foo bar baz"$
+(%i3) string: sha1sum(msg);
+(%o3)              c7567e8b39e2428e38bf9c9226ac68de4c67dc39
+(%i4) integer: sha1sum(msg, 'number);
+(%o4)             0c7567e8b39e2428e38bf9c9226ac68de4c67dc39
+(%i5) octets: sha1sum(msg, 'list);
+(%o5)  [0C7,56,7E,8B,39,0E2,42,8E,38,0BF,9C,92,26,0AC,68,0DE,4C,67,0DC,39]
+(%i6) sdowncase( printf(false, "~@{~2,'0x~^:~@}", octets) );
+(%o6)     c7:56:7e:8b:39:e2:42:8e:38:bf:9c:92:26:ac:68:de:4c:67:dc:39
+@end example
+
+もし @var{arg}がドイツ語のウムラウトや他の非ASCII文字(127より大きなオクテット)含むなら、
+@code{SHA1}フィンガープリントはプラットフォーム依存であることに注意してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sha256sum}
+@deffn {関数} sha256sum @
+@fname{sha256sum} (@var{arg}) @
+@fname{sha256sum} (@var{arg}, @var{return-type})
+
+文字列か非負整数かオクテットのリストの @code{SHA256}フィンガープリントを返します。
+デフォルトの戻り値は64ヘックス文字を含む文字列です。
+
+オプション引数 @var{return-type}を与えると
+@code{sha256sum}は代わりに対応する数かオクテットのリストを返します。
+(@ref{sha1sum}を参照してください)
+
+例:
+
+@example
+(%i1) string: sha256sum("foo bar baz");
+(%o1)  dbd318c1c462aee872f41109a4dfd3048871a03dedd0fe0e757ced57dad6f2d7
+@end example
+
+もし @var{arg}がドイツ語のウムラウトや他の非ASCII文字(127より大きなオクテット)含むなら、
+@code{SHA256}フィンガープリントはプラットフォーム依存であることに注意してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{string_to_octets}
+@deffn {関数} string_to_octets @
+@fname{string_to_octets} (@var{string})  @
+@fname{string_to_octets} (@var{string}, @var{encoding})
+
+現在のシステムのデフォルトに従って
+@var{string}をオクテットのリストにエンコードします。
+非US-ASCII文字を含む文字列をエンコードする時、
+結果はプラットフォームやアプリケーション、背後の Lispに依存します。
+
+Lispリーダの外部フォーマットが UTF-8に等しい場合、
+オプション引数 @var{encoding}で
+オクテットを文字列に変換するエンコーディングを設定できます。
+もし必要なら
+外部フォーマットの変更に関して@ref{adjust_external_format}を参照してください。
+
+例やより詳しい情報は @ref{octets_to_string}を参照してください。
+
+@opencatbox
+@category{Package stringproc}
+@closecatbox
+
+@end deffn

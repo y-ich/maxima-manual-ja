@@ -1,0 +1,308 @@
+@menu
+* Error messages::
+* Warning messages::
+@end menu
+
+この章は
+いくつかのエラーメッセージやエラーから復帰する方法についての詳細情報を提供します。
+@node Error messages, Warning messages,,Error and warning messages
+@section Error messages
+@menu
+* No such list element::
+* argument must be a non-atomic expression::
+* cannot assign to function::
+* 0 to a negative exponent::
+* Comma is not a prefix operator::
+* Illegal use of delimiter::
+* loadfile failed to load::
+* makelist second argument must evaluate to a number::
+* Only symbols can be bound::
+* Operators of arguments must all be the same::
+* out of memory::
+* part fell off the end::
+* undefined variable during plotting::
+* VTK is not installed::
+@end menu
+
+
+@node No such list element, argument must be a non-atomic expression, Error messages, Error messages
+@subsection apply: no such "list" element
+このエラーメッセージの共通の原因は、
+要素番号が @code{< 1}か @code{> length(list)}のリストの要素にアクセスしようと
+鍵括弧演算子 (@code{[ ]})を使うことです。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+@node argument must be a non-atomic expression, cannot assign to function, No such list element, Error messages
+@subsection argument must be a non-atomic expression
+これは通常
+1つ以上の(訳注: 原文はmore than one)要素からなるリストや集合、他の何かが期待されたことを意味します。
+このエラーメッセージの1つの起こりうる原因は以下の型の生成です:
+@c ===beg===
+@c l:[1,2,3];
+@c append(l,4);
+@c ===end===
+@example
+@group
+(%i1) l:[1,2,3];
+(%o1)                       [1, 2, 3]
+@end group
+@group
+(%i2) append(l,4);
+append: argument must be a non-atomic expression; found 4
+ -- an error. To debug this try: debugmode(true);
+@end group
+@end example
+リストに変数や数を追加する正しい方法は最初にそれらを要素1つのリストでラップすることです:
+@c ===beg===
+@c l:[1,2,3];
+@c append(l,[4]);
+@c ===end===
+@example
+@group
+(%i1) l:[1,2,3];
+(%o1)                       [1, 2, 3]
+@end group
+@group
+(%i2) append(l,[4]);
+(%o2)                     [1, 2, 3, 4]
+@end group
+@end example
+
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node cannot assign to function, 0 to a negative exponent, argument must be a non-atomic expression, Error messages
+@subsection assignment: cannot assign to <function name>
+Maximaはいくつかの割り当て演算子をサポートします。
+関数を定義しようとする時には、@code{:=}を使わなければいけません。
+
+@node 0 to a negative exponent, Comma is not a prefix operator, cannot assign to function, Error messages
+@subsection expt: undefined:  0 to a negative exponent.
+このメッセージは古典的なゼロ除算エラーを通知します。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+@node Comma is not a prefix operator, Illegal use of delimiter, 0 to a negative exponent, Error messages
+@subsection incorrect syntax: , is not a prefix operator
+これは、コンマ (@code{,})で始まるコマンドか、別のコンマが直接後に続くコンマが原因です。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+@node Illegal use of delimiter, loadfile failed to load, Comma is not a prefix operator, Error messages
+@subsection incorrect syntax: Illegal use of delimiter )
+このエラーの共通の理由は、括弧を開くことなしに閉じたり、コンマが直接先行する閉じ括弧です。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+@node loadfile failed to load, makelist second argument must evaluate to a number, Illegal use of delimiter, Error messages
+@subsection loadfile: failed to load <filename>
+このエラーメッセージは通常、ファイルは存在するが読み込めないことを示します。
+もしファイルが存在していて可読なら、このエラーメッセージに関して別の可能性があります:
+Maximaは高速化のためパッケージをネイティブバイナリファイルにコンパイルできます。
+もしファイルをコンパイルした後にシステム上の何かがバイナリと非互換にするような方法で
+バイナリを変更したら、ファイルはもはやロードできなくなります。
+Maximaは通常、パッケージから生成するバイナリファイルを
+以下のようにタイプした後印字される名前のフォルダ内の
+@code{binary}と名付けられたフォルダの中に置きます:
+@c ===beg===
+@c maxima_userdir;
+@c ===end===
+@example
+@group
+(%i1) maxima_userdir;
+(%o1)                 /home/gunter/.maxima
+@end group
+@end example
+もしこのディレクトリがなければ、maximaはパッケージをコンパイルしなければいけない時すぐにそれを再度作ります。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node makelist second argument must evaluate to a number, Only symbols can be bound, loadfile failed to load, Error messages
+@subsection makelist: second argument must evaluate to a number
+@code{makelist}は2番目の引数に刻まれる変数名を期待します。
+今回、未定義の変数の名前の代わりにmaximaが他の何か、多分リストかリストの名前を見つけました。
+
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node Only symbols can be bound, Operators of arguments must all be the same, makelist second argument must evaluate to a number, Error messages
+@subsection Only symbols can be bound
+このエラーのもっともありえる原因は
+ループカウンタとして知られる数値の数や変数を使おうとしたことにありました。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+@node Operators of arguments must all be the same, out of memory, Only symbols can be bound, Error messages
+@subsection operators of arguments must all be the same
+このエラーメッセージが現れる1つのありえる理由は等式をリストに追加するために
+@mref{append}を使おうとしようとしたことです:
+@c ===beg===
+@c l:[a=1,b=2,c=3];
+@c append(l,d=5);
+@c ===end===
+@example
+@group
+(%i1) l:[a=1,b=2,c=3];
+(%o1)                 [a = 1, b = 2, c = 3]
+@end group
+@group
+(%i2) append(l,d=5);
+append: operators of arguments must all be the same.
+ -- an error. To debug this try: debugmode(true);
+@end group
+@end example
+等式をリストに追加するために最初に要素1つのリストにラップしなくてはいけません:
+@c ===beg===
+@c l:[a=1,b=2,c=3];
+@c append(l,[d=5]);
+@c ===end===
+@example
+@group
+(%i1) l:[a=1,b=2,c=3];
+(%o1)                 [a = 1, b = 2, c = 3]
+@end group
+@group
+(%i2) append(l,[d=5]);
+(%o2)             [a = 1, b = 2, c = 3, d = 5]
+@end group
+@end example
+
+
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node out of memory, part fell off the end, Operators of arguments must all be the same, Error messages
+@subsection Out of memory
+普通Lispは、少なくとも1つのスタックとユーザーオブジェクトを含むヒープを含むいくつかのタイプのメモリを扱います。
+メモリの枯渇を避けるにはいくつかの手法が役に立つかもしれません:
+@itemize @bullet
+@item 可能なら、通常の最善解はよりメモリ効率がよいアルゴリズムを使うことです。
+@item 関数をコンパイルすると、必要なメモリの総量を劇的に減ることがあります。
+@item 固定長のタイプの配列はリストよりメモリ効率がいいかもしれません。
+@item もし maximaが sbcl上で走っているなら、 sbclのメモリ制限が
+現在の問題を解くには低すぎる値に設定されているかもしれません。
+この場合、コマンドラインオプション @code{--dynamic-space-size <n>}を使うと
+sbclにヒープを @code{n}メガバイト確保するように命令できます。
+しかし、 sbclはいくつかの異なるタイプのメモリを扱わなければならなくて、
+なので利用可能な物理メモリの半分ぐらいまでしか確保できないことに注意してください。
+また、 32-bitプロセスは 物理メモリに 2GBまでしかアクセスできないことに注意してください。
+@end itemize
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node part fell off the end, undefined variable during plotting, out of memory, Error messages
+@subsection part: fell off the end
+@code{part()}が
+@code{n}より少ない項目を持つ何かの中の
+@code{n}番目の項目をアクセスするのに使われました。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node undefined variable during plotting, VTK is not installed, part fell off the end, Error messages
+@subsection undefined variable (draw or plot)
+maximaが値を知らない変数を含んでいたので関数が描画できませんでした。
+
+どの変数がわからないのか見つけるためには、
+描画コマンドの名前
+(@code{draw2d}, @code{plot2d}や似たようなもの)を
+既存の関数名と衝突しない適当な名前(例えば @code{ddraw2d})で一時的に置き換えて
+maximaに描画コマンドがなんのパラメータを見ているのか印字させることが時々役に立ちます。
+
+@example
+(%i1) load("draw")$
+(%i2) f(x):=sin(omega*t);
+(%o2) f(x) := sin(omega t)
+(%i3) draw2d(
+        explicit(
+          f(x),
+          x,1,10
+        )
+      );
+draw2d (explicit): non defined variable
+ -- an error. To debug this try: debugmode(true);
+(%i4) ddraw2d(
+        explicit(
+          f(x),
+          x,1,10
+        )
+      );
+(%o4) ddraw2d(explicit(sin(omega t), x, 1, 10))
+@end example
+
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node VTK is not installed,  , undefined variable during plotting, Error messages
+@subsection VTK is not installed, which is required for Scene
+
+これは、VTKが実際にインストールされていないかー
+maximaが見つけられないかー
+以下の maximaコマンドを入力した時の出力の名前のディレクトリへの書き込みアクセスができないか
+を意味します:
+@c ===beg===
+@c maxima_tempdir;
+@c ===end===
+@example
+@group
+(%i1) maxima_tempdir;
+(%o1)                         /tmp
+@end group
+@end example
+
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node Warning messages, ,Error messages,Error and warning messages
+@section Warning messages
+@menu
+* undefined variable during translation::
+* replaced x by y::
+@end menu
+
+@node undefined variable during translation, replaced x by y, Warning messages, Warning messages
+@subsection Encountered undefined variable <x> in translation
+関数をコンパイルしましたが、変数 @code{x}の型がわかりませんでした。
+これはコンパイルされたコマンドが、
+maximaがこの変数に関して提供するすべての柔軟性を保持する追加のコードを含むことを意味します。
+もし @code{x}が変数名を意味しなくてコマンドへの名前付きオプションを意味するなら、
+名前オプションの前にシングルクォート (@code{'})をつけることでこの問題を解決するでしょう。
+@opencatbox
+@category{Error messages}
+@closecatbox
+
+
+@node replaced x by y, , undefined variable during translation, Warning messages
+@subsection Rat: replaced <x> by <y> = <z>
+浮動小数点数は、最大数が普通は十分大きなものですが、依然制限はあります。
+無害に見える例でこの制限が小さすぎることを示すよい例はとして、
+@uref{https://en.wikipedia.org/wiki/Wilkinson%27s_polynomial, Wilkinson's Polynomial},
+Rump多項式、そして正確な1/10は2進数の浮動小数点で表現できないという事実があります。
+それゆえに、
+浮動小数点エラーが徐々に大きくなったり、項が互いに打ち消し合うことを妨げるあちこちの場所で、
+maximaはデフォルトでそれらを正確な分数に置き換えます。
+@code{ratprint}, @code{ratepsilon}, @code{bftorat}, @code{fpprintprec}, @code{rationalize}も参照してください。
+@opencatbox
+@category{Warning messages}
+@closecatbox

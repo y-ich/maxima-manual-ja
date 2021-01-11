@@ -1,0 +1,6019 @@
+,@menu
+* Introduction to draw::
+* Functions and Variables for draw::
+* Functions and Variables for pictures::
+* Functions and Variables for worldmap::
+@end menu
+
+
+
+@node Introduction to draw, Functions and Variables for draw, draw-pkg, draw-pkg
+@section Introduction to draw
+
+
+@code{draw}は Maxima-Gnuplotと Maxima-vtkのインターフェイスです。
+
+Maximaレベルで使われる３つの主な関数があります:
+@itemize @bullet
+@item @mref{draw2d}, 2Dシーンを1つ描画します。
+@item @mref{draw3d}, 3Dシーンを1つ描画します。
+@item @mref{draw}, 複数の描画シーンを生成する @mref{gr2d}と @mref{gr3d}コマンドで1つのウィンドウを埋めることができます。
+@end itemize
+それぞれのシーンは、
+シーンのオプションと以下のオブジェクトとともに、
+任意の数のオブジェクトと @code{key=value}ペアを含むことができます。
+
+シーンを構成できる有用なオブジェクトのセレクション:
+@itemize @bullet
+@item @mref{explicit}は関数をプロットします。
+@item @mref{implicit}は等式が成り立つすべての点をプロットします。
+@item @mref{points}は、もし現在のシーンの以前のラインでオプション
+      @mref{points_joined}が @code{true}に設定されていたら線で接続された点をプロットします。
+@item @mref{parametric}は、x, y(と3dプロットならzも)変数を計算する別々の式を指定することを許します。
+@end itemize
+
+(このマニュアルのhtmlとpdfバージョンで)
+プロット例を含むすべての描画コマンドとオプションの短い記述は
+セクション @xref{Functions and Variables for draw}で見つけることができます。
+htmlマニュアルのオンラインバージョンは
+@url{maxima.sourceforge.net/docs/manual/maxima_singlepage.html#draw}にあります。
+このパッケージのもっと精巧な例は以下の場所にあります:
+
+@url{http://tecnostats.net/Maxima/gnuplot} @*
+@url{http://tecnostats.net/Maxima/vtk}
+
+例:
+
+@example
+(%i1) draw2d(
+          title="Two simple plots",
+          xlabel="x",ylabel="y",grid=true,
+
+          color=red,key="A sinus",
+          explicit(sin(x),x,1,10),
+          color=blue,line_type=dots,key="A cosinus",
+          explicit(cos(x),x,1,10)
+)$
+@end example
+@figure{draw_intro}
+
+描画を走らせるには Gnuplot 4.2以上が必要です;
+もしフロントエンドとして wxMaximaを使っているなら、
+@code{wxdraw}と @code{wxdraw2d}, @code{wxdraw3d}は、
+@mref{draw}, @mref{draw2d}, @mref{draw3d}と同じことをしますが、
+ワークシート内に結果のプロットを埋め込む、描画のための互換関数です。
+
+@opencatbox
+@category{Plotting} @category{Share packages} @category{Package draw}
+@closecatbox
+
+
+@node Functions and Variables for draw, Functions and Variables for pictures, Introduction to draw, draw-pkg
+@section Functions and Variables for draw
+
+
+
+@subsection Scenes
+
+
+@anchor{gr2d}
+@deffn {シーン構成子} gr2d (@var{argument_1}, ...)
+
+関数 @code{gr2d}は 2Dシーンを記述するオブジェクトを作ります。
+引数は@i{グラフィックオプション}、@i{グラフィックオブジェクト}、または、
+グラフィックオプションとオブジェクト両方を含むリストです。
+このシーンは順に解釈されます:
+@i{グラフィックオプション}はその右に置かれたそれらの@i{グラフィックオブジェクト}に影響します。
+いくつかの@i{グラフィックオプション}はシーンのグローバルな外観に影響します。
+
+以下は2次元のシーンで利用可能な@i{グラフィックオブジェクト}のリストです:
+@mref{bars}, @mref{ellipse}, @mref{explicit}, @mref{image}, @mref{implicit},
+@mref{label}, @mref{parametric}, @mref{points}, @mref{polar}, @mref{polygon},
+@mref{quadrilateral}, @mref{rectangle}, @mref{triangle}, @mref{vector},
+@mref{geomap} (パッケージ@code{worldmap}で定義されるもの)。
+
+@mref{draw}と @mref{draw2d}も参照してください。
+
+@c ===beg===
+@c draw(
+@c     gr2d(
+@c         key="sin (x)",grid=[2,2],
+@c         explicit(
+@c             sin(x),
+@c             x,0,2*%pi
+@c         )
+@c     ),
+@c     gr2d(
+@c         key="cos (x)",grid=[2,2],
+@c         explicit(
+@c             cos(x),
+@c             x,0,2*%pi
+@c         )
+@c     )
+@c  );
+@c ===end===
+@example
+(%i1) draw(
+    gr2d(
+        key="sin (x)",grid=[2,2],
+        explicit(
+            sin(x),
+            x,0,2*%pi
+        )
+    ),
+    gr2d(
+        key="cos (x)",grid=[2,2],
+        explicit(
+            cos(x),
+            x,0,2*%pi
+        )
+    )
+ );
+(%o1)           [gr2d(explicit), gr2d(explicit)]
+@end example
+@figure{draw_scene}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{gr3d}
+@deffn {シーン構成子} gr3d (@var{argument_1}, ...)
+
+関数 @code{gr3d}は 3dシーンを記述するオブジェクトを作ります。
+引数は@i{グラフィックオプション}、@i{グラフィックオブジェクト}、または
+グラフィックオプションとオブジェクト両方を含むリストです。
+このシーンは順に解釈されます:
+@i{グラフィックオプション}はその右に置かれたそれらの
+@i{グラフィックオブジェクト}に影響します。
+いくつかの@i{グラフィックオプション}はシーンのグローバルな外観に影響します。
+
+以下は3次元のシーンで利用可能な@i{グラフィックオブジェクト}のリストです:
+@mref{cylindrical}, @mref{elevation_grid}, @mref{explicit}, @mref{implicit},
+@mref{label}, @mref{mesh}, @mref{parametric},@*
+@mref{parametric_surface},
+@mref{points}, @mref{quadrilateral}, @mref{spherical}, @mref{triangle},
+@mref{tube},@*
+@mref{vector}, @mref{geomap}
+(パッケージ @code{worldmap}で定義されるもの)。
+
+@mref{draw}と @mref{draw3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@subsection Functions
+
+
+
+@anchor{draw}
+@deffn {関数} draw (<arg_1>, ...)
+
+一連のシーンをプロットします;
+引数は @code{gr2d}や @code{gr3d}のオブジェクトといくつかのオプションです。
+デフォルトでは、1列の中にシーンを一緒に配置します。
+
+シーン以外に関数 @code{draw}は以下のグローバルオプションを受け付けます: @mref{terminal},
+@mref{columns}, @mref{dimensions}, @mref{file_name}, @mref{delay}.
+
+関数 @mref{draw2d}や @mref{draw3d}は
+それぞれ、2次元と3次元に関して、１つのシーンだけが要求される時に使われるショートカットです。
+
+@mref{gr2d}と @mref{gr3d}も参照してください。
+
+例:
+
+@example
+(%i1) scene1: gr2d(title="Ellipse",
+                   nticks=300,
+                   parametric(2*cos(t),5*sin(t),t,0,2*%pi))$
+(%i2) scene2: gr2d(title="Triangle",
+                   polygon([4,5,7],[6,4,2]))$
+(%i3) draw(scene1, scene2, columns = 2)$
+@end example
+@figure{draw_intro2}
+
+@example
+(%i1) scene1: gr2d(title="A sinus",
+        grid=true,
+        explicit(sin(t),t,0,2*%pi))$
+(%i2) scene2: gr2d(title="A cosinus",
+        grid=true,
+        explicit(cos(t),t,0,2*%pi))$
+(%i3) draw(scene1, scene2)$
+@end example
+@figure{draw_intro3}
+
+以下の2つの描画文は同値です:
+@example
+(%i1) draw(gr3d(explicit(x^2+y^2,x,-1,1,y,-1,1)));
+(%o1)                          [gr3d(explicit)]
+(%i2) draw3d(explicit(x^2+y^2,x,-1,1,y,-1,1));
+(%o2)                          [gr3d(explicit)]
+@end example
+
+アニメーティド gifファイルの生成:
+@example
+(%i1) draw(
+        delay     = 100,
+        file_name = "zzz",
+        terminal  = 'animated_gif,
+        gr2d(explicit(x^2,x,-1,1)),
+        gr2d(explicit(x^3,x,-1,1)),
+        gr2d(explicit(x^4,x,-1,1)));
+End of animation sequence
+(%o1)          [gr2d(explicit), gr2d(explicit), gr2d(explicit)]
+@end example
+@figure{draw_equiv}
+
+@mref{gr2d}, @mref{gr3d}, @mref{draw2d}, @mref{draw3d}も参照してください。
+
+@opencatbox
+@category{Package draw} @category{File output}
+@closecatbox
+@end deffn
+
+
+
+
+
+@anchor{draw2d}
+@deffn {関数} draw2d (@var{argument_1}, ...)
+この関数は
+@code{draw(gr2d(@var{options}, ..., @var{graphic_object}, ...))}
+のショートカットです。
+
+以下のほとんどの例で見られるように、2d特化のシーンをプロットするのに使うことができます。
+
+この関数を利用するには、最初に @code{load(draw)}と書いてください。
+
+@mref{draw}と @mref{gr2d}も参照してください。
+
+@opencatbox
+@category{Package draw} @category{File output}
+@closecatbox
+@end deffn
+
+
+
+
+@anchor{draw3d}
+@deffn {関数} draw3d (@var{argument_1}, ...)
+この関数は
+@code{draw(gr3d(@var{options}, ..., @var{graphic_object}, ...))}
+のショートカットです。
+
+以下のほとんどの例で見られるように、3d特化のシーンをプロットするのに使うことができます。
+
+この関数を利用するには、最初に @code{load(draw)}と書いてください。
+
+@mref{draw}と @mref{gr3d}も参照してください。
+
+@opencatbox
+@category{Package draw} @category{File output}
+@closecatbox
+@end deffn
+
+
+
+@anchor{draw_file}
+@deffn {関数} drawf_ile (@var{graphic option}, ..., @var{graphic object}, ...)
+
+現在のプロットをファイルに保存します。
+受け付けられるグラフィックオプションは以下です:
+@code{terminal}, @code{dimensions}, @code{file_name}
+
+例:
+
+@example
+(%i1) /* screen plot */
+      draw(gr3d(explicit(x^2+y^2,x,-1,1,y,-1,1)))$
+(%i2) /* same plot in eps format */
+      draw_file(terminal  = eps,
+                dimensions = [5,5]) $
+@end example
+
+@opencatbox
+@category{Package draw} @category{File output}
+@closecatbox
+@end deffn
+
+
+
+@anchor{multiplot_mode}
+@deffn {関数} multiplot_mode (@var{term})
+この関数を使うと、 Maximaを端末
+@var{term}で 1ウィンドウマルチプロットモードとして動作させることができます;
+この関数が受け付ける引数は、@code{screen}, @code{wxt}, @code{aquaterm},
+@code{windows}, @code{none}です。
+
+マルチプロットモードがイネーブルの時、
+@code{draw}へのそれぞれのコールは、
+同じウィンドウに以前のものを消すことなく新しいプロットを送ります。
+マルチモードをディセーブルにするには、
+@code{multiplot_mode(none)}を書いてください。
+
+マルチプロットモードがイネーブルの時、グローバルオプション
+@code{terminal}はブロックされます。
+別の端末に変更する前に、この機能中のモードをディセーブルしなければいけません。
+
+Windows上ではこの機能はGnuplot 5.0以降を必要とします。
+同じプロットに複数の式をただプロットするのには multiplotを必要とないことに注意してください:
+@mref{explicit}か似たコマンドを1行の中に複数発行するだけでできます。
+
+例:
+
+@example
+(%i1) set_draw_defaults(
+         xrange = [-1,1],
+         yrange = [-1,1],
+         grid   = true,
+         title  = "Step by step plot" )$
+(%i2) multiplot_mode(screen)$
+(%i3) draw2d(color=blue,  explicit(x^2,x,-1,1))$
+(%i4) draw2d(color=red,   explicit(x^3,x,-1,1))$
+(%i5) draw2d(color=brown, explicit(x^4,x,-1,1))$
+(%i6) multiplot_mode(none)$
+@end example
+@figure{draw_multiplot}
+
+@opencatbox
+@category{Package draw} @category{File output}
+@closecatbox
+@end deffn
+
+
+
+@anchor{set_draw_defaults}
+@deffn {関数} set_draw_defaults (@var{graphic option}, ..., @var{graphic object}, ...)
+
+ユーザーグラフィックオプションを設定します。
+この関数は
+共通のグラフィックスオプションで一連のグラフィックスをプロットするのに役に立ちます。
+引数なしにこの関数を呼ぶと、ユーザーデフォルトを取り除きます。
+
+例:
+
+@example
+(%i1) set_draw_defaults(
+         xrange = [-10,10],
+         yrange = [-2, 2],
+         color  = blue,
+         grid   = true)$
+(%i2) /* plot with user defaults */
+      draw2d(explicit(((1+x)**2/(1+x*x))-1,x,-10,10))$
+(%i3) set_draw_defaults()$
+(%i4) /* plot with standard defaults */
+      draw2d(explicit(((1+x)**2/(1+x*x))-1,x,-10,10))$
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@subsection Graphic options
+
+
+@anchor{adapt_depth_draw}
+@defvr {グラフィックオプション} adapt_depth
+デフォルト値: 10
+
+@code{adapt_depth}は適応プロットルーチンが使う分割の最大数です。
+
+このオプションは 2d @code{explicit}関数に対してだけ有効です。
+
+@code{nticks}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{allocation}
+@defvr {グラフィックオプション} allocation
+デフォルト値: @code{false}
+
+オプション @code{allocation}を使うと、出力ウィンドウの中に自在にシーンを置くことが可能です;
+これはマルチプロットで重要です。
+@code{false}の時、シーンは、オプション @code{columns}に割り当てられた値に従って自動的に配置されます。
+他の場合には @code{allocation}は二組の数のリストに設定しなければいけません;
+一番目はシーンの左下隅の位置に対応し、 二番目のペアはプロットの幅と高さを与えます。
+すべての数字は0から1の間の相対座標で与えなければいけません。
+
+例:
+
+グラフィックスの配置に関して。
+
+@example
+(%i1) draw(
+        gr2d(
+          explicit(x^2,x,-1,1)),
+        gr2d(
+          allocation = [[1/4, 1/4],[1/2, 1/2]],
+          explicit(x^3,x,-1,1),
+          grid = true) ) $
+@end example
+@figure{draw_allocation}
+
+選択された次元を持つマルチプロット。
+
+@example
+(%i1) draw(
+        terminal = wxt,
+        gr2d(
+          grid=[5,5],
+          allocation = [[0, 0],[1, 1/4]],
+          explicit(x^2,x,-1,1)),
+        gr3d(
+          allocation = [[0, 1/4],[1, 3/4]],
+          explicit(x^2+y^2,x,-1,1,y,-1,1) ))$
+@end example
+@figure{draw_allocation2}
+
+オプション @mref{columns}も参照して下さい。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{axis_3d}
+@defvr {グラフィックオプション} axis_3d
+デフォルト値: @code{true}
+
+もし @code{axis_3d}が @code{true}なら、
+@var{x}, @var{y} @var{z}軸が3dシーンで表示されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(axis_3d = false,
+             explicit(sin(x^2+y^2),x,-2,2,y,-2,2) )$
+@end example
+@figure{draw_axis3d}
+
+2dでの軸に関しては、
+@mref{axis_bottom},  @mref{axis_left}, @mref{axis_top},
+@mref{axis_right}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{axis_bottom}
+@defvr {グラフィックオプション} axis_bottom
+デフォルト値: @code{true}
+
+もし @code{axis_bottom}が @code{true}なら、底の軸は 2dシーンで表示されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(axis_bottom = false,
+             explicit(x^3,x,-1,1))$
+@end example
+@figure{draw_axis_bottom}
+
+@mref{axis_left},  @mref{axis_top}, @mref{axis_right},
+@mref{axis_3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{axis_left}
+@defvr {グラフィックオプション} axis_left
+デフォルト値: @code{true}
+
+もし @code{axis_left}が @code{true}なら、左の軸が 2dシーンで表示されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(axis_left = false,
+             explicit(x^3,x,-1,1))$
+@end example
+
+@mref{axis_bottom},  @mref{axis_top}, @mref{axis_right},
+@mref{axis_3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{axis_right}
+@defvr {グラフィックオプション} axis_right
+デフォルト値: @code{true}
+
+もし @code{axis_right}が @code{true}なら、 2dシーンで右軸が表示されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(axis_right = false,
+             explicit(x^3,x,-1,1))$
+@end example
+
+@mref{axis_bottom},  @mref{axis_left}, @mref{axis_top},
+@mref{axis_3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{axis_top}
+@defvr {グラフィックオプション} axis_top
+デフォルト値: @code{true}
+
+もし @code{axis_top}が @code{true}なら、上部の軸が 2dシーンで表示されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(axis_top = false,
+             explicit(x^3,x,-1,1))$
+@end example
+
+@mref{axis_bottom},  @mref{axis_left}, @mref{axis_right},
+@mref{axis_3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{background_color}
+@defvr {グラフィックオプション} background_color
+デフォルト値: @code{white}
+
+端末の背景色を設定します。デフォルト背景色は白です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+このオプションは端末 @code{epslatex}と @code{epslatex_standalone}と一緒には機能しません。
+
+@code{color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{border}
+@defvr {グラフィックオプション} border
+デフォルト値: @code{true}
+
+もし @code{border}が @code{true}なら、
+ポリゴンの境界は @code{line_type}と @code{line_width}に従って塗られます。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+
+@item
+@code{gr2d}: @mref{polygon}, @mref{rectangle}, と@mref{ellipse}.
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(color       = brown,
+             line_width  = 8,
+             polygon([[3,2],[7,2],[5,5]]),
+             border      = false,
+             fill_color  = blue,
+             polygon([[5,2],[9,2],[7,5]]) )$
+@end example
+@figure{draw_border}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{capping}
+@defvr {グラフィックオプション} capping
+デフォルト値: @code{[false, false]}
+
+グラフィックオブジェクト @code{tube}の極値が閉か開かを示す
+2つの可能な値 @code{true}と @code{false}のリスト。
+デフォルトでは極値は開です。
+
+設定 @code{capping = false}は @code{capping = [false, false]}と同値で、
+@code{capping = true}は @code{capping = [true, true]}と同値です。
+
+例:
+
+@example
+(%i1) draw3d(
+        capping = [false, true],
+        tube(0, 0, a, 1,
+             a, 0, 8) )$
+@end example
+@figure{draw_tube_extremes}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{cbrange}
+@defvr {グラフィックオプション} cbrange
+デフォルト値: @code{auto}
+
+もし @code{cbrange}が @code{auto}なら
+@code{enhanced3d}が @code{false}でない時
+色付けられる値の範囲は自動的に計算されます。
+カラー範囲外の値は、最も近い端の色を使います。
+
+@code{enhanced3d}や @code{colorbox}が @code{false}の時、オプション
+@code{cbrange}は効果を持ちません。
+
+もしユーザーが色付けられた値の特定の区間が欲しいなら、
+@code{cbrange=[-2, 3]}のように Maximaリストとして与えられなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d (
+        enhanced3d     = true,
+        color          = green,
+        cbrange = [-3,10],
+        explicit(x^2+y^2, x,-2,2,y,-2,2)) $
+@end example
+@figure{draw_cbrange}
+
+@mref{enhanced3d}, @mref{colorbox}, @mref{cbtics}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end defvr
+
+
+
+@anchor{cbtics}
+@defvr {グラフィックオプション} cbtics
+デフォルト値: @code{auto}
+
+このグラフィックオプションは、オプション @code{enhanced3d}が
+@code{false}でない時、カラーボックス上にチックマークを描く方法を制御します。
+
+@code{enhanced3d}か @code{colorbox}が @code{false}の時、
+オプション @code{cbtics}は効果を持ちません。
+
+完全な記述に関しては、@code{xtics}を参照してください。
+
+例:
+
+@example
+(%i1) draw3d (
+        enhanced3d = true,
+        color      = green,
+        cbtics  = @{["High",10],["Medium",05],["Low",0]@},
+        cbrange = [0, 10],
+        explicit(x^2+y^2, x,-2,2,y,-2,2)) $
+@end example
+@figure{draw_cbtics}
+
+@mref{enhanced3d}, @mref{colorbox}, @mref{cbrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{color_draw}
+@defvr {グラフィックオプション} color
+デフォルト値: @code{"blue"}
+
+@code{color}は、線や点、ポリゴンやラベルの境界をプロットする色を指定します。
+
+色は名前や16進数の @i{rgb}コードとして与えられます。
+もし gnuplot version >= 5.0が使われていて使用中の端末がこの@i{rgba}をサポートしているなら、
+透過情報を持つ色もまたサポートされます。
+
+利用可能な色の名前は以下のものです:
+@verbatim
+white            black            gray0            grey0
+gray10           grey10           gray20           grey20
+gray30           grey30           gray40           grey40
+gray50           grey50           gray60           grey60
+gray70           grey70           gray80           grey80
+gray90           grey90           gray100          grey100
+gray             grey             light_gray       light_grey
+dark_gray        dark_grey        red              light_red
+dark_red         yellow           light_yellow     dark_yellow
+green            light_green      dark_green       spring_green
+forest_green     sea_green        blue             light_blue
+dark_blue        midnight_blue    navy             medium_blue
+royalblue        skyblue          cyan             light_cyan
+dark_cyan        magenta          light_magenta    dark_magenta
+turquoise        light_turquoise  dark_turquoise   pink
+light_pink       dark_pink        coral            light_coral
+orange_red       salmon           light_salmon     dark_salmon
+aquamarine       khaki            dark_khaki       goldenrod
+light_goldenrod  dark_goldenrod   gold             beige
+brown            orange           dark_orange      violet
+dark_violet      plum             purple
+@end verbatim
+
+16進コードでの色彩成分は形式 @code{"#rrggbb"}で導入されます。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^2,x,-1,1), /* default is black */
+             color = red,
+             explicit(0.5 + x^2,x,-1,1),
+             color = blue,
+             explicit(1 + x^2,x,-1,1),
+             color = light_blue,
+             explicit(1.5 + x^2,x,-1,1),
+             color = "#23ab0f",
+             label(["This is a label",0,1.2])  )$
+@end example
+@figure{draw_color}
+@example
+(%i1) draw2d(
+             line_width=50,
+             color="#FF0000",
+             explicit(sin(x),x,0,10),
+             color="#0000FF80",
+             explicit(cos(x),x,0,10)
+      );
+@end example
+@figure{draw_color2}
+
+@example
+(%i1) H(p,p_0):=%i/(2*%pi*(p-p_0));
+      draw2d(
+          proportional_axes=xy,
+          ip_grid=[150,150],
+          grid=true,
+          makelist(
+              [
+                  color=printf(false,"#~2,'0x~2,'0x~2,'0x",i*10,0,0),
+                  key_pos=top_left,
+                  key = if mod(i,5)=0 then sconcat("H=",i,"A/M") else "",
+                  implicit(
+                      cabs(H(x+%i*y,-1-%i)+H(x+%i*y,1+%i)-H(x+%i*y,1-%i)-H(x+%i*y,-1+%i))=i/10,
+                      x,-3,3,
+                      y,-3,3
+                  )
+              ],
+              i,1,25
+          )
+      )$
+@end example
+@figure{draw_color3}
+
+
+@mref{fill_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{colorbox}
+@defvr {グラフィックオプション} colorbox
+デフォルト値: @code{true}
+
+もし @code{colorbox}が @code{true}なら、
+ラベルなしの色スケールが @code{image} 2Dオブジェクトか色付けされた
+3dオブジェクトと一緒に描かれます。
+もし @code{colorbox}が @code{false}なら、色スケールは表示されません。
+もし @code{colorbox}が文字列なら、ラベル付き色スケールを描きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) im: apply('matrix,
+                 makelist(makelist(random(200),i,1,30),i,1,30))$
+(%i2) draw(
+          gr2d(image(im,0,0,30,30)),
+          gr2d(colorbox = false, image(im,0,0,30,30))
+      )$
+@end example
+@figure{draw_colorbox}
+色スケールと3D色付けオブジェクト。
+
+@example
+(%i1) draw3d(
+        colorbox   = "Magnitude",
+        enhanced3d = true,
+        explicit(x^2+y^2,x,-1,1,y,-1,1))$
+@end example
+@figure{draw_colorbox2}
+
+@mref{palette_draw}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{columns}
+@defvr {グラフィックオプション} columns
+デフォルト値: 1
+
+@code{columns}は多重プロットでの列の数です。
+
+これはグローバルグラフィックオプションなので、シーン記述での位置はかまいません。
+関数 @code{draw}の引数として使うこともできます。
+
+例:
+
+@example
+(%i1) scene1: gr2d(title="Ellipse",
+                   nticks=30,
+                   parametric(2*cos(t),5*sin(t),t,0,2*%pi))$
+(%i2) scene2: gr2d(title="Triangle",
+                   polygon([4,5,7],[6,4,2]))$
+(%i3) draw(scene1, scene2, columns = 2)$
+@end example
+@figure{draw_columns}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{contour}
+@defvr {グラフィックオプション} contour
+デフォルト値: @code{none}
+
+オプション @code{contour}を使うと、ユーザーは等高線をプロットする場所を選択できます。
+可能な値は以下の通りです:
+
+@itemize @bullet
+
+@item
+@code{none}:
+等高線をプロットしません。
+
+@item
+@code{base}:
+等高線を xy平面上に射影します。
+
+@item
+@code{surface}:
+等高線を表面にプロットします。
+
+@item
+@code{both}:
+xy平面上と表面と2つの等高線をプロットします。
+
+@item
+@code{map}:
+等高線を xy平面上に射影して、観点をちょうど垂直に設定します。
+
+@end itemize
+
+これはグローバルグラフィックオプションなので、シーン記述での位置はかまいません。
+
+例:
+
+@example
+(%i1) draw3d(explicit(20*exp(-x^2-y^2)-10,x,0,2,y,-3,3),
+             contour_levels = 15,
+             contour        = both,
+             surface_hide   = true) $
+@end example
+@figure{draw_contour}
+
+@example
+(%i1) draw3d(explicit(20*exp(-x^2-y^2)-10,x,0,2,y,-3,3),
+             contour_levels = 15,
+             contour        = map
+      ) $
+@end example
+@figure{draw_contour2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{contour_levels}
+@defvr {グラフィックオプション} contour_levels
+デフォルト値: 5
+
+このグラフィックオプションは等高線が描かれる方法を制御します。
+@code{contour_levels}は、正の整数、
+3つの数のリスト、または、数の任意の集合に設定することができます:
+
+@itemize @bullet
+@item
+オプション @code{contour_levels}が正の整数 @var{n}にバインド (bounded)されている時、
+@var{n}この等高線が等しい間隔で描かれます。
+デフォルトでは、
+5つの等しく間隔の空けられた等高線がプロットされます。
+
+@item
+オプション@code{contour_levels}が
+形式@code{[lowest,s,highest]}の長さ3のリストにバインド(bounded)されている時、
+等高線は
+@code{lowest}から@code{highest}へ@code{s}個のステップでプロットされます。
+
+@item
+オプション @code{contour_levels}が形式
+@code{@{n1, n2, ...@}}の数の集合にバインド (bounded)されている時、
+等高線は値 @code{n1}, @code{n2}, ...にプロットされます。
+@end itemize
+
+これはグローバルグラフィックオプションなので、シーン記述での位置はかまいません。
+
+例:
+
+10の等しく間隔の空けられた等高線。
+レベルの実際の数は簡単なラベルを与えるために調整することができます。
+@example
+(%i1) draw3d(color = green,
+             explicit(20*exp(-x^2-y^2)-10,x,0,2,y,-3,3),
+             contour_levels = 10,
+             contour        = both,
+             surface_hide   = true) $
+@end example
+
+
+-8から 8まで 4つのステップで。
+@example
+(%i1) draw3d(color = green,
+             explicit(20*exp(-x^2-y^2)-10,x,0,2,y,-3,3),
+             contour_levels = [-8,4,8],
+             contour        = both,
+             surface_hide   = true) $
+@end example
+
+レベル -7, -6, 0.8, 5での等値線。
+@example
+(%i1) draw3d(color = green,
+             Explicit(20*exp(-x^2-y^2)-10,x,0,2,y,-3,3),
+             Contour_levels = @{-7, -6, 0.8, 5@},
+             Contour        = both,
+             Surface_hide   = true) $
+@end example
+
+@mref{contour}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{data_file_name}
+@defvr {グラフィックオプション} data_file_name
+デフォルト値: @code{"data.gnuplot"}
+
+これは、リクエストされたプロットを構築するために
+Gnuplotが必要とする数値データを含むファイルの名前です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+関数 @code{draw}の引数としても使うことができます。
+
+@code{gnuplot_file_name}の中で例を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{delay}
+@defvr {グラフィックオプション} delay
+デフォルト値: 5
+
+これはアニメーション gifファイルにおけるフレームの 1/100秒単位の遅延です。
+
+これはグローバルグラフィックスオプションなので、
+シーン記述の位置は問題なりません。
+関数 @code{draw}の引数としても使うことができます。
+
+例:
+
+@example
+(%i1) draw(
+        delay     = 100,
+        file_name = "zzz",
+        terminal  = 'animated_gif,
+        gr2d(explicit(x^2,x,-1,1)),
+        gr2d(explicit(x^3,x,-1,1)),
+        gr2d(explicit(x^4,x,-1,1)));
+End of animation sequence
+(%o2)          [gr2d(explicit), gr2d(explicit), gr2d(explicit)]
+@end example
+
+オプション @code{delay}はアニメーション gifに関してだけアクティブです;
+他のいかなる場合も無視されます。
+
+@mref{terminal}, @mref{dimensions}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{dimensions_draw}
+@defvr {グラフィックオプション} dimensions
+デフォルト値: @code{[600,500]}
+
+出力端末の寸法。
+その値は、幅と高さで形成されるリストです。
+2つの数の意味は使っている端末に依存します。
+
+端末 @code{gif}, @code{animated_gif}, @code{png}, @code{jpg}, @code{svg},
+@code{screen}, @code{wxt}, @code{aquaterm}では、
+整数はそれぞれの方向の点の数を表します。
+もし整数でないなら丸められます。
+
+端末 @code{eps}, @code{eps_color}, @code{pdf}, @code{pdfcairo}では、
+両方の数は 1/100cm単位の長さを表します。
+デフォルトでは、これらのフォーマットでの画像は幅 6cm、高さ 5cmであることを意味します。
+
+これはグローバルグラフィックオプションなので、シーン記述での位置は関係ありません。
+関数 @code{draw}の引数として使われることもあります。
+
+例:
+
+ファイル出力と wxtキャンバスに適用されたオプション @code{dimensions}。
+
+@example
+(%i1) draw2d(
+        dimensions = [300,300],
+        terminal   = 'png,
+        explicit(x^4,x,-1,1)) $
+(%i2) draw2d(
+        dimensions = [300,300],
+        terminal   = 'wxt,
+        explicit(x^4,x,-1,1)) $
+@end example
+
+eps出力に適用されたオプション @code{dimensions}。
+A4縦寸法の epsファイルが欲しいです。
+
+@example
+(%i1) A4portrait: 100*[21, 29.7]$
+(%i2) draw3d(
+        dimensions = A4portrait,
+        terminal   = 'eps,
+        explicit(x^2-y^2,x,-2,2,y,-2,2)) $
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{draw_realpart}
+@defvr {グラフィックオプション} draw_realpart
+デフォルト値: @code{true}
+
+@code{true}の時、描画される関数は複素関数とみなされ、実部の値をプロットします;
+@code{false}の時、関数が実数値を与えないときは何もプロットしません。
+
+このオプションは
+2Dや 3Dにおけるオブジェクト @mref{explicit}と @mref{parametric}と
+@mref{parametric_surface}に作用します。
+
+例:
+@example
+(%i1) draw2d(
+        draw_realpart = false,
+        explicit(sqrt(x^2  - 4*x) - x, x, -1, 5),
+        color         = red,
+        draw_realpart = true,
+        parametric(x,sqrt(x^2  - 4*x) - x + 1, x, -1, 5) );
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{enhanced3d}
+@defvr {グラフィックオプション} enhanced3d
+デフォルト値: @code{none}
+
+もし @code{enhanced3d}が @code{none}なら3Dプロットで表面を色付けしません。
+色付けされた表面を得るには、オプション @mref{enhanced3d}にリストを割り当てなければいけません。
+リストの最初の要素は色で、残りはその式中で使われる変数やパラメータの名前です。
+@code{[f(x,y,z), x, y, z]}のようなリストは、表面の点 @code{[x,y,z]}に数
+@code{f(x,y,z)}を割り当てることを意味します。数は実際の @code{palette}に従って色付けされます。
+パラメータで定義されたそれらの3Dグラフィックオブジェクトに関して、
+@mref{parametric}オブジェクトと @mref{tube}オブジェクトに関して@code{[f(u), u]}という具合に、
+あるいは、 @code{parametric_surface}オブジェクトに関して @code{[f(u,v), u, v]}という具合に、
+パラメータで色数を定義することが可能です。
+3Dオブジェクトがすべて絶対座標に基づいたモデル @code{[f(x,y,z), x, y, z]}を採用する一方、
+その中の @code{explicit}と @mref{elevation_grid}の2つだけは
+@code{[x,y]}座標上で定義されたモデル @code{[f(x,y), x, y]}も受け付けます。
+3Dグラフィックオブジェクト @code{implicit}は
+@code{[f(x,y,z), x, y, z]}モデルだけを受け付けます。
+オブジェクト @code{points}も
+@code{[f(x,y,z), x, y, z]}モデルを受け付けますが、点が順序的性質を持つ時は
+モデル @code{[f(k), k]}も有効です。 @code{k}は順序パラメータです。
+
+@code{enhanced3d}に @code{none}以外の何かを割り当てた時、オプション
+@code{color}と @code{surface_hide}は無視されます。
+
+リストで定義れた変数名はグラフィックオブジェクトの定義で使われたものと異なるかもしれません。
+
+下位互換性を維持するために、
+@code{enhanced3d = false}は @code{enhanced3d = none}と同値で、
+@code{enhanced3d = true}は @code{enhanced3d = [z, x, y, z]}と同値です。
+もし @mref{enhanced3d}に式が与えられたら、
+その変数は表面定義で使われたものと同じでなければいけません。
+リストを使う時にはこれは必要ありません。
+
+もし @code{enhanced3d}が @code{false}なら、 3dプロットで表面は色付けられません。
+もし @code{enhanced3d}が @code{true}なら、 Gnuplotの
+pm3dモードを設定して表面が色付けられます。
+もし式が @code{enhanced3d}に与えられるなら、
+それは @code{palette}に従って色を割り当てるのに使われます;
+この式の中の変数は表面記述で使われるものと同じでなければいけません。
+
+如何にパレットが指定されるか知るためには、オプション @code{palette}を参照してください。
+
+例:
+
+@example
+(%i1) draw3d(
+         enhanced3d = [x-z/10,x,y,z],
+         palette    = gray,
+         explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3))$
+@end example
+@figure{draw_enhanced3d}
+
+@code{[f(x,y), x, y]}モデルで定義された色付けを持つ
+@code{explicit}オブジェクト。
+リストで定義れた変数名はグラフィックオブジェクトの定義で使われたものと異なるかもしれません;
+この場合、 @code{r}は @code{x}に、 @code{s}は @code{y}に対応します。
+
+@example
+(%i1) draw3d(
+         enhanced3d = [sin(r*s),r,s],
+         explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3))$
+@end example
+@figure{draw_enhanced3d2}
+
+@code{[f(x,y,z), x, y, z]}モデルで定義された色付けを持つ @code{parametric}オブジェクト。
+
+@example
+(%i1) draw3d(
+         nticks = 100,
+         line_width = 2,
+         enhanced3d = [if y>= 0 then 1 else 0, x, y, z],
+         parametric(sin(u)^2,cos(u),u,u,0,4*%pi)) $
+@end example
+@figure{draw_enhanced3d3}
+
+@code{[f(u), u]}モデルで定義された色付けを持つ @code{parametric}オブジェクト。
+
+この場合、 @code{(u-1)^2}は @code{[(u-1)^2,u]}のショートカットです。
+
+@example
+(%i1) draw3d(
+         nticks = 60,
+         line_width = 3,
+         enhanced3d = (u-1)^2,
+         parametric(cos(5*u)^2,sin(7*u),u-2,u,0,2))$
+@end example
+@figure{draw_enhanced3d4}
+
+@code{[f(x,y), x, y]}モデルで定義された色付けを持つ @code{elevation_grid}オブジェクト。
+
+@example
+(%i1) m: apply(
+           matrix,
+           makelist(makelist(cos(i^2/80-k/30),k,1,30),i,1,20)) $
+(%i2) draw3d(
+         enhanced3d = [cos(x*y*10),x,y],
+         elevation_grid(m,-1,-1,2,2),
+         xlabel = "x",
+         ylabel = "y");
+@end example
+@figure{draw_enhanced3d5}
+
+@code{[f(x,y,z), x, y, z]}モデルで定義された色付けを持つ @code{tube}オブジェクト。
+
+@example
+(%i1) draw3d(
+         enhanced3d = [cos(x-y),x,y,z],
+         palette = gray,
+         xu_grid = 50,
+         tube(cos(a), a, 0, 1, a, 0, 4*%pi) )$
+@end example
+@figure{draw_enhanced3d6}
+
+@code{[f(u), u]}モデルで定義された色付けを持つ @code{tube}オブジェクト。
+ここで @code{enhanced3d = -a}は @code{enhanced3d = [-foo,foo]}のショートカットになります。
+
+@example
+(%i1) draw3d(
+         capping = [true, false],
+         palette = [26,15,-2],
+         enhanced3d = [-foo, foo],
+         tube(a, a, a^2, 1, a, -2, 2) )$
+@end example
+@figure{draw_enhanced3d7}
+
+@code{[f(x,y,z), x, y, z]}モデルで定義された色付けを持つ
+@code{implicit}オブジェクトと @code{points}オプジェクト
+
+@example
+(%i1) draw3d(
+         enhanced3d = [x-y,x,y,z],
+         implicit((x^2+y^2+z^2-1)*(x^2+(y-1.5)^2+z^2-0.5)=0.015,
+                  x,-1,1,y,-1.2,2.3,z,-1,1)) $
+(%i2) m: makelist([random(1.0),random(1.0),random(1.0)],k,1,2000)$
+@end example
+@figure{draw_enhanced3d9}
+@example
+(%i3) draw3d(
+         point_type = filled_circle,
+         point_size = 2,
+         enhanced3d = [u+v-w,u,v,w],
+         points(m) ) $
+@end example
+@figure{draw_enhanced3d10}
+
+点が順序的性質を持つ時、モデル @code{[f(k), k]}も有効です。
+@code{k}は順序パラメータです。
+
+@example
+(%i1) m:makelist([random(1.0), random(1.0), random(1.0)],k,1,5)$
+(%i2) draw3d(
+         enhanced3d = [sin(j), j],
+         point_size = 3,
+         point_type = filled_circle,
+         points_joined = true,
+         points(m)) $
+@end example
+@figure{draw_enhanced3d11}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{error_type}
+@defvr {グラフィックオプション} error_type
+デフォルト値: @code{y}
+
+値は @code{x}, @code{y}, @code{xy}を取り得ますが、
+その値に依存して、グラフィックオブジェクト
+@code{errors}は水平エラーバー、垂直エラーバー、その両方を伴って点を描画します。
+@code{error_type=boxes}の時、クロスの代わりにボックスが描かれます。
+
+@mref{errors}も参照してください。
+@end defvr
+
+
+@anchor{file_name}
+@defvr {グラフィックオプション} file_name
+デフォルト値: @code{"maxima_out"}
+
+これは、端末@code{png}, @code{jpg}, @code{eps}, @code{eps_color}, @code{pdf},
+@code{pdfcairo}がグラフィックを保存するファイルの名前です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(file_name = "myfile",
+             explicit(x^2,x,-1,1),
+             terminal  = 'png)$
+@end example
+
+@mref{terminal}, @mref{dimensions}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{fill_color}
+@defvr {グラフィックオプション} fill_color
+デフォルト値: @code{"red"}
+
+@code{fill_color}はポリゴンと 2d @code{explicit}関数を塗りつぶすための色を指定します。
+
+如何に色が指定されるかを知るには @code{color}を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{fill_density}
+@defvr {グラフィックオプション} fill_density
+デフォルト値: 0
+
+@code{fill_density}は @code{bars}オブジェクトに関して
+@code{fill_color}の強度を指定する数です。 0と 1の間の数です。
+
+例を見るには @code{bars}を参照してください。
+@end defvr
+
+
+
+@anchor{filled_func}
+@defvr {グラフィックオプション} filled_func
+デフォルト値: @code{false}
+
+オプション @code{filled_func}は関数によって制限された領域が如何に塗りつぶされるべきかを
+制御します。
+@code{filled_func}が @code{true}の時、
+オブジェクト
+@code{explicit}とグラフィックウィンドウの底で定義された関数によって閉ざされた領域を
+@code{fill_color}で塗りつぶします。
+@code{filled_func}が関数式を含む時、
+この関数とオブジェクト @code{explicit} で定義された関数によって閉ざされた領域を
+塗りつぶします。
+デフォルトでは、明示的な関数は塗りつぶされません。
+
+役に立つ特殊なケースは @code{filled_func=0}です。
+水平軸と明示関数による領域の縁を生成します。
+
+このオプションは 2dグラフィックオブジェクト @mref{explicit}だけに影響します。
+
+例:
+
+@code{explicit}オブジェクトとグラフィックウィンドウによって閉ざされた領域。
+@example
+(%i1) load(draw)$
+(%i2) draw2d(fill_color  = red,
+             filled_func = true,
+             explicit(sin(x),x,0,10) )$
+@end example
+
+@code{explicit}オブジェクトとオプション
+@code{filled_func}で定義された関数によって閉ざされた領域。
+@code{filled_func}の中の変数は
+@code{explicit}の中で使われるものと同じでなければいけないことに注意してください。
+@example
+(%i1) draw2d(fill_color  = red,
+             filled_func = sin(x),
+             explicit(-sin(x),x,0,%pi));
+@end example
+@figure{draw_filledfunc}
+
+Region bounded by an
+@code{explicit}オブジェクトとオプション @code{filled_func}で定義された関数で囲まれた領域。
+Note that the variable in
+@code{filled_func}の変数は
+@code{explicit}で使われるそれと同じでなければいけないことに注意してください。
+@example
+(%i1) draw2d(fill_color  = grey,
+             filled_func = sin(x),
+             explicit(-sin(x),x,0,%pi));
+@end example
+@figure{draw_filledfunc2}
+@mref{fill_color}と @mref{explicit}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{font}
+@defvr {グラフィックオプション} font
+デフォルト値: @code{""} (empty string)
+
+このオプションは端末が使う書体を設定するために使うことができます。
+プロットを通して書体とサイズは１つだけ使うことができます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@mref{font_size}も参照してください。
+
+Gnuplotはそれ自身フォントを扱いません。
+異なる端末のサポートライブラリに任せます。
+それぞれはフォントに関して独自の哲学を持っています。
+簡単なまとめは以下の通りです:
+
+@itemize @bullet
+@item
+@i{x11}:
+通常のX11フォンとサーバーメカニズムを使います。
+
+例:
+@example
+(%i1) draw2d(font      = "Arial",
+             font_size = 20,
+             label(["Arial font, size 20",1,1]))$
+@end example
+
+@item
+@i{windows}:
+Windows端末はプロット内部でフォントの変更をサポートしません。
+一旦プロットが生成されると、
+グラフウィンドウのメニューを右クリックしてフォントを変更することができます。
+
+@item
+@i{png, jpeg, gif}:
+@i{libgd}ライブラリは環境変数
+@code{GDFONTPATH}の中に保持されたフォントパスを使います;
+この場合、オプション @code{font}をフォント名に設定することだけが必要です。
+フォントファイルへの完全なパスを与えることも可能です。
+
+例:
+
+オプション @code{font}はフォントファイルへの完全なパスを与えることができます:
+@example
+(%i1) path: "/usr/share/fonts/truetype/freefont/" $
+(%i2) file: "FreeSerifBoldItalic.ttf" $
+(%i3) draw2d(
+        font      = concat(path, file),
+        font_size = 20,
+        color     = red,
+        label(["FreeSerifBoldItalic font, size 20",1,1]),
+        terminal  = png)$
+@end example
+
+もし環境変数 @code{GDFONTPATH}が
+フォントファイルが配置されているパスに設定されているなら、
+グラフィックオプション @code{font}をフォント名に設定することが可能です。
+@example
+(%i1) draw2d(
+        font      = "FreeSerifBoldItalic",
+        font_size = 20,
+        color     = red,
+        label(["FreeSerifBoldItalic font, size 20",1,1]),
+        terminal  = png)$
+@end example
+
+@item
+@i{Postscript}:
+標準ポストスクリプトフォントは以下の通りです:@*
+@code{"Times-Roman"}, @code{"Times-Italic"}, @code{"Times-Bold"},
+@code{"Times-BoldItalic"},@*
+@code{"Helvetica"}, @code{"Helvetica-Oblique"}, @code{"Helvetica-Bold"},@*
+@code{"Helvetic-BoldOblique"}, @code{"Courier"},
+@code{"Courier-Oblique"}, @code{"Courier-Bold"},@*
+@code{"Courier-BoldOblique"}。
+
+例:
+@example
+(%i1) draw2d(
+        font      = "Courier-Oblique",
+        font_size = 15,
+        label(["Courier-Oblique font, size 15",1,1]),
+        terminal = eps)$
+@end example
+
+@item
+@i{pdf}:
+@i{Postscript}と同じフォントを使います。
+
+@item
+@i{pdfcairo}:
+@i{wxt}と同じフォントを使います。
+
+@item
+@i{wxt}:
+@i{pango}ライブラリは
+@code{fontconfig}ユーティリティを介してフォントを見つけます。
+
+@item
+@i{aqua}:
+デフォルトは @code{"Times-Roman"}です。
+@end itemize
+
+Gnuplotドキュメンテーションは端末とフォントに関する情報の重要なソースです。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{font_size}
+@defvr {グラフィックオプション} font_size
+デフォルト値: 10
+
+このオプションは、端末が使うフォントサイズを設定するために使うことができます。
+１つの書体とサイズだけがプロットの間中で使うことができます。
+オプション @code{font}が空の文字列に等しくない時だけ、
+@code{font_size}はアクティブです。
+
+これはグローバルグラフィックスオプションなので、
+シーン記述の位置は問題になりません。
+
+@mref{font}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{gnuplot_file_name}
+@defvr {グラフィックオプション} gnuplot_file_name
+デフォルト値: @code{"maxout_xxx.gnuplot"}
+ここで @code{"xxx"}は同時に走っているmaximaプロセスそれぞれに固有の数字です。
+
+これは Gnuplotで処理される必要なコマンドを含むファイルの名前です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+関数 @code{draw}の引数としても使うことができます。
+
+例:
+
+@example
+(%i1) draw2d(
+       file_name = "my_file",
+       gnuplot_file_name = "my_commands_for_gnuplot",
+       data_file_name    = "my_data_for_gnuplot",
+       terminal          = png,
+       explicit(x^2,x,-1,1)) $
+@end example
+
+@mref{data_file_name}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{grid_draw}
+@defvr {グラフィックオプション} grid
+デフォルト値: @code{false}
+
+もし @code{grid}が @code{not false}なら、 @var{xy}平面上に格子を描きます。
+もし @code{grid}に trueを割り当てたなら、 それぞれの軸の目盛毎にグリッド線を1つ引きます。
+もし @code{grid}に @code{[nx,ny] > [0,0]}のリスト @code{nx,ny}を割り当てたなら、
+x軸の目盛毎に @code{nx}個の線を、y軸の目盛毎に @code{ny}個の線を引きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(grid = true,
+             explicit(exp(u),u,-2,2))$
+@end example
+@figure{draw_grid}
+
+@example
+(%i1) draw2d(grid = [2,2],
+             explicit(sin(x),x,0,2*%pi))$
+@end example
+@figure{draw_grid2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{head_angle}
+@defvr {グラフィックオプション} head_angle
+デフォルト値: 45
+
+@code{head_angle}は矢印の頭と線分の間の角度を度の単位で示します。
+
+このオプションは @code{vector}オブジェクトに対してだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [0,10],
+             yrange      = [0,9],
+             head_length = 0.7,
+             head_angle  = 10,
+             vector([1,1],[0,6]),
+             head_angle  = 20,
+             vector([2,1],[0,6]),
+             head_angle  = 30,
+             vector([3,1],[0,6]),
+             head_angle  = 40,
+             vector([4,1],[0,6]),
+             head_angle  = 60,
+             vector([5,1],[0,6]),
+             head_angle  = 90,
+             vector([6,1],[0,6]),
+             head_angle  = 120,
+             vector([7,1],[0,6]),
+             head_angle  = 160,
+             vector([8,1],[0,6]),
+             head_angle  = 180,
+             vector([9,1],[0,6]) )$
+@end example
+@figure{draw_head_angle}
+
+@mref{head_both}, @mref{head_length}, @mref{head_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{head_both}
+@defvr {グラフィックオプション} head_both
+デフォルト値: @code{false}
+
+もし @code{head_both}が @code{true}なら、ベクトルを2つの矢先と共に描画します。
+もし @code{false}なら１つの矢だけが描かれます。
+
+このオプションは @code{vector}オブジェクトに対してだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [0,8],
+             yrange      = [0,8],
+             head_length = 0.7,
+             vector([1,1],[6,0]),
+             head_both   = true,
+             vector([1,7],[6,0]) )$
+@end example
+@figure{draw_head_both}
+
+@mref{head_length}, @mref{head_angle}, @mref{head_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{head_length}
+@defvr {グラフィックオプション} head_length
+デフォルト値: 2
+
+@code{head_length}は矢印の頭の長さを @var{x}-軸の単位で示します。
+
+このオプションは @code{vector}オブジェクトに対してだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [0,12],
+             yrange      = [0,8],
+             vector([0,1],[5,5]),
+             head_length = 1,
+             vector([2,1],[5,5]),
+             head_length = 0.5,
+             vector([4,1],[5,5]),
+             head_length = 0.25,
+             vector([6,1],[5,5]))$
+@end example
+
+@mref{head_both}, @mref{head_angle}, @mref{head_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+
+
+@anchor{head_type}
+@defvr {グラフィックオプション} head_type
+デフォルト値: @code{filled}
+
+@code{head_type}は矢印の頭を如何にプロットするかを指定するのに使われます。
+可能な値は以下の通りです: @code{filled} (閉じていて塗りつぶされた矢印の頭),
+@code{empty} (閉じているが塗りつぶされていない矢印の頭),
+@code{nofilled} (開いた矢印の頭)。
+
+このオプションは @code{vector}オブジェクトにだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [0,12],
+             yrange      = [0,10],
+             head_length = 1,
+             vector([0,1],[5,5]), /* default type */
+             head_type = 'empty,
+             vector([3,1],[5,5]),
+             head_type = 'nofilled,
+             vector([6,1],[5,5]))$
+@end example
+@figure{draw_head_type}
+
+@mref{head_both}, @mref{head_angle}, @mref{head_length}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{interpolate_color}
+@defvr {グラフィックオプション} interpolate_color
+デフォルト値: @code{false}
+
+このオプションは @code{enhanced3d}が @code{false}でない時だけ有効です。
+
+@code{interpolate_color}が @code{false}の時、表面が均一な四角形で色付けします。
+@code{true}の時、色の遷移を内挿で滑らかにします。
+
+@code{interpolate_color}は2つの数字のリスト @code{[m,n]}も受け付けます。
+正の @var{m}と @var{n}の場合、四角形もしくは三角形それぞれをそれぞれの方向に @var{m}回、 @var{n}回内挿します。
+負の @var{m}と @var{n}の場合、少なくとも @var{|m|}点、 @var{|n|}点描かれるように内挿頻度を選びます;
+特殊なグリッド関数と考えるといいでしょう。
+ゼロ、すなわち @code{interpolate_color=[0,0]}は表面上の内挿点の最適数を自動的に選択します。
+
+また、 @code{interpolate_color=true}は @code{interpolate_color=[0,0]}と等価です。
+
+例:
+
+陽関数での色内挿。
+
+@example
+(%i1) draw3d(
+        enhanced3d   = sin(x*y),
+        explicit(20*exp(-x^2-y^2)-10, x ,-3, 3, y, -3, 3)) $
+@end example
+@figure{draw_interpolate_color}
+@example
+(%i2) draw3d(
+        interpolate_color = true,
+        enhanced3d   = sin(x*y),
+        explicit(20*exp(-x^2-y^2)-10, x ,-3, 3, y, -3, 3)) $
+@end example
+@figure{draw_interpolate_color2}
+@example
+(%i3) draw3d(
+        interpolate_color = [-10,0],
+        enhanced3d   = sin(x*y),
+        explicit(20*exp(-x^2-y^2)-10, x ,-3, 3, y, -3, 3)) $
+@end example
+@figure{draw_interpolate_color3}
+
+@code{mesh}グラフィックオブジェクトでの色内装。
+
+パラメトリック表面内の内挿色は予期しない結果をもたらす可能性があります。
+
+@example
+(%i1) draw3d(
+        enhanced3d = true,
+        mesh([[1,1,3],   [7,3,1],[12,-2,4],[15,0,5]],
+             [[2,7,8],   [4,3,1],[10,5,8], [12,7,1]],
+             [[-2,11,10],[6,9,5],[6,15,1], [20,15,2]])) $
+@end example
+@figure{draw_interpolate_color4}
+@example
+(%i2) draw3d(
+        enhanced3d        = true,
+        interpolate_color = true,
+        mesh([[1,1,3],   [7,3,1],[12,-2,4],[15,0,5]],
+             [[2,7,8],   [4,3,1],[10,5,8], [12,7,1]],
+             [[-2,11,10],[6,9,5],[6,15,1], [20,15,2]])) $
+@end example
+@figure{draw_interpolate_color5}
+@example
+(%i3) draw3d(
+        enhanced3d        = true,
+        interpolate_color = true,
+        view=map,
+        mesh([[1,1,3],   [7,3,1],[12,-2,4],[15,0,5]],
+             [[2,7,8],   [4,3,1],[10,5,8], [12,7,1]],
+             [[-2,11,10],[6,9,5],[6,15,1], [20,15,2]])) $
+@end example
+@figure{draw_interpolate_color6}
+
+@mref{enhanced3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ip_grid}
+@defvr {グラフィックオプション} ip_grid
+デフォルト値: @code{[50, 50]}
+
+@code{ip_grid}は陰的プロットでの最初のサンプリングのためにグリッドを設定します。
+
+このオプションは @code{implicit}オブジェクトに対してだけ関係があります。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ip_grid_in}
+@defvr {グラフィックオプション} ip_grid_in
+デフォルト値: @code{[5, 5]}
+
+@code{ip_gridi_in}は陰的プロットでの二番目のサンプリングのためにグリッドを設定します。
+
+このオプションは @code{implicit}オブジェクトに対してだけ関係があります。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{key}
+@defvr {グラフィックオプション} key
+デフォルト値: @code{""} (empty string)
+
+@code{key}は凡例の中の関数名です。
+もし @code{key}が空の文字列なら、関数にキーを割り当てません。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}, @mref{polygon}, @mref{rectangle},
+@mref{ellipse}, @mref{vector}, @mref{explicit}, @mref{implicit},
+@mref{parametric}, と@mref{polar}。
+
+@item
+@code{gr3d}: @mref{points}, @mref{explicit}, @mref{parametric},
+と@mref{parametric_surface}
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(key   = "Sinus",
+             explicit(sin(x),x,0,10),
+             key   = "Cosinus",
+             color = red,
+             explicit(cos(x),x,0,10) )$
+@end example
+@figure{draw_key}
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{key_pos}
+@defvr {グラフィックオプション} key_pos
+デフォルト値: @code{""} (空文字列)
+
+@code{key_pos} は凡例を描画する位置を定義します。
+もし @code{key} が空文字列なら、 @code{"top_right"} を使います。
+利用可能な位置指定子は以下の通り: @code{top_left}, @code{top_center}, @code{top_right},
+@code{center_left}, @code{center}, @code{center_right},
+@code{bottom_left}, @code{bottom_center}, @code{bottom_right}
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+        key_pos = top_left,
+        key   = "x",
+        explicit(x,  x,0,10),
+        color= red,
+        key   = "x squared",
+        explicit(x^2,x,0,10))$
+(%i3) draw3d(
+        key_pos = center,
+        key   = "x",
+        explicit(x+y,x,0,10,y,0,10),
+        color= red,
+        key   = "x squared",
+        explicit(x^2+y^2,x,0,10,y,0,10))$
+@end example
+@figure{draw_key_pos}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{label_alignment}
+@defvr {グラフィックオプション} label_alignment
+デフォルト値: @code{center}
+
+@code{label_alignment}は
+与えられた座標に関するラベルを書く場所を指定するのに使われます。
+可能な値は以下のものです: @code{center}, @code{left}, @code{right}.
+
+このオプションは @code{label}オブジェクトに対してだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange          = [0,10],
+             yrange          = [0,10],
+             points_joined   = true,
+             points([[5,0],[5,10]]),
+             color           = blue,
+             label(["Centered alignment (default)",5,2]),
+             label_alignment = 'left,
+             label(["Left alignment",5,5]),
+             label_alignment = 'right,
+             label(["Right alignment",5,8]))$
+@end example
+@figure{draw_label_alignment}
+
+@mref{label_orientation}, @mref{color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{label_orientation}
+@defvr {グラフィックオプション} label_orientation
+デフォルト値: @code{horizontal}
+
+@code{label_orientation}はラベルの向きを指定するのに使われます。
+可能な値は以下のものです: @code{horizontal}, @code{vertical}.
+
+このオプションは @code{label}オブジェクトに対してだけ有効です。
+
+例:
+
+この例では、ダミーの点がイメージを得るために加えられます。
+パッケージ @code{draw}はいつもシーンを描くのにデータを必要とします。
+@example
+(%i1) draw2d(xrange     = [0,10],
+             yrange     = [0,10],
+             point_size = 0,
+             points([[5,5]]),
+             color      = navy,
+             label(["Horizontal orientation (default)",5,2]),
+             label_orientation = 'vertical,
+             color             = "#654321",
+             label(["Vertical orientation",1,5]))$
+@end example
+@figure{draw_label_orientation}
+
+@mref{label_alignment}と @mref{color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{line_type}
+@defvr {グラフィックオプション} line_type
+デフォルト値: @code{solid}
+
+@code{line_type}は線が如何に表示されるかを示します;
+可能な値は @code{solid}と @code{dots}で、どちらもすべての端末で利用可能です。そして
+@code{dashes}, @code{short_dashes}, @code{short_long_dashes}, @code{short_short_long_dashes},
+@code{dot_dash}, これらは @code{png}, @code{jpg}, @code{gif} 端末の中で利用可能です。
+
+
+このオプションは以下のグラフィックオブジェクトに鋭意供します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}, @mref{polygon}, @mref{rectangle}, @mref{ellipse},
+@mref{vector}, @mref{explicit}, @mref{implicit}, @mref{parametric}と
+@mref{polar}。
+
+@item
+@code{gr3d}: @mref{points}, @mref{explicit}, @mref{parametric}と
+@mref{parametric_surface}。
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(line_type = dots,
+             explicit(1 + x^2,x,-1,1),
+             line_type = solid, /* default */
+             explicit(2 + x^2,x,-1,1))$
+@end example
+@figure{draw_line_type}
+
+@mref{line_width}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{line_width}
+@defvr {グラフィックオプション} line_width
+デフォルト値: 1
+
+@code{line_width}はプロットする線の幅です。
+値は正の数でなければいけません。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}, @mref{polygon}, @mref{rectangle}, @mref{ellipse},
+@mref{vector}, @mref{explicit}, @mref{implicit}, @mref{parametric}と
+@mref{polar}。
+
+@item
+@code{gr3d}: @mref{points}と @mref{parametric}.
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^2,x,-1,1), /* default width */
+             line_width = 5.5,
+             explicit(1 + x^2,x,-1,1),
+             line_width = 10,
+             explicit(2 + x^2,x,-1,1))$
+@end example
+@figure{draw_line_width}
+
+@mref{line_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+@anchor{logcb}
+@defvr {グラフィックオプション} logcb
+デフォルト値: @code{false}
+
+もし @mref{logcb}が @code{true}なら、
+カラーボックスのチックを対数スケールで描きます。
+
+@code{enhanced3d}か @code{colorbox}が @code{false}の時、オプション
+@code{logcb}は効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d (
+        enhanced3d = true,
+        color      = green,
+        logcb = true,
+        logz  = true,
+        palette = [-15,24,-9],
+        explicit(exp(x^2-y^2), x,-2,2,y,-2,2)) $
+@end example
+@figure{draw_logcb}
+
+@mref{enhanced3d}, @mref{colorbox}, @mref{cbrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{logx_draw}
+@defvr {グラフィックオプション} logx
+デフォルト値: @code{false}
+
+もし @code{logx}が @code{true}なら @var{x}軸を対数スケールで描きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+ただし、どの2D @code{explicit}オブジェクトより先に記述されなければいけないという例外があります。
+そうすることで @code{draw}はよりよいプロットを生成できます。
+
+
+例:
+
+@example
+(%i1) draw2d(logx = true,
+             logx = true)$
+@end example
+
+@mref{logy_draw}, @mref{logx_secondary}, @mref{logy_secondary}, @mref{logz}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{logx_secondary}
+@defvr {グラフィックオプション} logx_secondary
+デフォルト値: @code{false}
+
+もし @code{logx_secondary} が @code{true}なら、 第2の @var{x} 軸を対数スケールで描画します。
+
+このオプションは2dシーンでだけ有効です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+        grid = true,
+        key="x^2, linear scale",
+        color=red,
+        explicit(x^2,x,1,100),
+        xaxis_secondary = true,
+        xtics_secondary = true,
+        logx_secondary  = true,
+        key = "x^2, logarithmic x scale",
+        color = blue,
+        explicit(x^2,x,1,100) )$
+@end example
+@figure{draw_logx_secondary}
+
+@mref{logx_draw}, @mref{logy_draw}, @mref{logy_secondary}, @mref{logz}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{logy_draw}
+@defvr {グラフィックオプション} logy
+デフォルト値: @code{false}
+
+もし @code{logy}が @code{true}なら @var{y}軸は対数スケールで描かれます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(logy = true,
+             explicit(exp(x),x,0,5))$
+@end example
+
+@mref{logx_draw}, @mref{logx_secondary}, @mref{logy_secondary}, @mrefdot{logz}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{logy_secondary}
+@defvr {グラフィックオプション} logy_secondary
+デフォルト値: @code{false}
+
+もし @code{logy_secondary} が @code{true}なら、 第2の @var{y} 軸を対数スケールで描画します。
+
+このオプションは2dシーンでだけ有効です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+        grid = true,
+        key="x^2, linear scale",
+        color=red,
+        explicit(x^2,x,1,100),
+        yaxis_secondary = true,
+        ytics_secondary = true,
+        logy_secondary  = true,
+        key = "x^2, logarithmic y scale",
+        color = blue,
+        explicit(x^2,x,1,100) )$
+@end example
+
+@mref{logx_draw}, @mref{logy_draw}, @mref{logx_secondary}, @mref{logz}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{logz}
+@defvr {グラフィックオプション} logz
+デフォルト値: @code{false}
+
+もし @code{logz}が @code{true}なら @var{z}軸を対数スケールで描きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d(logz = true,
+             explicit(exp(u^2+v^2),u,-2,2,v,-2,2))$
+@end example
+
+@mref{logx_draw}, @mref{logy_draw}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@defvr {グラフィックオプション} nticks
+デフォルト値: 29
+
+2dでは、
+@code{nticks}は、適応プロットルーチンが陽的オブジェクトに関して使う点の初期数を与えます。
+それはパラメトリック曲線と極座標曲線で描かれる点の数でもあります。
+
+このオプションは以下のグラフィックオブジェクトに影響を与えます:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{ellipse}, @mref{explicit}, @mref{parametric}と @mref{polar}。
+
+@item
+@code{gr3d}: @mref{parametric}。
+@end itemize
+
+@code{adapt_depth}も参照してください。
+
+例:
+
+@example
+(%i1) draw2d(transparent = true,
+             ellipse(0,0,4,2,0,180),
+             nticks = 5,
+             ellipse(0,0,4,2,180,180) )$
+@end example
+@figure{draw_nticks}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{palette_draw}
+@defvr {グラフィックオプション} palette
+デフォルト値: @code{color}
+
+@code{palette}はグレイレベルを色成分上にマップする仕方を示します。
+3Dオブジェクトでのオプション @code{enhanced3d}と一緒に機能します。
+3Dオブジェクトは表面のすべての点を実数かグレイレベルに関連付けます。
+グレイイメージとも一緒に機能します。
+@code{palette}によってレベルは色に変換されます。
+
+これらの変換を定義するには2つの方法があります。
+
+1つ目の方法では、 @code{palette}は -36から +36までの範囲の成分の長さ 3のベクトルです;
+それぞれの値はそれぞれ赤、緑、青色上にレベルをマップする公式に関する添字です:
+@example
+ 0: 0               1: 0.5           2: 1
+ 3: x               4: x^2           5: x^3
+ 6: x^4             7: sqrt(x)       8: sqrt(sqrt(x))
+ 9: sin(90x)       10: cos(90x)     11: |x-0.5|
+12: (2x-1)^2       13: sin(180x)    14: |cos(180x)|
+15: sin(360x)      16: cos(360x)    17: |sin(360x)|
+18: |cos(360x)|    19: |sin(720x)|  20: |cos(720x)|
+21: 3x             22: 3x-1         23: 3x-2
+24: |3x-1|         25: |3x-2|       26: (3x-1)/2
+27: (3x-2)/2       28: |(3x-1)/2|   29: |(3x-2)/2|
+30: x/0.32-0.78125 31: 2*x-0.84     32: 4x;1;-2x+1.84;x/0.08-11.5
+33: |2*x - 0.5|    34: 2*x          35: 2*x - 0.5
+36: 2*x - 1
+@end example
+負の数は負の色成分を意味します。
+@code{palette = gray}と @code{palette = color}は、それぞれ
+@code{palette = [3,3,3]}と @code{palette = [7,5,15]}のショートカットです
+
+2つ目の方法では、 @code{palette}はユーザー定義のルックアップテーブルです。
+この場合、長さ @code{n}のルックアップテーブルを構成するフォーマットは
+@code{palette=[color_1, color_2, ..., color_n}です。
+ここで、 @code{color_i}は @code{color_i}を最低のグレイレベルに割り当て、
+@code{color_n}を最高に割り当てるような均整のとれた色です
+(オプション @code{color}を参照してください)。
+残りの色は内挿されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+3Dオブジェクトでのオプション @code{enhanced3d}と一緒に機能します。
+
+@example
+(%i1) draw3d(
+        enhanced3d = [z-x+2*y,x,y,z],
+        palette = [32, -8, 17],
+        explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3))$
+@end example
+@figure{draw_palette}
+
+グレイイメージとも一緒に機能します。
+
+@example
+(%i1) im: apply(
+           'matrix,
+            makelist(makelist(random(200),i,1,30),i,1,30))$
+(%i2) /* palette = color, default */
+      draw2d(image(im,0,0,30,30))$
+(%i3) draw2d(palette = gray, image(im,0,0,30,30))$
+(%i4) draw2d(palette = [15,20,-4],
+             colorbox=false,
+             image(im,0,0,30,30))$
+@end example
+@figure{draw_palette2}
+
+@code{palette}はユーザー定義のルックアップテーブルの場合があります。
+この例では、
+@code{x}の低いレベルは赤に割り当てられ、高いレベルは黄色に割り当てられています。
+
+@example
+(%i1) draw3d(
+         palette = [red, blue, yellow],
+         enhanced3d = x,
+         explicit(x^2+y^2,x,-1,1,y,-1,1)) $
+@end example
+@figure{draw_palette3}
+
+@mref{colorbox}と @mref{enhanced3d}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{point_size}
+@defvr {グラフィックオプション} point_size
+デフォルト値: 1
+
+@code{point_size}はプロットする点のサイズを設定します。
+非負数でなければいけません。
+
+グラフィックオプション @code{point_type}が
+@code{dot}に設定される時このオプションは効果を持ちません。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}.
+
+@item
+@code{gr3d}: @mref{points}.
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(points(makelist([random(20),random(50)],k,1,10)),
+        point_size = 5,
+        points(makelist(k,k,1,20),makelist(random(30),k,1,20)))$
+@end example
+@figure{draw_point_size}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{point_type_draw}
+@defvr {グラフィックオプション} point_type
+デフォルト値: 1
+
+@code{point_type}は孤立した点をどう表示するかを示します;
+このオプションの値は、 -1以上の整数インデックスもしくは点スタイルの名前であり得ます:
+@code{$none} (-1), @code{dot} (0), @code{plus} (1), @code{multiply} (2),
+@code{asterisk} (3), @code{square} (4), @code{filled_square} (5),
+@code{circle} (6), @code{filled_circle} (7), @code{up_triangle} (8),
+@code{filled_up_triangle} (9), @code{down_triangle} (10),
+@code{filled_down_triangle} (11), @code{diamant} (12),
+@code{filled_diamant} (13)。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}。
+
+@item
+@code{gr3d}: @mref{points}。
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(xrange = [0,10],
+             yrange = [0,10],
+             point_size = 3,
+             point_type = diamant,
+             points([[1,1],[5,1],[9,1]]),
+             point_type = filled_down_triangle,
+             points([[1,2],[5,2],[9,2]]),
+             point_type = asterisk,
+             points([[1,3],[5,3],[9,3]]),
+             point_type = filled_diamant,
+             points([[1,4],[5,4],[9,4]]),
+             point_type = 5,
+             points([[1,5],[5,5],[9,5]]),
+             point_type = 6,
+             points([[1,6],[5,6],[9,6]]),
+             point_type = filled_circle,
+             points([[1,7],[5,7],[9,7]]),
+             point_type = 8,
+             points([[1,8],[5,8],[9,8]]),
+             point_type = filled_diamant,
+             points([[1,9],[5,9],[9,9]]) )$
+@end example
+@figure{draw_point_type}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{points_joined}
+@defvr {グラフィックオプション} points_joined
+デフォルト値: @code{false}
+
+@code{points_joined}が @code{true}の時、点を線で結びます;
+@code{false}の時、孤立した点が描かれます。
+このグラフィックオプションの三番目の可能な値は @code{impulses}です;
+この場合、点から x軸(2D)もしくは xy平面(3D)へ垂直の線分が描かれます。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{points}。
+
+@item
+@code{gr3d}: @mref{points}。
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(xrange        = [0,10],
+             yrange        = [0,4],
+             point_size    = 3,
+             point_type    = up_triangle,
+             color         = blue,
+             points([[1,1],[5,1],[9,1]]),
+             points_joined = true,
+             point_type    = square,
+             line_type     = dots,
+             points([[1,2],[5,2],[9,2]]),
+             point_type    = circle,
+             color         = red,
+             line_width    = 7,
+             points([[1,3],[5,3],[9,3]]) )$
+@end example
+@figure{draw_points_joined}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{proportional_axes}
+@defvr {グラフィックオプション} proportional_axes
+デフォルト値: @code{none}
+
+@code{proportional_axes}が @code{xy}か @code{xyz}に等しい時、
+2Dか 3Dシーンでそれらの相対的な長さに比例する軸とともに描画するように
+軸単位のアスペクトレシオを 1:1に設定します。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+このオプションは Gnuplot 4.2.6以上で機能します。
+
+例:
+
+単2Dプロット。
+
+@example
+(%i1) draw2d(
+        ellipse(0,0,1,1,0,360),
+        transparent=true,
+        color = blue,
+        line_width = 4,
+        ellipse(0,0,2,1/2,0,360),
+        proportional_axes = 'xy) $
+@end example
+@figure{draw_proportional_axis}
+
+多重プロット。
+
+@example
+(%i1) draw(
+        terminal = wxt,
+        gr2d(proportional_axes = 'xy,
+             explicit(x^2,x,0,1)),
+        gr2d(explicit(x^2,x,0,1),
+             xrange = [0,1],
+             yrange = [0,2],
+             proportional_axes='xy),
+        gr2d(explicit(x^2,x,0,1)))$
+@end example
+@figure{draw_proportional_axis2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{surface_hide}
+@defvr {グラフィックオプション} surface_hide
+デフォルト値: @code{false}
+
+もし @code{surface_hide}が @code{true}なら、隠れた部分を 3d表面にプロットしません。
+
+これはグローバルグラフィックオプションなので、シーン記述での位置はかまいません。
+
+例:
+
+@example
+(%i1) draw(columns=2,
+           gr3d(explicit(exp(sin(x)+cos(x^2)),x,-3,3,y,-3,3)),
+           gr3d(surface_hide = true,
+                explicit(exp(sin(x)+cos(x^2)),x,-3,3,y,-3,3)) )$
+@end example
+@figure{draw_surface_hide}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{terminal}
+@defvr {グラフィックオプション} terminal
+デフォルト値: @code{screen}
+
+Gnuplotが使う端末を選択します; 可能な値は:
+@code{screen} (デフォルト), @code{png}, @code{pngcairo}, @code{jpg}, @code{gif},
+@code{eps}, @code{eps_color}, @code{epslatex}, @code{epslatex_standalone},
+@code{svg}, @code{canvas}, @code{dumb}, @code{dumb_file}, @code{pdf}, @code{pdfcairo},
+@code{wxt}, @code{animated_gif}, @code{multipage_pdfcairo}, @code{multipage_pdf},
+@code{multipage_eps}, @code{multipage_eps_color}, @code{aquaterm}。
+
+端末 @code{screen}, @code{wxt}, @code{windows},
+@code{aquaterm}は２つの要素を持つリストとしても定義できます:
+端末自身の名前と非負の整数。
+この形式では、それぞれ対応する番号を持つ複数のウィンドウを同時に開くことができます。
+この特長は Windowsプラットフォームでは機能しません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+関数 @code{draw}の引数としても使われます。
+
+注意せよ― pdfcairoは Gnuplot 4.3を必要とします。
+pdfは、Gnuplotをオプション
+@code{--enable-pdf}でコンパイルすることを必要とし、
+libpdfがインストールされていなければいけません。
+pdfライブラリは以下で入手可能です:
+@url{http://www.pdflib.com/en/download/pdflib-family/pdflib-lite/}
+
+例:
+
+@example
+(%i1) /* screen terminal (default) */
+      draw2d(explicit(x^2,x,-1,1))$
+(%i2) /* png file */
+      draw2d(terminal  = 'png,
+             explicit(x^2,x,-1,1))$
+(%i3) /* jpg file */
+      draw2d(terminal   = 'jpg,
+             dimensions = [300,300],
+             explicit(x^2,x,-1,1))$
+(%i4) /* eps file */
+      draw2d(file_name = "myfile",
+             explicit(x^2,x,-1,1),
+             terminal  = 'eps)$
+(%i5) /* pdf file */
+      draw2d(file_name = "mypdf",
+             dimensions = 100*[12.0,8.0],
+             explicit(x^2,x,-1,1),
+             terminal  = 'pdf)$
+(%i6) /* wxwidgets window */
+      draw2d(explicit(x^2,x,-1,1),
+             terminal  = 'wxt)$
+@end example
+
+複数のウィンドウ。
+@example
+(%i1) draw2d(explicit(x^5,x,-2,2), terminal=[screen, 3])$
+(%i2) draw2d(explicit(x^2,x,-2,2), terminal=[screen, 0])$
+@end example
+
+動画 gifファイル。
+@example
+(%i1) draw(
+        delay     = 100,
+        file_name = "zzz",
+        terminal  = 'animated_gif,
+        gr2d(explicit(x^2,x,-1,1)),
+        gr2d(explicit(x^3,x,-1,1)),
+        gr2d(explicit(x^4,x,-1,1)));
+End of animation sequence
+(%o1)          [gr2d(explicit), gr2d(explicit), gr2d(explicit)]
+@end example
+
+オプション @code{delay}は動画 gifでだけ有効です;
+他のいかなる場合も無視されます。
+
+eps 形式での複数ページ出力。
+@example
+(%i1) draw(
+        file_name = "parabol",
+        terminal  = multipage_eps,
+        dimensions = 100*[10,10],
+        gr2d(explicit(x^2,x,-1,1)),
+        gr3d(explicit(x^2+y^2,x,-1,1,y,-1,1))) $
+@end example
+
+@mref{file_name}, @mref{dimensions}, @mref{delay}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{title_draw}
+@defvr {グラフィックオプション} title
+デフォルト値: @code{""} (empty string)
+
+オプション @code{title}、文字列は、シーンのメインタイトルです。
+デフォルトではタイトルは書かれません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(exp(u),u,-2,2),
+             title = "Exponential function")$
+@end example
+@figure{draw_title}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{transform}
+@defvr {グラフィックオプション} transform
+デフォルト値: @code{none}
+
+もし @code{transform}が @code{none}なら、
+空間を変換せず、グラフィックオブジェクトを定義の通り描画します。
+空間変換を望む時、リストをオプション
+@code{transform}に割り当てられなければいけません。
+2Dシーンの場合、リストは形式
+@code{[f1(x,y), f2(x,y), x, y]}を取ります。
+3Dシーンの場合、リストは形式
+@code{[f1(x,y,z), f2(x,y,z), f3(x,y,z), x, y, z]}を取ります。
+リストの中で定義されている変数名は
+グラフィックオブジェクトの定義の中で使われるものと異なるかもしれません。
+
+例:
+
+2Dの回転。
+
+@example
+(%i1) th : %pi / 4$
+(%i2) draw2d(
+        color = "#e245f0",
+        proportional_axes = 'xy,
+        line_width = 8,
+        triangle([3,2],[7,2],[5,5]),
+        border     = false,
+        fill_color = yellow,
+        transform  = [cos(th)*x - sin(th)*y,
+                      sin(th)*x + cos(th)*y, x, y],
+        triangle([3,2],[7,2],[5,5]) )$
+@end example
+@figure{draw_transform}
+
+3Dでの変形。
+
+@example
+(%i1) draw3d(
+        color     = "#a02c00",
+        explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3),
+        transform = [x+10,y+10,z+10,x,y,z],
+        color     = blue,
+        explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3) )$
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end defvr
+
+
+
+@anchor{transparent}
+@defvr {グラフィックオプション} transparent
+デフォルト値: @code{false}
+
+もし @code{transparent}が @code{false}なら、
+ポリゴンの内側の領域は @code{fill_color}に従って塗りつぶされます。
+
+このオプションは以下のグラフィックオブジェクトに影響します:
+@itemize @bullet
+@item
+@code{gr2d}: @mref{polygon}, @mref{rectangle}, と @mref{ellipse}.
+@end itemize
+
+例:
+
+@example
+(%i1) draw2d(polygon([[3,2],[7,2],[5,5]]),
+             transparent = true,
+             color       = blue,
+             polygon([[5,2],[9,2],[7,5]]) )$
+@end example
+@figure{draw_transparent}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{unit_vectors}
+@defvr {グラフィックオプション} unit_vectors
+デフォルト値: @code{false}
+
+もし @code{unit_vectors}が @code{true}なら、ベクトルは単位 1でプロットされます。
+これはベクトル場をプロットするのに役に立ちます。
+もし @code{unit_vectors}が @code{false}なら、ベクトルは元の長さでプロットされます。
+
+このオプションは @code{vector}オブジェクトに対してだけ有効です。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [-1,6],
+             yrange      = [-1,6],
+             head_length = 0.1,
+             vector([0,0],[5,2]),
+             unit_vectors = true,
+             color        = red,
+             vector([0,3],[5,2]))$
+@end example
+@figure{draw_unit_vectors}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{user_preamble}
+@defvr {グラフィックオプション} user_preamble
+デフォルト値: @code{""} (empty string)
+
+熟練 Gnuplotユーザーは、
+@code{plot}や @code{splot}コマンドの前に送られる設定を書くことで、
+このオプションを利用して、
+Gnuplotの振る舞いを微調整することができます。
+
+このオプションの値は文字列か(行毎に１つの)文字列のリストでなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+Gnuplotにグラフィックオブジェクトの頭に軸とグリッドを描画するよう命令します。
+@example
+(%i1) draw2d(
+        xaxis =true, xaxis_type=solid,
+        yaxis =true, yaxis_type=solid,
+        user_preamble="set grid front",
+        region(x^2+y^2<1 ,x,-1.5,1.5,y,-1.5,1.5))$
+@end example
+@figure{draw_user_preamble}
+
+gnuplotに黒ですべての等高線を描画するように命令します。
+
+@example
+(%i1) draw3d(
+          contour=both,
+          surface_hide=true,enhanced3d=true,wired_surface=true,
+          contour_levels=10,
+          user_preamble="set for [i=1:8] linetype i dashtype i linecolor 0",
+          explicit(sin(x)*cos(y),x,1,10,y,1,10)
+      );
+@end example
+@figure{draw_user_preamble2}
+
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{view}
+@defvr {グラフィックオプション} view
+デフォルト値: @code{[60,30]}
+
+3Dシーンでビュー方向を示す度数で測られた角度の対。
+最初の角度は @var{x}軸回りの垂直回転であり、 @math{[0, 360]}の範囲です。
+二番目は @var{z}回りの水平回転であり、 @math{[0, 360]}の範囲です。
+
+もしオプション @code{view}に値 @code{map}を与えたなら、ビュー方向をxy-平面に垂直に設定します。
+
+これはグローバルグラフィックスオプションなので、
+シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(view = [170, 50],
+             enhanced3d = true,
+             explicit(sin(x^2+y^2),x,-2,2,y,-2,2) )$
+@end example
+@figure{draw_view}
+@example
+(%i2) draw3d(view = map,
+             enhanced3d = true,
+             explicit(sin(x^2+y^2),x,-2,2,y,-2,2) )$
+@end example
+@figure{draw_view2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{wired_surface}
+@defvr {グラフィックオプション} wired_surface
+デフォルト値: @code{false}
+
+
+@code{enhanced3d}モードでの 3D 表面が点を結合したグリッドを表示するかどうかを示します。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d(
+        enhanced3d    = [sin(x),x,y],
+        wired_surface = true,
+        explicit(x^2+y^2,x,-1,1,y,-1,1)) $
+@end example
+@figure{draw_wired_surface}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{x_voxel}
+@defvr {グラフィックオプション} x_voxel
+デフォルト値: 10
+
+@code{x_voxel}は 3d
+@code{陰的}オブジェクトで実装された@i{マーチングキューブアルゴリズム}
+x方向のボクセルの数です。
+グラフィックオブジェクト @mref{region}でも使われます。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xaxis}
+@defvr {グラフィックオプション} xaxis
+デフォルト値: @code{false}
+
+もし @code{xaxis}が @code{true}なら、 @var{x}軸を描きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             xaxis       = true,
+             xaxis_color = blue)$
+@end example
+@figure{draw_xaxis}
+
+@mref{xaxis_width}, @mref{xaxis_type}, @mref{xaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xaxis_color}
+@defvr {グラフィックオプション} xaxis_color
+デフォルト値: @code{"black"}
+
+@code{xaxis_color}は @var{x}軸の色を指定します。
+色をどう定義するかを知るには @code{color}を参照してください。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             xaxis       = true,
+             xaxis_color = red)$
+@end example
+
+@mref{xaxis}, @mref{xaxis_width}, @mref{xaxis_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xaxis_secondary}
+@defvr {グラフィックオプション} xaxis_secondary
+デフォルト値: @code{false}
+
+もし @code{xaxis_secondary}が @code{true}なら、
+関数値を、二番目の @var{x}軸に関してプロットできます。
+二番目の @var{x}軸はシーンのトップに描かれます。
+
+これは 2dプロットにだけ影響する局所的なグラフィックオプションであることに注意してください。
+
+例:
+
+@example
+(%i1) draw2d(
+         key   = "Bottom x-axis",
+         explicit(x+1,x,1,2),
+         color = red,
+         key   = "Above x-axis",
+         xtics_secondary = true,
+         xaxis_secondary = true,
+         explicit(x^2,x,-1,1)) $
+@end example
+@figure{draw_xaxis_secondary}
+
+@mref{xrange_secondary}, @mref{xtics_secondary}, @mref{xtics_rotate_secondary},
+@code{xtics_axis_secondary}, @mref{xaxis_secondary}も参照してください。
+@c TODO: Document xtics_axis_secondary
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xaxis_type}
+@defvr {グラフィックオプション} xaxis_type
+デフォルト値: @code{dots}
+
+@code{xaxis_type}は @var{x}軸をどう表示するかを示します;
+可能な値は @code{solid}と @code{dots}です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             xaxis       = true,
+             xaxis_type  = solid)$
+@end example
+
+@mref{xaxis}, @mref{xaxis_width}, @mref{xaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xaxis_width}
+@defvr {グラフィックオプション} xaxis_width
+デフォルト値: 1
+
+@code{xaxis_width}は @var{x}軸の幅です。
+その値は正数でなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             xaxis       = true,
+             xaxis_width = 3)$
+@end example
+
+@mref{xaxis}, @mref{xaxis_type}, @mref{xaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xlabel_draw}
+@defvr {グラフィックオプション} xlabel
+デフォルト値: @code{""}
+
+オプション@code{xlabel}、文字列は @var{x}軸のラベルです。
+デフォルトでは、軸は文字列 @code{"x"}でラベルされます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(xlabel = "Time",
+             explicit(exp(u),u,-2,2),
+             ylabel = "Population")$
+@end example
+
+@mref{xlabel_secondary}と @mref{ylabel}, @mref{ylabel_secondary}, @mref{zlabel}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xlabel_secondary}
+@defvr {グラフィックオプション} xlabel_secondary
+デフォルト値: @code{""} (空の文字列)
+
+文字列であるオプション @code{xlabel_secondary}は副@var{x}軸のラベルです。
+デフォルトでは何も書かれません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+         xaxis_secondary=true,yaxis_secondary=true,
+         xtics_secondary=true,ytics_secondary=true,
+         xlabel_secondary="t[s]",
+         ylabel_secondary="U[V]",
+         explicit(sin(t),t,0,10) )$
+@end example
+
+@mref{xlabel}, @mref{ylabel}, @mref{ylabel_secondary}, @mref{zlabel}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xrange}
+@defvr {グラフィックオプション} xrange
+デフォルト値: @code{auto}
+
+もし @code{xrange}が @code{auto}なら @var{x}座標の範囲を自動的に計算します。
+
+もしユーザーが @var{x}に関して特定の区間が欲しいなら、
+@code{xrange=[-2, 3]}のように Maximaリストとして与えられなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(xrange = [-3,5],
+             explicit(x^2,x,-1,1))$
+@end example
+
+@mref{yrange}と @mref{zrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xrange_secondary}
+@defvr {グラフィックオプション} xrange_secondary
+デフォルト値: @code{auto}
+
+もし @code{xrange_secondary}が @code{auto}なら
+二番目の @var{x}軸の範囲を自動的に計算します。
+
+もしユーザーが二番目の @var{x}軸の特定した区間が欲しいなら、
+@code{xrange_secondary=[-2, 3]}のように Maximaリストとして与えられなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@mref{xrange}, @mref{yrange}, @mref{zrange},
+@mref{yrange_secondary}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end defvr
+
+
+
+
+@anchor{xtics_draw}
+@defvr {グラフィックオプション} xtics
+デフォルト値: @code{true}
+
+このグラフィックオプション制御はチックマークを @var{x}軸上に描く方法を制御します。
+
+@itemize @bullet
+@item
+オプション @code{xtics}がシンボル @var{true}にバインドされている時
+チックマークを自動的に描きます。
+
+@item
+オプション @code{xtics}がシンボル @var{false}にバインドされている時
+チックマークを描きません。
+
+@item
+オプション @code{xtics}が正の数にバインドされている時、
+これは２つの連続するチックマークの間の距離になります。
+
+@item
+オプション @code{xtics}が形式
+@code{[start,incr,end]}の長さ３のリストにバインドされている時、
+チックマークを @code{start}から @code{end}まで長さ
+@code{incr}の間隔でプロットします。
+
+@item
+オプション @code{xtics}が形式
+@code{@{n1, n2, ...@}}の数の集合にバインドされている時、チックマークを
+値 @code{n1}, @code{n2}, ...にプロットします。
+
+@item
+オプション @code{xtics}が形式
+@code{@{["label1", n1], ["label2", n2], ...@}}の対の集合にバインドされている時、値
+@code{n1}, @code{n2}, ...に対応するチックマークをそれぞれ、
+@code{"label1"}, @code{"label2"}, ...にラベルします。
+@end itemize
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+チックをディセーブルします。
+@example
+(%i1) draw2d(xtics = 'false,
+             explicit(x^3,x,-1,1)  )$
+@end example
+
+1/4単位毎のチック。
+@example
+(%i1) draw2d(xtics = 1/4,
+             explicit(x^3,x,-1,1)  )$
+@end example
+
+-3/4から 3/4まで 1/8のステップでチック。
+@example
+(%i1) draw2d(xtics = [-3/4,1/8,3/4],
+             explicit(x^3,x,-1,1)  )$
+@end example
+
+点 -1/2, -1/4, 3/4にチック。
+@example
+(%i1) draw2d(xtics = @{-1/2,-1/4,3/4@},
+             explicit(x^3,x,-1,1)  )$
+@end example
+
+ラベルされたチック。
+@example
+(%i1) draw2d(xtics = @{["High",0.75],["Medium",0],["Low",-0.75]@},
+             explicit(x^3,x,-1,1)  )$
+@end example
+
+@mref{ytics}, @mref{ztics}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xtics_axis}
+@defvr {グラフィックオプション} xtics_axis
+デフォルト値: @code{false}
+
+もし @code{xtics_axis}が @code{true}なら、
+チックマークとそれらのラベルを @var{x}軸に沿ってだけプロットします。
+もし @code{false}なら、チックを境界上にプロットします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xtics_rotate}
+@defvr {グラフィックオプション} xtics_rotate
+デフォルト値: @code{false}
+
+もし @code{xtics_rotate}が @code{true}なら、
+@var{x}軸上のチックマークを90度回転します。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{xtics_rotate_secondary}
+@defvr {グラフィックオプション} xtics_rotate_secondary
+デフォルト値: @code{false}
+
+もし @code{xtics_rotate_secondary}が @code{true}なら、
+補助的な @var{x}軸上のチックマークが 90度回転されます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xtics_secondary}
+@defvr {グラフィックオプション} xtics_secondary
+デフォルト値: @code{auto}
+
+このグラフィックオプションは、二番目の @var{x}軸上にチックマークを描く方法を制御します。
+
+完全な記述に関しては @code{xtics}を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xtics_secondary_axis}
+@defvr {グラフィックオプション} xtics_secondary_axis
+デフォルト値: @code{false}
+
+もし @code{xtics_secondary_axis}が @code{true}なら、
+チックマークとそれらのラベルを補助的な @var{x}軸に沿ってだけプロットし、
+もし @code{false}なら境界上にプロットします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{xu_grid}
+@defvr {グラフィックオプション} xu_grid
+デフォルト値: 30
+
+@code{xu_grid}は
+サンプル点のグリッドを構築するための一番目の変数
+(陽での @code{x}、パラメトリック3d表面での @code{u})の座標の数です。
+
+このオプションは以下のグラフィックオブジェクトに影響を与えます:
+@itemize @bullet
+@item
+@code{gr3d}: @code{explicit}と @code{parametric_surface}。
+@end itemize
+
+例:
+
+@example
+(%i1) draw3d(xu_grid = 10,
+             yv_grid = 50,
+             explicit(x^2+y^2,x,-3,3,y,-3,3) )$
+@end example
+
+@mref{yv_grid}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xy_file}
+@defvr {グラフィックオプション} xy_file
+デフォルト値: @code{""} (empty string)
+
+@code{xy_file}は、マウスでクリックし
+'x'キーを叩いた後、座標を保存するファイルの名前です。
+デフォルトでは座標を保存しません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{xyplane}
+@defvr {グラフィックオプション} xyplane
+デフォルト値: @code{false}
+
+3Dシーンの中に xy平面を配置します。
+@code{xyplane}が @code{false}の時、
+xy平面は自動的に置かれます;
+実数の時、 xy平面はこのレベルで z軸と交わります。
+このオプションは 2Dシーンでは効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(xyplane = %e-2,
+             explicit(x^2+y^2,x,-1,1,y,-1,1))$
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{y_voxel}
+@defvr {グラフィックオプション} y_voxel
+デフォルト値: 10
+
+@code{y_voxel}は
+3d@code{陰的}オブジェクトで実装された@i{マーチングキューブアルゴリズム}で使われる
+y方向のボクセルの数です。
+グラフィックオブジェクト @mref{region}でも使われます。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yaxis}
+@defvr {グラフィックオプション} yaxis
+デフォルト値: @code{false}
+
+もし @code{yaxis}が @code{true}なら @var{y}軸を描きます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             yaxis       = true,
+             yaxis_color = blue)$
+@end example
+
+@mref{yaxis_width}, @mref{yaxis_type}, @mref{yaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yaxis_color}
+@defvr {グラフィックオプション} yaxis_color
+デフォルト値: @code{"black"}
+
+@code{yaxis_color}は @var{y}軸の色を指定します。
+色がどのように定義されているか知るには @code{color}を参照してください。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             yaxis       = true,
+             yaxis_color = red)$
+@end example
+
+@mref{yaxis}, @mref{yaxis_width}, @mref{yaxis_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yaxis_secondary}
+@defvr {グラフィックオプション} yaxis_secondary
+デフォルト値: @code{false}
+
+もし @code{yaxis_secondary}が @code{true}なら、
+関数値を二番目の @var{y}軸に関してプロットできます。
+二番目の @var{y}軸をシーンの右側に描きます。
+
+これは 2dプロットにだけ影響する局所的なグラフィックオプションであることに注意してください。
+
+例:
+
+@example
+(%i1) draw2d(
+         explicit(sin(x),x,0,10),
+         yaxis_secondary = true,
+         ytics_secondary = true,
+         color = blue,
+         explicit(100*sin(x+0.1)+2,x,0,10));
+@end example
+
+@mref{yrange_secondary}, @mref{ytics_secondary}, @mref{ytics_rotate_secondary},
+@code{ytics_axis_secondary}も参照してください。
+@c TODO: Document ytics_axis_secondary
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yaxis_type}
+@defvr {グラフィックオプション} yaxis_type
+デフォルト値: @code{dots}
+
+@code{yaxis_type}は @var{y}軸がどのように表示されるか示します;
+可能な値は @code{solid}と @code{dots}です。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             yaxis       = true,
+             yaxis_type  = solid)$
+@end example
+
+@mref{yaxis}, @mref{yaxis_width}, @mref{yaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yaxis_width}
+@defvr {グラフィックオプション} yaxis_width
+デフォルト値: 1
+
+@code{yaxis_width}は @var{y}軸の幅です。
+その値は正の数でなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw2d(explicit(x^3,x,-1,1),
+             yaxis       = true,
+             yaxis_width = 3)$
+@end example
+
+@mref{yaxis}, @mref{yaxis_type}, @mref{yaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ylabel_draw}
+@defvr {グラフィックオプション} ylabel
+デフォルト値: @code{""}
+
+オプション@code{ylabel}、文字列は @var{y}軸のラベルです。
+デフォルトでは軸は文字列 @code{"y"}でラベルされます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(xlabel = "Time",
+             ylabel = "Population",
+             explicit(exp(u),u,-2,2) )$
+@end example
+
+@mref{xlabel}, @mref{xlabel_secondary}, @mref{ylabel_secondary}, @mref{zlabel}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ylabel_secondary}
+@defvr {グラフィックオプション} ylabel_secondary
+デフォルト値: @code{""} (空の文字列)
+
+文字列であるオプション @code{ylabel_secondary}は副@var{y}軸のラベルです。
+デフォルトではラベルを書きません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+        key_pos=bottom_right,
+        key="current",
+        xlabel="t[s]",
+        ylabel="I[A]",ylabel_secondary="P[W]",
+        explicit(sin(t),t,0,10),
+        yaxis_secondary=true,
+        ytics_secondary=true,
+        color=red,key="Power",
+        explicit((sin(t))^2,t,0,10)
+    )$
+@end example
+
+@mref{xlabel_draw}, @mref{xlabel_secondary}, @mref{ylabel_draw}, @mref{zlabel}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yrange}
+@defvr {グラフィックオプション} yrange
+デフォルト値: @code{auto}
+
+もし @code{yrange}が @code{auto}なら、 @var{y}座標の範囲を自動的に計算します。
+
+もしユーザーが @var{y}の特定の区間が欲しいなら、
+@code{yrange=[-2, 3]}のように Maximaリストとして与えなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(yrange = [-2,3],
+             explicit(x^2,x,-1,1),
+             xrange = [-3,3])$
+@end example
+
+@mref{xrange}, @mref{yrange_secondary}, @mref{zrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yrange_secondary}
+@defvr {グラフィックオプション} yrange_secondary
+デフォルト値: @code{auto}
+
+もし @code{yrange_secondary}が @code{auto}なら、二番目の
+@var{y}軸の範囲を自動的に計算します。
+
+もしユーザーが二番目の @var{y}軸の特定の区間が欲しいなら、
+@code{yrange_secondary=[-2, 3]}のように Maximaリストとして与えなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw2d(
+         explicit(sin(x),x,0,10),
+         yaxis_secondary = true,
+         ytics_secondary = true,
+         yrange = [-3, 3],
+         yrange_secondary = [-20, 20],
+         color = blue,
+         explicit(100*sin(x+0.1)+2,x,0,10)) $
+@end example
+
+@mref{xrange}, @mref{yrange}, @mref{zrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end defvr
+
+@anchor{ytics_draw}
+@defvr {グラフィックオプション} ytics
+デフォルト値: @code{true}
+
+このグラフィックオプションは @var{y}軸上にチックマークを描く方法を制御します。
+
+完全な記述に関しては @code{xtics}を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ytics_axis}
+@defvr {グラフィックオプション} ytics_axis
+デフォルト値: @code{false}
+
+もし @code{ytics_axis}が @code{true}なら、
+チックマークとそれらのラベルを @var{y}軸に沿ってだけプロットし、
+もし @code{false}なら境界上にプロットします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{ytics_rotate}
+@defvr {グラフィックオプション} ytics_rotate
+デフォルト値: @code{false}
+
+もし @code{ytics_rotate}が @code{true}なら、
+@var{y}軸上のチックマークを90度回転させます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{ytics_rotate_secondary}
+@defvr {グラフィックオプション} ytics_rotate_secondary
+デフォルト値: @code{false}
+
+もし @code{ytics_rotate_secondary}が @code{true}なら、
+補助的な @var{y}軸上のチックマークを 90度回転させます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{ytics_secondary}
+@defvr {グラフィックオプション} ytics_secondary
+デフォルト値: @code{auto}
+
+このグラフィックオプションは、二番目の
+@var{y}軸上にチックマークを描く方法を制御します。
+
+完全な記述に関しては @code{xtics}を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ytics_secondary_axis}
+@defvr {グラフィックオプション} ytics_secondary_axis
+デフォルト値: @code{false}
+
+もし @code{ytics_secondary_axis}が @code{true}なら、
+チックマークとそれらのラベルを補助的な @var{y}軸に沿ってだけプロットし、
+もし @code{false}なら境界上にプロットします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{yv_grid}
+@defvr {グラフィックオプション} yv_grid
+デフォルト値: 30
+
+@code{yv_grid}はサンプル点のグリッドを構築するための二番目の変数(陽での
+@code{y}、パラメトリック 3d表面での @code{v})の座標の数です。
+
+このオプションは以下のグラフィックオブジェクトに影響を与えます:
+@itemize @bullet
+@item
+@code{gr3d}: @mref{explicit}と@mref{parametric_surface}。
+@end itemize
+
+例:
+
+@example
+(%i1) draw3d(xu_grid = 10,
+             yv_grid = 50,
+             explicit(x^2+y^2,x,-3,3,y,-3,3) )$
+@end example
+@figure{draw_xugrid}
+
+@mref{xu_grid}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{z_voxel}
+@defvr {グラフィックオプション} z_voxel
+デフォルト値: 10
+
+@code{z_voxel}は
+3d @code{陰的}オブジェクトで実装された@i{マーチングキューブアルゴリズム}
+で使われる z方向のボクセルの数です。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{zaxis}
+@defvr {グラフィックオプション} zaxis
+デフォルト値: @code{false}
+
+もし @code{zaxis}が @code{true}なら、 3Dプロットで @var{z}軸を描きます。
+このオプションは 2Dシーンでは効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(explicit(x^2+y^2,x,-1,1,y,-1,1),
+             zaxis       = true,
+             zaxis_type  = solid,
+             zaxis_color = blue)$
+@end example
+
+@mref{zaxis_width}, @mref{zaxis_type}, @mref{zaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{zaxis_color}
+@defvr {グラフィックオプション} zaxis_color
+デフォルト値: @code{"black"}
+
+@code{zaxis_color}は @var{z}軸の色を指定します。
+色がどのように定義されているか知るには @code{color}を参照してください。
+このオプションは 2Dシーンでは効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(explicit(x^2+y^2,x,-1,1,y,-1,1),
+             zaxis       = true,
+             zaxis_type  = solid,
+             zaxis_color = red)$
+@end example
+
+@mref{zaxis}, @mref{zaxis_width}, @mref{zaxis_type}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{zaxis_type}
+@defvr {グラフィックオプション} zaxis_type
+デフォルト値: @code{dots}
+
+@code{zaxis_type}は @var{z}軸がどのように表示されるか示します;
+可能な値は @code{solid}と @code{dots}です。
+このオプションは 2Dシーンでは効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(explicit(x^2+y^2,x,-1,1,y,-1,1),
+             zaxis       = true,
+             zaxis_type  = solid)$
+@end example
+
+@mref{zaxis}, @mref{zaxis_width}, @mref{zaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{zaxis_width}
+@defvr {グラフィックオプション} zaxis_width
+デフォルト値: 1
+
+@code{zaxis_width}は @var{z}軸の幅です。
+その値は正の数でなければいけません。
+このオプションは 2Dシーンでは効果を持ちません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題なりません。
+
+例:
+
+@example
+(%i1) draw3d(explicit(x^2+y^2,x,-1,1,y,-1,1),
+             zaxis       = true,
+             zaxis_type  = solid,
+             zaxis_width = 3)$
+@end example
+
+@mref{zaxis}, @mref{zaxis_type}, @mref{zaxis_color}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{zlabel_draw}
+@defvr {グラフィックオプション} zlabel
+デフォルト値: @code{""}
+
+オプション @code{zlabel}文字列は @var{z}軸のラベルです。
+デフォルトでは軸は文字列 @code{"z"}でラベルされます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d(zlabel = "Z variable",
+             ylabel = "Y variable",
+             explicit(sin(x^2+y^2),x,-2,2,y,-2,2),
+             xlabel = "X variable" )$
+@end example
+
+@mref{xlabel_draw}と @mref{ylabel_draw}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{zlabel_rotate}
+@defvr {グラフィックオプション} zlabel_rotate
+デフォルト値: @code{"auto"}
+
+このグラフィックオプションは
+もし3dプロットのz軸ラベルを水平に描画するか (@code{false})垂直か (@code{true})
+もしくはラベルの長さに基づいてmaximaが方向を自動的に選択するか
+@code{auto})を選ぶことを可能にします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d(
+          explicit(sin(x)*sin(y),x,0,10,y,0,10),
+          zlabel_rotate=false
+      )$
+@end example
+
+@mref{zlabel_draw}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@anchor{zrange}
+@defvr {グラフィックオプション} zrange
+デフォルト値: @code{auto}
+
+もし @code{zrange}が @code{auto}なら、 @var{z}座標の範囲を自動的に計算します。
+
+もしユーザーが @var{z}の特定の区間が欲しいなら、
+@code{zrange=[-2, 3]}のように Maximaリストとして与えなければいけません。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+例:
+
+@example
+(%i1) draw3d(yrange = [-3,3],
+             zrange = [-2,5],
+             explicit(x^2+y^2,x,-1,1,y,-1,1),
+             xrange = [-3,3])$
+@end example
+
+@mref{xrange}, @mref{yrange}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end defvr
+
+
+@anchor{ztics}
+@defvr {グラフィックオプション} ztics
+デフォルト値: @code{auto}
+
+このグラフィックオプションは、
+@var{z}軸上にチックマークを描く方法を制御します。
+
+完全な記述に関しては @code{xtics}を参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+@anchor{ztics_axis}
+@defvr {グラフィックオプション} ztics_axis
+デフォルト値: @code{false}
+
+もし @code{ztics_secondary_axis}が @code{true}なら、
+チックマークとそれらのラベルを補助的な @var{z}軸に沿ってだけプロットし、
+もし @code{false}なら境界上にプロットします。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+@anchor{ztics_rotate}
+@defvr {グラフィックオプション} ztics_rotate
+デフォルト値: @code{false}
+
+もし @code{ztics_rotate}が @code{true}なら、
+@var{z}軸上のチックマークを 90度回転させます。
+
+これはグローバルグラフィックスオプションなので、シーン記述の位置は問題になりません。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+@subsection Graphics objects
+
+
+
+@anchor{bars}
+@deffn  {グラフィックオブジェクト} bars ([@var{x1},@var{h1},@var{w1}], [@var{x2},@var{h2},@var{w2}, ...])
+2D内に垂直バーを描画します。
+
+@b{2D}
+
+@code{bars ([@var{x1},@var{h1},@var{w1}], [@var{x2},@var{h2},@var{w2},
+...])}は値 @var{x1}, @var{x2}, ...に中心を持ち、高さ @var{h1}, @var{h2},
+...と幅 @var{w1}, @var{w2}, ...を持つバーを描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}に影響されます: @mref{key},
+@mref{fill_color}, @mref{fill_density}, @mref{line_width}。
+
+例:
+
+@example
+(%i1) draw2d(
+       key          = "Group A",
+       fill_color   = blue,
+       fill_density = 0.2,
+       bars([0.8,5,0.4],[1.8,7,0.4],[2.8,-4,0.4]),
+       key          = "Group B",
+       fill_color   = red,
+       fill_density = 0.6,
+       line_width   = 4,
+       bars([1.2,4,0.4],[2.2,-2,0.4],[3.2,5,0.4]),
+       xaxis = true);
+@end example
+@figure{draw_bars}
+
+@end deffn
+
+
+
+@anchor{cylindrical}
+@deffn  {グラフィックオブジェクト} cylindrical (@var{radius}, @var{z}, @var{minz}, @var{maxz}, @var{azi}, @var{minazi}, @var{maxazi})
+円柱座標で定義された 3D関数を描画します。
+
+@b{3D}
+
+@code{cylindrical (@var{radius}, @var{z}, @var{minz}, @var{maxz}, @var{azi},
+@var{minazi}, @var{maxazi})}は
+@var{minz}から @var{maxz}までの値を取る @var{z}と
+@var{minazi}から @var{maxazi}まで値を取る@i{方位角}
+@var{azi}を伴う円柱座標で定義された関数
+@code{@var{radius}(@var{z},@var{azi})}をプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}に作用されます:
+@mref{xu_grid}, @mref{yv_grid}, @mref{line_type}, @mref{key},
+@mref{wired_surface}, @mref{enhanced3d}, @mref{color}。
+
+例:
+
+@example
+(%i1) draw3d(cylindrical(1,z,-2,2,az,0,2*%pi))$
+@end example
+@figure{draw_cylindrical}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{elevation_grid}
+@deffn  {グラフィックオブジェクト} elevation_grid (@var{mat},@var{x0},@var{y0},@var{width},@var{height})
+
+3D空間に行列 @var{mat}を描画します。
+@var{x0}から @math{@var{x0} + @var{width}}までの横座標範囲と
+@var{y0}から @math{@var{y0} + @var{height}}までの縦座標範囲で、
+@var{z}値は @var{mat}から取られます。
+要素 @math{a(1,1)}は点 @math{(x0,y0+height)}上に射影され、
+@math{a(1,n)}は @math{(x0+width,y0+height)}上に射影され、
+@math{a(m,1)}は @math{(x0,y0)}上に射影され、
+@math{a(m,n)}は @math{(x0+width,y0)}上に射影されます。
+
+このオブジェクトは以下の@i{グラフィックオプション}に作用されます: @mref{line_type},
+@mref{line_width}, @mref{key}, @mref{wired_surface}, @mref{enhanced3d},
+@mref{color}。
+
+Maximaの古いバージョンでは @mref{elevation_grid}を @mref{mesh}と呼びました。
+@mref{mesh}も参照してください。
+
+例:
+
+@example
+(%i1) m: apply(
+            matrix,
+            makelist(makelist(random(10.0),k,1,30),i,1,20)) $
+(%i2) draw3d(
+         color = blue,
+         elevation_grid(m,0,0,3,2),
+         xlabel = "x",
+         ylabel = "y",
+         surface_hide = true);
+@end example
+@figure{draw_elevation_grid}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{ellipse}
+@deffn  {グラフィックオブジェクト} ellipse (@var{xc}, @var{yc}, @var{a}, @var{b}, @var{ang1}, @var{ang2})
+2D内で楕円や円を描画します。
+
+
+@b{2D}
+
+@code{ellipse (@var{xc}, @var{yc}, @var{a}, @var{b}, @var{ang1}, @var{ang2})}は
+@code{[@var{xc}, @var{yc}]}を中心とし、水平と垂直半軸にそれぞれ
+@var{a}と @var{b}を持ち、角度 @var{ang1}から始まり、角度
+@var{ang2}に等しい振幅を持つ楕円をプロットします。
+
+このオブジェクトは以下の@i{graphic options}に影響されます:
+@mref{nticks},
+@mref{transparent}, @mref{fill_color}, @mref{border}, @mref{line_width},
+@mref{line_type}, @mref{key}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(transparent = false,
+             fill_color  = red,
+             color       = gray30,
+             transparent = false,
+             line_width  = 5,
+             ellipse(0,6,3,2,270,-270),
+             /* center (x,y), a, b, start & end in degrees */
+             transparent = true,
+             color       = blue,
+             line_width  = 3,
+             ellipse(2.5,6,2,3,30,-90),
+             xrange      = [-3,6],
+             yrange      = [2,9] )$
+@end example
+@figure{draw_ellipse}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{errors}
+@deffn  {グラフィックオブジェクト} errors ([@var{x1}, @var{x2}, @dots{}], [@var{y1}, @var{y2}, @dots{}])
+オプション @code{error_type}の値に依存して、
+水平、垂直もしくは両方のエラーバーと共に点を描きます。
+
+@b{2D}
+
+もし @code{error_type = x}なら、
+@code{errors}の引数は形式 @code{[x, y, xdelta]}か
+@code{[x, y, xlow, xhigh]}でなければいけません。
+もし @code{error_type = y}なら、
+引数は形式 @code{[x, y, ydelta]}か @code{[x, y, ylow, yhigh]}でなければいけません。
+もし @code{error_type = xy}か @code{error_type = boxes}なら、
+@code{errors}の引数は形式 @code{[x, y, xdelta, ydelta]}か
+@code{[x, y, xlow, xhigh, ylow, yhigh]}でなければいけません。
+
+@mref{error_type}も参照してください。
+
+このオブジェクトは以下の@i{グラフィックオブジェクト}によって影響されます:
+@mref{error_type}, @mref{points_joined}, @mref{line_width}, @mref{key},
+@mref{line_type}, @mref{color}, @mref{fill_density}, @mref{xaxis_secondary},
+@mref{yaxis_secondary}.
+
+オプション @code{fill_density}は @code{error_type=boxes}の時だけ有効です。
+
+例:
+
+水平エラーバー。
+
+@example
+(%i1) draw2d(
+        error_type = 'y,
+        errors([[1,2,1], [3,5,3], [10,3,1], [17,6,2]]))$
+@end example
+@figure{draw_errors}
+
+垂直および水平エラーバー。
+
+@example
+(%i1) draw2d(
+        error_type = 'xy,
+        points_joined = true,
+        color = blue,
+        errors([[1,2,1,2], [3,5,2,1], [10,3,1,1], [17,6,1/2,2]]));
+@end example
+@figure{draw_errors2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{explicit}
+@deffn  {グラフィックオブジェクト} explicit @
+@fname{explicit} (@var{expr},@var{var},@var{minval},@var{maxval}) @
+@fname{explicit} (@var{fcn},@var{var},@var{minval},@var{maxval}) @
+@fname{explicit} (@var{expr},@var{var1},@var{minval1},@var{maxval1},@var{var2},@var{minval2},@var{maxval2}) @
+@fname{explicit} (@var{fcn},@var{var1},@var{minval1},@var{maxval1},@var{var2},@var{minval2},@var{maxval2})
+
+(@var{fcn},@var{var1},@var{minval1},@var{maxval1},@var{var2},@var{minval2},@var{maxval2})
+2Dおよび3Dにて陽関数を描画します。
+
+@b{2D}
+
+@code{explicit(@var{fcn},@var{var},@var{minval},@var{maxval})}は
+@var{minval}から @var{maxval}まで値を取る変数 @var{var}を伴う陽関数
+@var{fcn}をプロットします。
+
+このオブジェクトは以下の@i{graphic options}に作用されます:
+@mref{nticks}, @mref{adapt_depth}, @mref{draw_realpart}, @mref{line_width},
+@mref{line_type}, @mref{key}, @mref{filled_func}, @mref{fill_color},
+@mref{color}。
+
+例:
+
+@example
+(%i1) draw2d(line_width = 3,
+             color      = blue,
+             explicit(x^2,x,-3,3) )$
+@end example
+@figure{draw_explicit}
+@example
+(%i2) draw2d(fill_color  = brown,
+             filled_func = true,
+             explicit(x^2,x,-3,3) )$
+@end example
+@figure{draw_explicit2}
+
+@b{3D}
+
+@code{explicit(@var{fcn}, @var{var1}, @var{minval1}, @var{maxval1}, @var{var2},
+@var{minval2}, @var{maxval2})}は
+@var{minval1}から @var{maxval1}まで値を取る変数 @var{var1}と
+@var{minval2}から @var{maxval2}まで値を取る変数 @var{var2}を伴う陽関数
+@var{fcn}をプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{draw_realpart}, @mref{xu_grid}, @mref{yv_grid}, @mref{line_type},
+@mref{line_width}, @mref{key}, @mref{wired_surface}, @mref{enhanced3d},
+@mref{color}。
+
+例:
+
+@example
+(%i1) draw3d(key   = "Gauss",
+             color = "#a02c00",
+             explicit(20*exp(-x^2-y^2)-10,x,-3,3,y,-3,3),
+             yv_grid     = 10,
+             color = blue,
+             key   = "Plane",
+             explicit(x+y,x,-5,5,y,-5,5),
+             surface_hide = true)$
+@end example
+@figure{draw_explicit3}
+
+埋められた関数に関しては @mref{filled_func}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{image}
+@deffn  {グラフィックオブジェクト} image (@var{im},@var{x0},@var{y0},@var{width},@var{height})
+2Dにてイメージを描写します。
+
+@b{2D}
+
+@code{image (@var{im},@var{x0},@var{y0},@var{width},@var{height})}は
+実平面上の頂点 @code{(@var{x0},@var{y0})}から
+@code{(x0+@var{width},y0+@var{height})}までの長方形領域にイメージ
+@var{im}をプロットします。
+引数 @var{im}は実数の行列、長さ 3のベクトルの行列もしくは
+@var{picture}オブジェクトでなければいけません。
+
+もし @var{im}が実数の行列か
+@var{levels picture}オブジェクトなら、ピクセル値は -36から +36に広がる成分を持つ長さ
+3のベクトルであるグラフィックオプション @code{palette}に従って解釈されます;
+それぞれの値はレベルをそれぞれ赤、緑、青色にマップする公式のインデックスです。
+@example
+ 0: 0               1: 0.5           2: 1
+ 3: x               4: x^2           5: x^3
+ 6: x^4             7: sqrt(x)       8: sqrt(sqrt(x))
+ 9: sin(90x)       10: cos(90x)     11: |x-0.5|
+12: (2x-1)^2       13: sin(180x)    14: |cos(180x)|
+15: sin(360x)      16: cos(360x)    17: |sin(360x)|
+18: |cos(360x)|    19: |sin(720x)|  20: |cos(720x)|
+21: 3x             22: 3x-1         23: 3x-2
+24: |3x-1|         25: |3x-2|       26: (3x-1)/2
+27: (3x-2)/2       28: |(3x-1)/2|   29: |(3x-2)/2|
+30: x/0.32-0.78125                  31: 2*x-0.84
+32: 4x;1;-2x+1.84;x/0.08-11.5
+33: |2*x - 0.5|    34: 2*x          35: 2*x - 0.5
+36: 2*x - 1
+@end example
+負の数は負の色成分を意味します。
+
+@code{palette = gray}と @code{palette = color}はそれぞれ、
+@code{palette = [3,3,3]}と @code{palette = [7,5,15]}へのショートカットです。
+
+もし @var{im}が長さ 3のベクトルの行列か
+@var{rgb picture}オブジェクトなら、それらは赤、緑、青の色成分として解釈されます。
+
+例:
+
+もし @var{im}が実数の行列なら、ピクセル値はグラフィックオプション
+@code{palette}に従って解釈されます。
+@example
+(%i1) im: apply(
+           'matrix,
+            makelist(makelist(random(200),i,1,30),i,1,30))$
+(%i2) /* palette = color, default */
+      draw2d(image(im,0,0,30,30))$
+@end example
+@figure{draw_image}
+@example
+(%i3) draw2d(palette = gray, image(im,0,0,30,30))$
+@end example
+@figure{draw_image2}
+@example
+(%i4) draw2d(palette = [15,20,-4],
+             colorbox=false,
+             image(im,0,0,30,30))$
+@end example
+@figure{draw_image3}
+
+@mref{colorbox}も参照してください。
+
+もし @var{im}が長さ3のベクトルの行列なら、
+それらは赤、緑、青の色成分として解釈されます。
+@example
+(%i1) im: apply(
+            'matrix,
+             makelist(
+               makelist([random(300),
+                         random(300),
+                         random(300)],i,1,30),i,1,30))$
+(%i2) draw2d(image(im,0,0,30,30))$
+@end example
+@figure{draw_image4}
+
+パッケージ @code{draw}は自動的にパッケージ @code{picture}をロードします。
+この例ではレベルピクチャオブジェクトを手動で組み立て、描画します。
+@example
+(%i1) im: make_level_picture([45,87,2,134,204,16],3,2);
+(%o1)       picture(level, 3, 2, @{Array:  #(45 87 2 134 204 16)@})
+(%i2) /* default color palette */
+      draw2d(image(im,0,0,30,30))$
+@end example
+@figure{draw_image5}
+@example
+(%i3) /* gray palette */
+      draw2d(palette = gray,
+             image(im,0,0,30,30))$
+@end example
+@figure{draw_image6}
+
+xpmファイルを読み込み、描写します。
+@example
+(%i1) im: read_xpm("myfile.xpm")$
+(%i2) draw2d(image(im,0,0,10,7))$
+@end example
+
+@mref{make_level_picture}, @mref{make_rgb_picture},
+@mref{read_xpm}も参照してください。
+
+@url{http://www.telefonica.net/web2/biomates/maxima/gpdraw/image}@*
+には更に丹念な例があります。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{implicit}
+@deffn  {グラフィックオブジェクト} implicit @
+@fname{implicit} (@var{fcn},@var{x},@var{xmin},@var{xmax},@var{y},@var{ymin},@var{ymax}) @
+@fname{implicit} (@var{fcn},@var{x},@var{xmin},@var{xmax},@var{y},@var{ymin},@var{ymax},@var{z},@var{zmin},@var{zmax})
+
+(@var{fcn},@var{x},@var{xmin},@var{xmax},@var{y},@var{ymin},@var{ymax},@var{z},@var{zmin},@var{zmax})
+2Dおよび 3Dにて陰関数を描画します。
+
+@b{2D}
+
+@code{implicit(@var{fcn},@var{x},@var{xmin},@var{xmax},@var{y},@var{ymin},@var{ymax})}は
+@var{xmin}から @var{xmax}までの値を取る変数 @var{x}と
+@var{ymin}から @var{ymax}までの値を取る変数 @var{y}を伴う
+@var{fcn}で定義された陰関数をプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{ip_grid}, @mref{ip_grid_in}, @mref{line_width}, @mref{line_type},
+@mref{key}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(grid      = true,
+             line_type = solid,
+             key       = "y^2=x^3-2*x+1",
+             implicit(y^2=x^3-2*x+1, x, -4,4, y, -4,4),
+             line_type = dots,
+             key       = "x^3+y^3 = 3*x*y^2-x-1",
+             implicit(x^3+y^3 = 3*x*y^2-x-1, x,-4,4, y,-4,4),
+             title     = "Two implicit functions" )$
+@end example
+@figure{draw_implicit}
+
+@b{3D}
+
+@code{implicit (@var{fcn},@var{x},@var{xmin},@var{xmax}, @var{y},@var{ymin},@var{ymax}, @var{z},@var{zmin},@var{zmax})}は
+@var{xmin}から @var{xmax}までの値を取る変数 @var{x}と
+@var{ymin}から @var{ymax}までの値を取る変数 @var{y}と
+@var{zmin}から @var{zmax}までの値を取る変数 @var{z}を伴う
+@var{fcn}で定義された陰表面をプロットします。
+このオブジェクトは@i{マーチングキューブアルゴリズム}を実装します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{x_voxel}, @mref{y_voxel}, @mref{z_voxel}, @mref{line_width},
+@mref{line_type}, @mref{key}, @mref{wired_surface}, @mref{enhanced3d},
+@mref{color}。
+
+例:
+
+@example
+(%i1) draw3d(
+        color=blue,
+        implicit((x^2+y^2+z^2-1)*(x^2+(y-1.5)^2+z^2-0.5)=0.015,
+                 x,-1,1,y,-1.2,2.3,z,-1,1),
+        surface_hide=true);
+@end example
+@figure{draw_implicit2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end deffn
+
+
+
+@anchor{label_draw}
+@deffn  {グラフィックオブジェクト} label @
+@fname{label} ([@var{string},@var{x},@var{y}],...) @
+@fname{label} ([@var{string},@var{x},@var{y},@var{z}],...)
+
+2Dと 3D内でラベルを書きます。
+
+色付けられたラベルは Gnuplot 4.3以上で機能します。
+これはパッケージ @code{draw}に関して既知のバグです。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{label_alignment}, @mref{label_orientation}, @mref{color}.
+
+@b{2D}
+
+@code{label([@var{string},@var{x},@var{y}])}は点
+@code{[@var{x},@var{y}]}に@var{string}を書きます。
+
+
+例:
+
+@example
+(%i1) draw2d(yrange = [0.1,1.4],
+             color = red,
+             label(["Label in red",0,0.3]),
+             color = "#0000ff",
+             label(["Label in blue",0,0.6]),
+             color = light_blue,
+             label(["Label in light-blue",0,0.9],
+                   ["Another light-blue",0,1.2])  )$
+@end example
+@figure{draw_label}
+
+@b{3D}
+
+@code{label([@var{string},@var{x},@var{y},@var{z}])}は、
+点@code{[@var{x},@var{y},@var{z}]}に@var{string}を書きます。
+
+例:
+
+@example
+(%i1) draw3d(explicit(exp(sin(x)+cos(x^2)),x,-3,3,y,-3,3),
+             color = red,
+             label(["UP 1",-2,0,3], ["UP 2",1.5,0,4]),
+             color = blue,
+             label(["DOWN 1",2,0,-3]) )$
+@end example
+@figure{draw_label2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{mesh}
+@deffn  {グラフィックオブジェクト} mesh (@var{row_1},@var{row_2},...)
+3Dで四角形のメッシュを描画します。
+
+@b{3D}
+
+引数 @var{row_i}は @code{[[x_i1,y_i1,z_i1], ...,[x_in,y_in,z_in]]}という形の
+@var{n}個の 3D 点のリストで、行すべては同じ長さです。
+これらの点すべては 3Dでの任意の表面を定義し、ある意味
+@code{elevation_grid}オブジェクトの一般化です。
+
+このオブジェクトは以下の@i{グラフィックオプション}に作用されます:
+@mref{line_type}, @mref{line_width}, @mref{color}, @mref{key},
+@mref{wired_surface}, @mref{enhanced3d}, @mref{transform}。
+
+例:
+
+簡単な例。
+
+@example
+(%i1) draw3d(
+         mesh([[1,1,3],   [7,3,1],[12,-2,4],[15,0,5]],
+              [[2,7,8],   [4,3,1],[10,5,8], [12,7,1]],
+              [[-2,11,10],[6,9,5],[6,15,1], [20,15,2]])) $
+@end example
+@figure{draw_mesh}
+
+3Dで三角形をプロット。
+
+@example
+(%i1) draw3d(
+        line_width = 2,
+        mesh([[1,0,0],[0,1,0]],
+             [[0,0,1],[0,0,1]])) $
+@end example
+@figure{draw_mesh2}
+
+２つの四角形。
+
+@example
+(%i1) draw3d(
+        surface_hide = true,
+        line_width   = 3,
+        color = red,
+        mesh([[0,0,0], [0,1,0]],
+             [[2,0,2], [2,2,2]]),
+        color = blue,
+        mesh([[0,0,2], [0,1,2]],
+             [[2,0,4], [2,2,4]])) $
+@end example
+@figure{draw_mesh3}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{parametric}
+@deffn  {グラフィックオブジェクト} parametric @
+@fname{parametric} (@var{xfun},@var{yfun},@var{par},@var{parmin},@var{parmax}) @
+@fname{parametric} (@var{xfun},@var{yfun},@var{zfun},@var{par},@var{parmin},@var{parmax})
+
+2Dおよび 3Dにてパラメトリック関数を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@code{nticks}, @mref{line_width}, @mref{line_type}, @mref{key}, @mref{color},
+@mref{enhanced3d}.
+
+@b{2D}
+
+コマンド @code{parametric(@var{xfun}, @var{yfun}, @var{par}, @var{parmin},
+@var{parmax})}は
+@var{parmin}から @var{parmax}まで値を取るパラメータ @var{par}を伴う
+パラメトリック関数 @code{[@var{xfun}, @var{yfun}]}をプロットします。
+
+例:
+
+@example
+(%i1) draw2d(explicit(exp(x),x,-1,3),
+             color = red,
+             key   = "This is the parametric one!!",
+             parametric(2*cos(rrr),rrr^2,rrr,0,2*%pi))$
+@end example
+@figure{draw_parametric}
+
+@b{3D}
+
+@code{parametric (@var{xfun}, @var{yfun}, @var{zfun}, @var{par}, @var{parmin},
+@var{parmax})}は @var{parmin}から @var{parmax}まで値を取るパラメータ
+@var{par}を伴うパラメトリック曲線
+@code{[@var{xfun}, @var{yfun}, @var{zfun}]}をプロットします。
+
+例:
+
+@example
+(%i1) draw3d(explicit(exp(sin(x)+cos(x^2)),x,-3,3,y,-3,3),
+             color = royalblue,
+             parametric(cos(5*u)^2,sin(7*u),u-2,u,0,2),
+             color      = turquoise,
+             line_width = 2,
+             parametric(t^2,sin(t),2+t,t,0,2),
+             surface_hide = true,
+             title = "Surface & curves" )$
+@end example
+@figure{draw_parametric2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{parametric_surface}
+@deffn  {グラフィックオブジェクト} parametric_surface (@var{xfun}, @var{yfun}, @var{zfun}, @var{par1}, @var{par1min}, @var{par1max}, @var{par2}, @var{par2min}, @var{par2max})
+3Dにおいてパラメトリックな表面を描画します。
+
+@b{3D}
+
+コマンド @code{parametric_surface (@var{xfun}, @var{yfun}, @var{zfun},
+@var{par1}, @var{par1min}, @var{par1max}, @var{par2}, @var{par2min},
+@var{par2max})}は
+@var{par1min}から @var{par1max}までを値として取るパラメータ @var{par1}と
+@var{par2min}から @var{par2max}までを値として取るパラメータ @var{par2}を伴う
+パラメトリックな表面 @code{[@var{xfun}, @var{yfun}, @var{zfun}]}をプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{xu_grid}, @mref{yv_grid}, @mref{line_type}, @mref{line_width}, @mref{key},
+@mref{wired_surface}, @mref{enhanced3d}, @mref{color}。
+
+例:
+
+@example
+(%i1) draw3d(title          = "Sea shell",
+             xu_grid        = 100,
+             yv_grid        = 25,
+             view           = [100,20],
+             surface_hide   = true,
+             parametric_surface(0.5*u*cos(u)*(cos(v)+1),
+                           0.5*u*sin(u)*(cos(v)+1),
+                           u*sin(v) - ((u+3)/8*%pi)^2 - 20,
+                           u, 0, 13*%pi, v, -%pi, %pi) )$
+@end example
+@figure{draw_parametric3}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{points}
+@deffn  {グラフィックオブジェクト} points @
+@fname{points} ([[@var{x1},@var{y1}], [@var{x2},@var{y2}],...]) @
+@fname{points} ([@var{x1},@var{x2},...], [@var{y1},@var{y2},...]) @
+@fname{points} ([@var{y1},@var{y2},...]) @
+@fname{points} ([[@var{x1},@var{y1},@var{z1}], [@var{x2},@var{y2},@var{z2}],...]) @
+@fname{points} ([@var{x1},@var{x2},...], [@var{y1},@var{y2},...], [@var{z1},@var{z2},...]) @
+@fname{points} (@var{matrix}) @
+@fname{points} (@var{1d_y_array}) @
+@fname{points} (@var{1d_x_array}, @var{1d_y_array}) @
+@fname{points} (@var{1d_x_array}, @var{1d_y_array}, @var{1d_z_array}) @
+@fname{points} (@var{2d_xy_array}) @
+@fname{points} (@var{2d_xyz_array})
+
+2Dや 3Dの中で点を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{point_size}, @mref{point_type}, @mref{points_joined}, @mref{line_width},
+@mref{key}, @mref{line_type}, @mref{color}.
+3Dモードでは @mref{enhanced3d}の影響も受けます。
+
+@b{2D}
+
+@code{points ([[@var{x1},@var{y1}], [@var{x2},@var{y2}],...])}や
+@code{points ([@var{x1},@var{x2},...], [@var{y1},@var{y2},...])}は
+点 @code{[x1,y1]}, @code{[x2,y2]},などをプロットします。
+もし横座標が与えられないなら、それらは連続する正の整数に設定されます。
+だから、@code{points ([@var{y1},@var{y2},...])}は点
+@code{[1,@var{y1}]}, @code{[2,@var{y2}]}などを描画します。
+もし @var{matrix}が2列または2行行列なら、
+@code{points (@var{matrix})}は関連した点を描画します。
+もし @var{matrix}が 1列または 1行行列なら、横座標が自動的に割り当てられます。
+
+もし @var{1d_y_array}が数の 1Dの lisp配列なら、
+@code{points (@var{1d_y_array})}は
+横座標を連続する正の整数に設定してそれらをプロットします。
+@code{points (@var{1d_x_array}, @var{1d_y_array})}は
+引数として渡された 2つの配列から取られた座標を持つ点をプロットします。
+もし @var{2d_xy_array}が 2列の 2D配列なら、
+@code{points (@var{2d_xy_array})}は平面上に対応する点をプロットします。
+
+例:
+
+@code{points}への2種類の引数、ペアのリストと分離した座標の2つのリスト。
+@example
+(%i1) draw2d(
+        key = "Small points",
+        points(makelist([random(20),random(50)],k,1,10)),
+        point_type    = circle,
+        point_size    = 3,
+        points_joined = true,
+        key           = "Great points",
+        points(makelist(k,k,1,20),makelist(random(30),k,1,20)),
+        point_type    = filled_down_triangle,
+        key           = "Automatic abscissas",
+        color         = red,
+        points([2,12,8]))$
+@end example
+@figure{draw_points}
+
+衝撃を描画。
+@example
+(%i1) draw2d(
+        points_joined = impulses,
+        line_width    = 2,
+        color         = red,
+        points(makelist([random(20),random(50)],k,1,10)))$
+@end example
+@figure{draw_points2}
+
+座標の配列。
+@example
+(%i1) a: make_array (flonum, 100) $
+(%i2) for i:0 thru 99 do a[i]: random(1.0) $
+(%i3) draw2d(points(a)) $
+@end example
+@figure{draw_points3}
+
+分離した座標の 2つの配列。
+@example
+(%i1) x: make_array (flonum, 100) $
+(%i2) y: make_array (fixnum, 100) $
+(%i3) for i:0 thru 99 do (
+        x[i]: float(i/100),
+        y[i]: random(10) ) $
+(%i4) draw2d(points(x, y)) $
+@end example
+@figure{draw_points4}
+
+2列 2D配列。
+@example
+(%i1) xy: make_array(flonum, 100, 2) $
+(%i2) for i:0 thru 99 do (
+        xy[i, 0]: float(i/100),
+        xy[i, 1]: random(10) ) $
+(%i3) draw2d(points(xy)) $
+@end example
+@figure{draw_points5}
+
+関数 @code{read_array}で埋められた配列の描画。
+@example
+(%i1) a: make_array(flonum,100) $
+(%i2) read_array (file_search ("pidigits.data"), a) $
+(%i3) draw2d(points(a)) $
+@end example
+
+@b{3D}
+
+@code{points([[@var{x1}, @var{y1}, @var{z1}], [@var{x2}, @var{y2}, @var{z2}],
+...])} や
+@code{points([@var{x1}, @var{x2}, ...], [@var{y1}, @var{y2}, ...],
+[@var{z1}, @var{z2}, ...])}は
+点 @code{[@var{x1}, @var{y1}, @var{z1}]}, @code{[@var{x2}, @var{y2},
+@var{z2}]}などをプロットします。
+もし @var{matrix}が 3列または 3行行列なら、
+@code{points (@var{matrix})}は関連した点を描画します。
+
+引数が lisp配列の時、
+@code{points (@var{1d_x_array}, @var{1d_y_array}, @var{1d_z_array})}は
+3つの 1D配列から座標を取ります。
+もし @var{2d_xyz_array}が 3列または 3行を持つ 2D配列なら、
+@code{points (@var{2d_xyz_array})}は対応する点をプロットします。
+
+例:
+
+3次元のサンプル１つ、
+@example
+(%i1) load ("numericalio")$
+(%i2) s2 : read_matrix (file_search ("wind.data"))$
+(%i3) draw3d(title = "Daily average wind speeds",
+             point_size = 2,
+             points(args(submatrix (s2, 4, 5))) )$
+@end example
+
+3次元のサンプル２つ、
+@example
+(%i1) load ("numericalio")$
+(%i2) s2 : read_matrix (file_search ("wind.data"))$
+(%i3) draw3d(
+         title = "Daily average wind speeds. Two data sets",
+         point_size = 2,
+         key        = "Sample from stations 1, 2 and 3",
+         points(args(submatrix (s2, 4, 5))),
+         point_type = 4,
+         key        = "Sample from stations 1, 4 and 5",
+         points(args(submatrix (s2, 2, 3))) )$
+@end example
+
+1次元配列、
+@example
+(%i1) x: make_array (fixnum, 10) $
+(%i2) y: make_array (fixnum, 10) $
+(%i3) z: make_array (fixnum, 10) $
+(%i4) for i:0 thru 9 do (
+        x[i]: random(10),
+        y[i]: random(10),
+        z[i]: random(10) ) $
+(%i5) draw3d(points(x,y,z)) $
+@end example
+@figure{draw_points6}
+
+2次元色付け配列、
+@example
+(%i1) xyz: make_array(fixnum, 10, 3) $
+(%i2) for i:0 thru 9 do (
+        xyz[i, 0]: random(10),
+        xyz[i, 1]: random(10),
+        xyz[i, 2]: random(10) ) $
+(%i3) draw3d(
+         enhanced3d = true,
+         points_joined = true,
+         points(xyz)) $
+@end example
+@figure{draw_points7}
+
+ユーザーが明示的に指定した色数。
+@example
+(%i1) pts: makelist([t,t^2,cos(t)], t, 0, 15)$
+(%i2) col_num: makelist(k, k, 1, length(pts))$
+(%i3) draw3d(
+        enhanced3d = ['part(col_num,k),k],
+        point_size = 3,
+        point_type = filled_circle,
+        points(pts))$
+@end example
+@figure{draw_points8}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{polar}
+@deffn  {グラフィックオブジェクト} polar (@var{radius},@var{ang},@var{minang},@var{maxang})
+極座標で定義された2D関数を描画します。
+
+@b{2D}
+
+@code{polar (@var{radius},@var{ang},@var{minang},@var{maxang})}は
+@var{minang}から @var{maxang}まで値を取る変数 @var{ang}を伴う極座標で定義された関数
+@code{@var{radius}(@var{ang})}をプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{nticks}, @mref{line_width}, @mref{line_type}, @mref{key}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(user_preamble = "set grid polar",
+             nticks        = 200,
+             xrange        = [-5,5],
+             yrange        = [-5,5],
+             color         = blue,
+             line_width    = 3,
+             title         = "Hyperbolic Spiral",
+             polar(10/theta,theta,1,10*%pi) )$
+@end example
+@figure{draw_polar}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{polygon}
+@deffn  {グラフィックオブジェクト} polygon @
+@fname{polygon} ([[@var{x1}, @var{y1}], [@var{x2}, @var{y2}], @dots{}]) @
+@fname{polygon} ([@var{x1}, @var{x2}, @dots{}], [@var{y1}, @var{y2}, @dots{}])
+
+2D内でポリゴンを描画します。
+
+@b{2D}
+
+コマンド @code{polygon ([[@var{x1}, @var{y1}], [@var{x2}, @var{y2}],...])}や
+@code{polygon ([@var{x1}, @var{x2},...], [@var{y1}, @var{y2},...])}は
+頂点 @code{[@var{x1}, @var{y1}]}, @code{[@var{x2}, @var{y2}]}などを持つポリゴンを
+平面上にプロットします。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{transparent}, @mref{fill_color}, @mref{border}, @mref{line_width},
+@mref{key}, @mref{line_type}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(color      = "#e245f0",
+             line_width = 8,
+             polygon([[3,2],[7,2],[5,5]]),
+             border      = false,
+             fill_color  = yellow,
+             polygon([[5,2],[9,2],[7,5]]) )$
+@end example
+@figure{draw_polygon}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{quadrilateral}
+@deffn  {グラフィックオブジェクト} quadrilateral (@var{point_1}, @var{point_2}, @var{point_3}, @var{point_4})
+四辺形を描画します。
+
+@b{2D}
+
+@code{quadrilateral ([@var{x1}, @var{y1}], [@var{x2}, @var{y2}],
+[@var{x3}, @var{y3}], [@var{x4}, @var{y4}])}は
+頂点 @code{[@var{x1}, @var{y1}]}, @code{[@var{x2}, @var{y2}]},
+@code{[@var{x3}, @var{y3}]}, @code{[@var{x4}, @var{y4}]}を持つ四辺形を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:@*
+@mref{transparent}, @mref{fill_color}, @mref{border}, @mref{line_width},
+@mref{key}, @mref{xaxis_secondary}, @mref{yaxis_secondary}, @mref{line_type},
+@mref{transform}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(
+        quadrilateral([1,1],[2,2],[3,-1],[2,-2]))$
+@end example
+@figure{draw_quadrilateral}
+
+@b{3D}
+
+@code{quadrilateral([@var{x1}, @var{y1}, @var{z1}], [@var{x2}, @var{y2},
+@var{z2}], [@var{x3}, @var{y3}, @var{z3}], [@var{x4}, @var{y4}, @var{z4}])}は
+頂点 @code{[@var{x1}, @var{y1}, @var{z1}]}, @code{[@var{x2}, @var{y2},
+@var{z2}]}, @code{[@var{x3}, @var{y3}, @var{z3}]}, @code{[@var{x4}, @var{y4},
+@var{z4}]}を持つ四辺形を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます: @mref{line_type},
+@mref{line_width}, @mref{color}, @mref{key}, @mref{enhanced3d},
+@mref{transform}.
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end deffn
+
+@anchor{rectangle}
+@deffn  {グラフィックオブジェクト} rectangle ([@var{x1},@var{y1}], [@var{x2},@var{y2}])
+2D内で長方形を描画します。
+
+@b{2D}
+
+@code{rectangle ([@var{x1},@var{y1}], [@var{x2},@var{y2}])}は、対角頂点
+@code{[@var{x1},@var{y1}]}と@code{[@var{x2},@var{y2}]}を持つ長方形を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます: @mref{transparent},
+@mref{fill_color}, @mref{border}, @mref{line_width}, @mref{key},
+@mref{line_type}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(fill_color  = red,
+             line_width  = 6,
+             line_type   = dots,
+             transparent = false,
+             fill_color  = blue,
+             rectangle([-2,-2],[8,-1]), /* opposite vertices */
+             transparent = true,
+             line_type   = solid,
+             line_width  = 1,
+             rectangle([9,4],[2,-1.5]),
+             xrange      = [-3,10],
+             yrange      = [-3,4.5] )$
+@end example
+@figure{draw_rectangle}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{region}
+@deffn  {グラフィックオブジェクト} region (@var{expr},@var{var1},@var{minval1},@var{maxval1},@var{var2},@var{minval2},@var{maxval2})
+平面上に不等式で定義された領域を描画します。
+
+@b{2D}
+@var{expr}は不等式とブーリアン演算子 @code{and}, @code{or},
+@mref{not}で形成された式です。
+領域は @math{[@var{minval1}, @var{maxval1}]}と@math{[@var{minval2},
+@var{maxval2}]}で定義された長方形で区切られています。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます: @mref{fill_color},
+@mref{key}, @mref{x_voxel}, @mref{y_voxel}.
+
+例:
+
+@example
+(%i1) load(draw)$
+(%i2) draw2d(
+        x_voxel = 30,
+        y_voxel = 30,
+        region(x^2+y^2<1 and x^2+y^2 > 1/2,
+               x, -1.5, 1.5, y, -1.5, 1.5));
+@end example
+@end deffn
+
+
+
+
+@deffn  {グラフィックオブジェクト} spherical (@var{radius}, @var{azi}, @var{minazi}, @var{maxazi}, @var{zen}, @var{minzen}, @var{maxzen})
+球座標で定義された3D関数を描画します。
+
+@b{3D}
+
+@anchor{spherical}
+@code{spherical(@var{radius}, @var{azi}, @var{minazi}, @var{maxazi}, @var{zen},
+@var{minzen}, @var{maxzen})}は
+@var{minazi}から @var{maxazi}まで値を取る @i{方位角} @var{azi}と
+@var{minzen}から @var{maxzen}まで値を取る @i{天頂角}
+@var{zen}を伴う球座標で定義された関数
+@code{@var{radius}(@var{azi}, @var{zen})}を描画します。
+
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{xu_grid}, @mref{yv_grid}, @mref{line_type}, @mref{key},
+@mref{wired_surface}, @mref{enhanced3d}, @mref{color}。
+
+例:
+
+@example
+(%i1) draw3d(spherical(1,a,0,2*%pi,z,0,%pi))$
+@end example
+@figure{draw_spherical}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{triangle}
+@deffn  {グラフィックオブジェクト} triangle (@var{point_1}, @var{point_2}, @var{point_3})
+三角形を描画します。
+
+@b{2D}
+
+@code{triangle ([@var{x1},@var{y1}], [@var{x2},@var{y2}],
+[@var{x3},@var{y3}])}は、頂点 @code{[@var{x1},@var{y1}]},
+@code{[@var{x2},@var{y2}]}, @code{[@var{x3},@var{y3}]}を持つ三角形を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}に影響されます:@*
+@mref{transparent}, @mref{fill_color}, @mref{border}, @mref{line_width},
+@mref{key}, @mref{xaxis_secondary}, @mref{yaxis_secondary}, @mref{line_type},
+@mref{transform}, @mref{color}.
+
+例:
+
+@example
+(%i1) draw2d(
+        triangle([1,1],[2,2],[3,-1]))$
+@end example
+@figure{draw_triangle}
+
+@b{3D}
+
+@code{triangle ([@var{x1},@var{y1},@var{z1}], [@var{x2},@var{y2},@var{z2}],
+[@var{x3},@var{y3},@var{z3}])}は頂点
+@code{[@var{x1},@var{y1},@var{z1}]}, @code{[@var{x2},@var{y2},@var{z2}]},
+@code{[@var{x3},@var{y3},@var{z3}]}を持つ三角形を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}に影響されます:
+@mref{line_type}, @mref{line_width}, @mref{color}, @mref{key},
+@mref{enhanced3d}, @mref{transform}.
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@anchor{tube}
+@deffn  {グラフィックオブジェクト} tube (@var{xfun},@var{yfun},@var{zfun},@var{rfun},@var{p},@var{pmin},@var{pmax})
+3Dにおいて径が変化する管を描画します。
+
+@b{3D}
+
+@code{[@var{xfun},@var{yfun},@var{zfun}]}は
+@var{pmin}から @var{pmax}まで値を取るパラメータ
+@var{p}を伴うパラメトリックな曲線です。
+パラメトリックな曲線上に中心を持ち、曲線と垂直な半径 @var{rfun}の円が置かれます。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{xu_grid}, @mref{yv_grid}, @mref{line_type}, @mref{line_width}, @mref{key},
+@mref{wired_surface}, @mref{color}, @mref{capping}。
+
+例:
+
+@example
+(%i1) draw3d(
+        enhanced3d = true,
+        xu_grid = 50,
+        tube(cos(a), a, 0, cos(a/10)^2,
+             a, 0, 4*%pi) )$
+@end example
+@figure{draw_tube}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{vector}
+@deffn  {グラフィックオブジェクト} vector @
+@fname{vector} ([@var{x},@var{y}], [@var{dx},@var{dy}]) @
+@fname{vector} ([@var{x},@var{y},@var{z}], [@var{dx},@var{dy},@var{dz}])
+
+2Dおよび 3D内でベクトルを描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{head_both}, @mref{head_length}, @mref{head_angle}, @mref{head_type},
+@mref{line_width}, @mref{line_type}, @mref{key}, @mref{color}.
+
+@b{2D}
+
+@code{vector([@var{x},@var{y}], [@var{dx},@var{dy}])}は
+@code{[@var{x},@var{y}]}を原点とするベクトル@code{[@var{dx},@var{dy}]}を
+プロットします。
+
+例:
+
+@example
+(%i1) draw2d(xrange      = [0,12],
+             yrange      = [0,10],
+             head_length = 1,
+             vector([0,1],[5,5]), /* default type */
+             head_type = 'empty,
+             vector([3,1],[5,5]),
+             head_both = true,
+             head_type = 'nofilled,
+             line_type = dots,
+             vector([6,1],[5,5]))$
+@end example
+@figure{draw_vector}
+
+@b{3D}
+
+@code{vector([@var{x},@var{y},@var{z}], [@var{dx},@var{dy},@var{dz}])}は
+@code{[@var{x},@var{y},@var{z}]}を原点とするベクトル
+@code{[@var{dx},@var{dy},@var{dz}]}をプロットします。
+
+例:
+
+@example
+(%i1) draw3d(color = cyan,
+             vector([0,0,0],[1,1,1]/sqrt(3)),
+             vector([0,0,0],[1,-1,0]/sqrt(2)),
+             vector([0,0,0],[1,1,-2]/sqrt(6)) )$
+@end example
+@figure{draw_vector2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+@node Functions and Variables for pictures, Functions and Variables for worldmap, Functions and Variables for draw, draw-pkg
+@section Functions and Variables for pictures
+
+
+
+@anchor{get_pixel}
+@deffn  {関数} get_pixel (@var{pic},@var{x},@var{y})
+ピクチャからピクセルを返します。
+座標 @var{x}と @var{y}は 0からそれぞれ @code{width-1}と
+@code{height-1}までの範囲を取ります。
+
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{make_level_picture}
+@deffn  {関数} make_level_picture @
+@fname{make_level_picture} (@var{data}) @
+@fname{make_level_picture} (@var{data},@var{width},@var{height})
+
+レベル @var{picture}オブジェクトを返します。
+@code{make_level_picture (@var{data})}は行列 @var{data}から
+@var{picture}オブジェクトを作ります。
+@code{make_level_picture (@var{data},@var{width},@var{height})}は
+数のリストからオブジェクトを作ります;
+この場合、 @var{width}と @var{height}両方を与えなければいけません。
+
+返された @var{picture}オブジェクトは以下の4つの部分を含みます:
+
+@enumerate
+@item シンボル @code{level}
+@item イメージの幅
+@item イメージの高さ
+@item 0から 255までの範囲のピクセルデータを持つ整数配列
+引数 @var{data}は 0から 255までの数のみを含まなければいけません;
+負の数は 0に置き換えられ、 255よりも大きな数は 255に設定されます。
+@end enumerate
+
+例:
+
+行列からのレベルピクチャ。
+@example
+(%i1) make_level_picture(matrix([3,2,5],[7,-9,3000]));
+(%o1)         picture(level, 3, 2, @{Array:  #(3 2 5 7 0 255)@})
+@end example
+
+数値リストからのレベルピクチャ
+@example
+(%i1) make_level_picture([-2,0,54,%pi],2,2);
+(%o1)            picture(level, 2, 2, @{Array:  #(0 0 54 3)@})
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{make_rgb_picture}
+@deffn  {関数} make_rgb_picture (@var{redlevel},@var{greenlevel},@var{bluelevel})
+rgb色付けされた @var{picture}オブジェクトを返します。
+3つ引数すべては赤、緑、青のレベルを持つレベルピクチャでなければいけません;
+
+戻り値の @var{picture}オブジェクトは以下の4つの部分を含みます:
+
+@enumerate
+@item シンボル @code{rgb}
+@item イメージの幅
+@item イメージの高さ
+@item 0から 255までの範囲のピクセルデータを持つ長さ @var{3*width*height}の整数配列。
+それぞれのピクセルは。3つの連続する数 (赤、緑、青)で表現されます。
+@end enumerate
+
+例:
+
+@example
+(%i1) red: make_level_picture(matrix([3,2],[7,260]));
+(%o1)           picture(level, 2, 2, @{Array:  #(3 2 7 255)@})
+(%i2) green: make_level_picture(matrix([54,23],[73,-9]));
+(%o2)           picture(level, 2, 2, @{Array:  #(54 23 73 0)@})
+(%i3) blue: make_level_picture(matrix([123,82],[45,32.5698]));
+(%o3)          picture(level, 2, 2, @{Array:  #(123 82 45 33)@})
+(%i4) make_rgb_picture(red,green,blue);
+(%o4) picture(rgb, 2, 2,
+              @{Array:  #(3 54 123 2 23 82 7 73 45 255 0 33)@})
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{negative_picture}
+@deffn  {関数} negative_picture (@var{pic})
+(@var{level}または@var{rgb})ピクチャの反転を返します。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+@end deffn
+
+
+
+
+@anchor{picture_equalp}
+@deffn  {関数} picture_equalp (@var{x},@var{y})
+等しいピクチャの場合 @code{true}を、そうでないなら @code{false}を返します。
+
+@opencatbox
+@category{Package draw} @category{Predicate functions}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{picturep}
+@deffn  {関数} picturep (@var{x})
+もし引数が適正なイメージなら@code{true}を、そうでないなら @code{false}を返します。
+
+@opencatbox
+@category{Package draw} @category{Predicate functions}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{read_xpm}
+@deffn  {関数} read_xpm (@var{xpm_file})
+xpm形式のファイルを読み、ピクチャオブジェクトを返します。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{rgb2level}
+@deffn  {関数} rgb2level (@var{pic})
+@var{rgb}ピクチャを赤、緑、青チャンネルを平均することで
+@var{level}の１つに変換します。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{take_channel}
+@deffn  {関数} take_channel (@var{im},@var{color})
+もし引数 @var{color}が @code{red}, @code{green}または @code{blue}なら、関数
+@code{take_channel}はピクチャ @var{im}の対応する色チャンネルを返します。
+例:
+
+@example
+(%i1) red: make_level_picture(matrix([3,2],[7,260]));
+(%o1)           picture(level, 2, 2, @{Array:  #(3 2 7 255)@})
+(%i2) green: make_level_picture(matrix([54,23],[73,-9]));
+(%o2)           picture(level, 2, 2, @{Array:  #(54 23 73 0)@})
+(%i3) blue: make_level_picture(matrix([123,82],[45,32.5698]));
+(%o3)          picture(level, 2, 2, @{Array:  #(123 82 45 33)@})
+(%i4) make_rgb_picture(red,green,blue);
+(%o4) picture(rgb, 2, 2,
+              @{Array:  #(3 54 123 2 23 82 7 73 45 255 0 33)@})
+(%i5) take_channel(%,'green);  /* simple quote!!! */
+(%o5)           picture(level, 2, 2, @{Array:  #(54 23 73 0)@})
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+
+@node Functions and Variables for worldmap,  , Functions and Variables for pictures, draw-pkg
+@section Functions and Variables for worldmap
+
+@subsection Variable and Functions
+
+
+
+@anchor{boundaries_array}
+@defvr {グローバル変数} boundaries_array
+デフォルト値: @code{false}
+
+@code{boundaries_array}はグラフィックオプション
+@code{geomap}が境界座標を探すところです。
+
+@code{boundaries_array}のそれぞれの成分は浮動小数点量の配列であり、
+多角形のセグメントかマップ境界の座標です。
+
+@mref{geomap}も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end defvr
+
+
+
+
+
+@anchor{numbered_boundaries}
+@deffn  {関数} numbered_boundaries (@var{nlist})
+その数 (@code{boundaries_array}座標)でラベルされた多角形セグメント(境界)のリストを
+描画します。
+これは新しい地理的なものを作る時に非常に役立ちます。
+
+例:
+
+@code{boundaries_array}内の成分数で境界をラベルされたヨーロッパの地図
+@example
+(%i1) load(worldmap)$
+(%i2) european_borders:
+           region_boundaries(-31.81,74.92,49.84,32.06)$
+(%i3) numbered_boundaries(european_borders)$
+@end example
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+@anchor{make_poly_continent}
+@deffn  {関数} make_poly_continent @
+@fname{make_poly_continent} (@var{continent_name}) @
+@fname{make_poly_continent} (@var{country_list})
+
+色付けられた大陸や国のリストを描画するのに必要なポリゴンを作ります。
+
+例:
+
+@example
+(%i1) load(worldmap)$
+(%i2) /* A continent */
+      make_poly_continent(Africa)$
+(%i3) apply(draw2d, %)$
+@end example
+@figure{worldmap_make_poly_continent}
+@example
+(%i4) /* A list of countries */
+      make_poly_continent([Germany,Denmark,Poland])$
+(%i5) apply(draw2d, %)$
+@end example
+@figure{worldmap_make_poly_continent2}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+
+@anchor{make_poly_country}
+@deffn  {関数} make_poly_country (@var{country_name})
+色付けられた国を描画するのに必要なポリゴンを作ります。
+もし島が存在するなら、 1つの国は複数のポリゴンで定義されることがあります。
+
+例:
+
+@example
+(%i1) load(worldmap)$
+(%i2) make_poly_country(India)$
+(%i3) apply(draw2d, %)$
+@end example
+@figure{worldmap_make_poly_country}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+
+@anchor{make_polygon}
+@deffn  {関数} make_polygon (@var{nlist})
+境界添字から @code{polygon}オブジェクトを返します。
+引数 @var{nlist}は @code{boundaries_array}の成分のリストです。
+
+例:
+
+ブータンは境界番号 171, 173, 1143で定義されます。
+だから、 @code{make_polygon([171,173,1143])}は座標
+@code{boundaries_array[171]}, @code{boundaries_array[173]},
+@code{boundaries_array[1143]}の配列を付加し、
+@code{draw}でプロットされるのに適した @code{polygon}オブジェクトを返します．
+エラーメッセージを避けるには、任意の連続する配列が端で共通の
+2つの座標を持つという意味で配列は互換性がなければいけません。
+この例では、
+@code{boundaries_array[171]}の最初の 2つの成分は
+@code{boundaries_array[173]}の最後の 2つの座標と等しく、
+@code{boundaries_array[173]}の最初の 2つは
+@code{boundaries_array[1143]}の最初の 2つに等しいです;
+結論として、境界番号 171, 173,
+1143は (この順で)互換性があり、色付けられたポリゴンは描画できます。
+@example
+(%i1) load(worldmap)$
+(%i2) Bhutan;
+(%o2)                        [[171, 173, 1143]]
+(%i3) boundaries_array[171];
+(%o3) @{Array:
+       #(88.750549 27.14727 88.806351 27.25305 88.901367 27.282221
+         88.917877 27.321039)@}
+(%i4) boundaries_array[173];
+(%o4) @{Array:
+       #(91.659554 27.76511 91.6008 27.66666 91.598022 27.62499
+         91.631348 27.536381 91.765533 27.45694 91.775253 27.4161
+         92.007751 27.471939 92.11441 27.28583 92.015259 27.168051
+         92.015533 27.08083 92.083313 27.02277 92.112183 26.920271
+         92.069977 26.86194 91.997192 26.85194 91.915253 26.893881
+         91.916924 26.85416 91.8358 26.863331 91.712479 26.799999
+         91.542191 26.80444 91.492188 26.87472 91.418854 26.873329
+         91.371353 26.800831 91.307457 26.778049 90.682457 26.77417
+         90.392197 26.903601 90.344131 26.894159 90.143044 26.75333
+         89.98996 26.73583 89.841919 26.70138 89.618301 26.72694
+         89.636093 26.771111 89.360786 26.859989 89.22081 26.81472
+         89.110237 26.829161 88.921631 26.98777 88.873016 26.95499
+         88.867737 27.080549 88.843307 27.108601 88.750549
+         27.14727)@}
+(%i5) boundaries_array[1143];
+(%o5) @{Array:
+       #(91.659554 27.76511 91.666924 27.88888 91.65831 27.94805
+         91.338028 28.05249 91.314972 28.096661 91.108856 27.971109
+         91.015808 27.97777 90.896927 28.05055 90.382462 28.07972
+         90.396088 28.23555 90.366074 28.257771 89.996353 28.32333
+         89.83165 28.24888 89.58609 28.139999 89.35997 27.87166
+         89.225517 27.795 89.125793 27.56749 88.971077 27.47361
+         88.917877 27.321039)@}
+(%i6) Bhutan_polygon: make_polygon([171,173,1143])$
+(%i7) draw2d(Bhutan_polygon)$
+@end example
+@figure{worldmap_make_polygon}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+
+
+@anchor{region_boundaries}
+@deffn  {関数} region_boundaries (@var{x1},@var{y1},@var{x2},@var{y2})
+頂点 (@var{x1},@var{y1}) -左上- と
+(@var{x2},@var{y2}) -右下-の長方形に完全に含まれるグローバル変数
+@code{boundaries_array}の多角形セグメント検出します。
+
+
+例:
+
+南イタリアをプロットするためのセグメントの数を返します。
+@example
+(%i1) load(worldmap)$
+(%i2) region_boundaries(10.4,41.5,20.7,35.4);
+(%o2)                [1846, 1863, 1864, 1881, 1888, 1894]
+(%i3) draw2d(geomap(%))$
+@end example
+@figure{worldmap_region_boundaries}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+
+
+@anchor{region_boundaries_plus}
+@deffn  {関数} region_boundaries_plus (@var{x1},@var{y1},@var{x2},@var{y2})
+頂点 (@var{x1},@var{y1}) -左上- と
+(@var{x2},@var{y2}) -右下-で定義された長方形に少なくとも1つ頂点を含まれる
+グローバル変数 @code{boundaries_array}の多角形セグメント検出します。
+多角形セグメント検出します。
+
+例:
+
+@example
+(%i1) load(worldmap)$
+(%i2) region_boundaries_plus(10.4,41.5,20.7,35.4);
+(%o2) [1060, 1062, 1076, 1835, 1839, 1844, 1846, 1858,
+       1861, 1863, 1864, 1871, 1881, 1888, 1894, 1897]
+(%i3) draw2d(geomap(%))$
+@end example
+@figure{worldmap_region_boundaries_plus}
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn
+
+@subsection Graphic objects
+
+
+@anchor{geomap}
+@deffn  {グラフィックオブジェクト} geomap @
+@fname{geomap} (@var{numlist}) @
+@fname{geomap} (@var{numlist},@var{3Dprojection})
+
+2Dと 3Dに関して地図を描画します。
+
+@b{2D}
+
+この関数はグローバル変数 @code{boundaries_array}と一緒に機能します。
+
+引数 @var{numlist}は数や数のリストを含むリストです。
+これらすべての数は、グローバル配列 @code{boundaries_array}の成分を表す
+0以上の整数でなければいけません。
+
+@code{boundaries_array}のそれぞれの成分は浮動小数点量の配列であり、
+多角形セグメントやマップ境界の座標です。
+
+@code{geomap (@var{numlist})}は引数を平坦化し、
+@code{boundaries_array}の中に関連した境界を描画します。
+
+このオブジェクトは以下の@i{グラフィックオプション}の影響を受けます:
+@mref{line_width}, @mref{line_type}, @mref{color}.
+
+例:
+
+手で定義された簡単な地図:
+@example
+(%i1) load(draw)$
+(%i2) /* Vertices of boundary #0: @{(1,1),(2,5),(4,3)@} */
+   ( bnd0: make_array(flonum,6),
+     bnd0[0]:1.0, bnd0[1]:1.0, bnd0[2]:2.0,
+     bnd0[3]:5.0, bnd0[4]:4.0, bnd0[5]:3.0 )$
+(%i3) /* Vertices of boundary #1: @{(4,3),(5,4),(6,4),(5,1)@} */
+   ( bnd1: make_array(flonum,8),
+     bnd1[0]:4.0, bnd1[1]:3.0, bnd1[2]:5.0, bnd1[3]:4.0,
+     bnd1[4]:6.0, bnd1[5]:4.0, bnd1[6]:5.0, bnd1[7]:1.0)$
+(%i4) /* Vertices of boundary #2: @{(5,1), (3,0), (1,1)@} */
+   ( bnd2: make_array(flonum,6),
+     bnd2[0]:5.0, bnd2[1]:1.0, bnd2[2]:3.0,
+     bnd2[3]:0.0, bnd2[4]:1.0, bnd2[5]:1.0 )$
+(%i5) /* Vertices of boundary #3: @{(1,1), (4,3)@} */
+   ( bnd3: make_array(flonum,4),
+     bnd3[0]:1.0, bnd3[1]:1.0, bnd3[2]:4.0, bnd3[3]:3.0)$
+(%i6) /* Vertices of boundary #4: @{(4,3), (5,1)@} */
+   ( bnd4: make_array(flonum,4),
+     bnd4[0]:4.0, bnd4[1]:3.0, bnd4[2]:5.0, bnd4[3]:1.0)$
+(%i7) /* Pack all together in boundaries_array */
+   ( boundaries_array: make_array(any,5),
+     boundaries_array[0]: bnd0, boundaries_array[1]: bnd1,
+     boundaries_array[2]: bnd2, boundaries_array[3]: bnd3,
+     boundaries_array[4]: bnd4 )$
+(%i8) draw2d(geomap([0,1,2,3,4]))$
+@end example
+@figure{worldmap_geomap}
+
+補助バッケージ @code{worldmap}はグローバル変数
+@code{boundaries_array}を(経度、緯度)座標で実世界境界に設定します。
+これらのデータはパブリックドメインであり、
+@c Link is dead, linked to archive.org. Does someone know a better Link?
+@url{https://web.archive.org/web/20100310124019/http://www-cger.nies.go.jp/grid-e/gridtxt/grid19.html}
+に由来するものです。
+
+パッケージ @code{worldmap}は、国、大陸、海岸線の境界も
+@code{boundaries_array}の必要な成分を持つリストとして、
+定義します。
+(更に知るにはファイル @code{share/draw/worldmap.mac}を参照してください)
+パッケージ @code{draw}は自動的に @code{worldmap}をロードしません。
+
+@example
+(%i1) load(worldmap)$
+(%i2) c1: gr2d(geomap([Canada,United_States,
+                       Mexico,Cuba]))$
+(%i3) c2: gr2d(geomap(Africa))$
+(%i4) c3: gr2d(geomap([Oceania,China,Japan]))$
+(%i5) c4: gr2d(geomap([France,Portugal,Spain,
+                       Morocco,Western_Sahara]))$
+(%i6) draw(columns  = 2,
+           c1,c2,c3,c4)$
+@end example
+@figure{worldmap_geomap2}
+
+パッケージ @code{worldmap}は国をポリゴンとしてプロットする時にも役に立ちます。
+この場合、グラフィックオブジェクト @code{geomap}はもはや必要でなく、代わりに
+@code{polygon}オブジェクトが使われます。
+配列ではなくリストが現在使われているので、地図レンダリングはより遅いでしょう。
+以下のコードを理解するためには、
+@mref{make_poly_country}と @mref{make_poly_continent}も参照してください。
+@example
+(%i1) load(worldmap)$
+(%i2) mymap: append(
+   [color      = white],  /* borders are white */
+   [fill_color = red],             make_poly_country(Bolivia),
+   [fill_color = cyan],            make_poly_country(Paraguay),
+   [fill_color = green],           make_poly_country(Colombia),
+   [fill_color = blue],            make_poly_country(Chile),
+   [fill_color = "#23ab0f"],       make_poly_country(Brazil),
+   [fill_color = goldenrod],       make_poly_country(Argentina),
+   [fill_color = "midnight-blue"], make_poly_country(Uruguay))$
+(%i3) apply(draw2d, mymap)$
+@end example
+@figure{worldmap_geomap3}
+
+
+@b{3D}
+
+@code{geomap (@var{numlist})}は地図境界を中心が (0,0,0)で半径 1の球上に射影します。
+@code{geomap (@var{numlist},@var{3Dprojection})}を使うことで、
+球や射影タイプを変えることが可能です。
+
+利用可能な 3D射影:
+
+@itemize @bullet
+@item
+@code{[spherical_projection,@var{x},@var{y},@var{z},@var{r}]}:
+地図境界を中心 (@var{x},@var{y},@var{z})、半径@var{r}の球上に射影します。
+
+@example
+(%i1) load(worldmap)$
+(%i2) draw3d(geomap(Australia), /* default projection */
+             geomap(Australia,
+                    [spherical_projection,2,2,2,3]))$
+@end example
+@figure{worldmap_geomap4}
+
+@item
+@code{[cylindrical_projection,@var{x},@var{y},@var{z},@var{r},@var{rc}]}:
+球地図境界を中心 (@var{x},@var{y},@var{z})の半径
+@var{r}の地球の極を通る軸を持ち半径 @var{rc}の円柱に再射影します。
+
+@example
+(%i1) load(worldmap)$
+(%i2) draw3d(geomap([America_coastlines,Eurasia_coastlines],
+                    [cylindrical_projection,2,2,2,3,4]))$
+@end example
+@figure{worldmap_geomap5}
+
+@item
+@code{[conic_projection,@var{x},@var{y},@var{z},@var{r},@var{alpha}]}:
+球地図境界を中心 (@var{x},@var{y},@var{z})の半径 @var{r}の地球の極を通る軸を持ち角度
+@var{alpha}の円錐上に再射影します。
+北円錐と南円錐両方が球に接触します。
+
+@example
+(%i1) load(worldmap)$
+(%i2) draw3d(geomap(World_coastlines,
+                    [conic_projection,0,0,0,1,90]))$
+@end example
+@figure{worldmap_geomap6}
+@end itemize
+
+更に丹念な例を見るには、
+@url{http://riotorto.users.sf.net/gnuplot/geomap}
+も参照してください。
+
+@opencatbox
+@category{Package draw}
+@closecatbox
+
+@end deffn

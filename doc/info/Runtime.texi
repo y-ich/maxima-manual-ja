@@ -1,0 +1,664 @@
+@menu
+* Introduction for Runtime Environment::
+* Interrupts::
+* Functions and Variables for Runtime Environment::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Introduction for Runtime Environment, Interrupts, Runtime Environment, Runtime Environment
+@section Introduction for Runtime Environment
+@c -----------------------------------------------------------------------------
+
+@c THIS DISCUSSION OF maxima-init.mac REPLACES AN EARLIER WRITE-UP. !!!
+@c HOWEVER IT SEEMS THAT THIS TEXT REALLY WANTS TO BE UNDER A DIFFERENT HEADING. !!!
+@code{maxima-init.mac}は、 Maximaがスタートする時自動的にロードされるファイルです。
+自分の Maxima環境をカスタマイズするために
+@code{maxima-init.mac}を使うことができます。
+@code{maxima-init.mac}は、もし存在するなら、
+関数 @code{file_search}が検索する任意のディレクトリで大丈夫ですが、
+通常は @code{maxima_userdir}で名付けられたディレクトリの中に置かれます。
+
+以下は @code{maxima-init.mac}ファイルの例です:
+
+@example
+setup_autoload ("specfun.mac", ultraspherical, assoc_legendre_p);
+showtime:all;
+@end example
+
+この例では、 @code{setup_autoload}はMaximaに
+もし関数 (@code{ultraspherical},
+@code{assoc_legendre_p})のいずれかがコールされた時まだ定義されていなかったら、
+指定されたファイル (@code{specfun.mac})をロードするように命じます。
+このように関数をコールする前にファイルをロードすることを覚えておく必要はありません。
+
+文 @code{showtime: all}は Maximaに @code{showtime}変数を設定することを命じます。
+@code{maxima-init.mac}ファイルは他の任意の割り当てや Maxima文を含むことができます。
+
+@opencatbox
+@category{Session management}
+@closecatbox
+
+@c -----------------------------------------------------------------------------
+@node Interrupts, Functions and Variables for Runtime Environment, Introduction for Runtime Environment, Runtime Environment
+@section Interrupts
+@c -----------------------------------------------------------------------------
+
+ユーザーは、時間のかかる計算を ^C (control-C)文字で止めることができます。
+デフォルトの動作は、計算を止めて、別のユーザープロンプトを印字することでです。
+この場合、止められた計算の再開することはできません。
+
+もし
+
+@example
+:lisp (setq *debugger-hook* nil)
+@end example
+
+@noindent
+を実行することによって、
+Lisp変数　@code{*debugger-hook*}が　@code{nil}に設定されているなら、
+^Cを受け取ると、Maximaは Lispデバッガに入り、
+ユーザーは Lisp環境を検査するためにデバッガを使うことができます。
+止められた計算は Lispデバッガの中で、
+@code{continue}を入力することで、再開することができます。
+(計算を完了まで走らせる以外に)
+Lispデバッガから Maximaに戻る方法は Lispのバージョンそれぞれで異なります。
+
+Unixシステム上では、 文字^Z (control-Z)は Maximaが完全に止まるようにし、
+制御はシェルスクリプトに戻ります。
+@code{fg}コマンドが Maximaが止められた点から再開するようにします。
+
+@opencatbox
+@category{Console interaction}
+@closecatbox
+
+@c end concepts Runtime Environment
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for Runtime Environment,  , Interrupts, Runtime Environment
+@section Functions and Variables for Runtime Environment
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+@anchor{maxima_tempdir}
+@defvr {システム変数} maxima_tempdir
+
+@code{maxima_tempdir}は
+Maximaが一時的なファイルを生成するディレクトリを指名します。
+特に、プロットのための一時ファイルが
+@code{maxima_tempdir}に生成されます。
+
+@code{maxima_tempdir}の初期値は、
+もし Maximaが置くことができるならユーザーのホームディレクトリです;
+そうでないなら、Maximaは適切なディレクトリについて推量します。
+
+@code{maxima_tempdir}はディレクトリを指名する文字列に割り当てられます。
+
+@opencatbox
+@category{Global variables}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{maxima_userdir}
+@defvr {システム変数} maxima_userdir
+
+@code{maxima_userdir}は、
+Maximaが Maximaや Lispファイルを見つけるために検索するディレクトリを指名します。
+(Maximaは他のディレクトリも検索します;
+@code{file_search_maxima}と @code{file_search_lisp}が完全なリストです。)
+
+@code{maxima_userdir}の初期値は、
+もし　Maximaが置くことができなら
+ユーザーのホームディレクトリのサブディレクトリです;
+そうでないなら Maximaは適切なディレクトリについて推量します。
+
+@code{maxima_userdir}はディレクトリを指名する文字列に割り当てられます。
+しかしながら、
+@code{maxima_userdir}への割り当ては、自動的には
+@code{file_search_maxima}と @code{file_search_lisp}を変えません;
+それらの変数は別々に変更しなければいけません。
+
+@opencatbox
+@category{Global variables}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{room}
+@deffn  {関数} room @
+@fname{room} () @
+@fname{room} (true) @
+@fname{room} (false)
+
+Maximaの記憶装置とスタックマネージメントの状態の描写を印字します。
+@code{room}は同じ名前の Lisp関数をコールします。
+
+@itemize @bullet
+@item
+@code{room ()}は適度の描写を印字します。
+@item
+@code{room (true)}は言葉数の多い描写を印字します。
+@item
+@code{room (false)}は簡潔な描写を印字します。
+@end itemize
+
+@opencatbox
+@category{Debugging}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sstatus}
+@deffn {関数} sstatus (@var{keyword}, @var{item})
+
+@var{keyword}がシンボル @code{feature}の時、
+@var{item}がシステムフィーチャのリスト上に追加されます。
+@code{sstatus (keyword, item)}が実行された後、
+@code{status (feature, item)}は @code{true}を返します。
+もし @var{keyword}がシンボル @code{nofeature}なら、
+@var{item}はシステムフィーチャのリストから削除されます。
+これはパッケージ作者が、搭載したフィーチャの追跡をするのに役に立つかもしれません。
+
+@mref{status}も参照してください。
+
+@opencatbox
+@category{Programming}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{status}
+@deffn  {関数} status @
+@fname{status} (@code{feature}) @
+@fname{status} (@code{feature}, @var{item})
+
+いくつかのシステム依存のフィーチャの存在と不在についての情報を返す。
+
+@itemize @bullet
+@item
+@code{status (feature)}はシステムフィーチャのリストを返します。
+これらは Lispのバージョン、オペレーティングシステムのタイプなどを含みます。
+リストは１つの Lispタイプからもう１つに変わるかもしれません。
+
+@item
+@code{status (feature, item)}は、
+もし @var{item}が @code{status (feature)}が返す項目のリスト上にあるなら、
+@code{true}を返し、そうでないなら @code{false}を返します。
+@code{status}は引数 @var{item}をクォートします。
+クォート-クォート演算子 @code{'@w{}'}はクォーテーションに優先されます。
+名前がハイフンのように特殊文字を含むフィーチャは、
+文字列引数として与えられなければいけません。例えば、
+@code{status (feature, "ansi-cl")}。
+@end itemize
+
+@mref{sstatus}も参照してください。
+
+変数 @code{features}は数式に適用されるフィーチャのリストを含みます。
+もっと情報を知るには、 @code{features}と @code{featurep}を参照してください。
+
+@opencatbox
+@category{Programming}
+@closecatbox
+@end deffn
+
+@c NEEDS CLARIFICATION
+
+@c -----------------------------------------------------------------------------
+@anchor{system}
+@deffn {関数} system (@var{command})
+
+別のプロセスとして @var{command}を実行します。
+コマンドは実行のためデフォルトのシェルに渡されます。
+@code{system}はオペレーティングシステムすべてではサポートされませんが、
+一般に Unixと Unixライクな環境では存在します。
+
+@code{_hist.out}は、
+@code{xgraph}を使ってバーグラフとしてプロットしたい頻度のリストだと仮定します。
+
+@example
+(%i1) (with_stdout("_hist.out",
+           for i:1 thru length(hist) do (
+             print(i,hist[i]))),
+       system("xgraph -bar -brw .7 -nl < _hist.out"));
+@end example
+
+プロットをバックグラウンドで（ Maximaに制御を戻すように）させるようにし、
+終了した後、一次ファルを削除するようにするためには以下のようにします:
+
+@example
+system("(xgraph -bar -brw .7 -nl < _hist.out;  rm -f _hist.out)&")
+@end example
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{time}
+@deffn {関数} time (%o1, %o2, %o3, @dots{})
+
+出力行 @code{%o1}, @code{%o2}, @code{%o3},
+@dots{}を計算するために使った時間のリストを秒で返します。
+返された時間は内部計算時間の Maximaの概算であって、経過時間ではありません。
+@code{time}は出力行変数にだけ適用されます;
+他の変数に関して @code{time}は @code{unknown}を返します。
+
+Maximaに出力行それぞれに計算時間と経過時間を印字させるには、
+@code{showtime: true}を設定してください。
+
+@opencatbox
+@category{Debugging}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{timedate}
+@deffn  {関数} timedate @
+@fname{timedate} (@var{T}, @var{tz_offset})
+@fname{timedate} (@var{T})
+@fname{timedate} () @
+
+@code{timedate(@var{T}, @var{tz_offset})}は
+タイムゾーン @var{tz_offset}での時刻 @var{T}を表す文字列を返します。
+文字列フォーマットは
+(小数部を表すのにひつよなだけの数字を使った)
+@code{YYYY-MM-DD HH:MM:SS.NNN[+|-]ZZ:ZZ}か
+もし小数部がなければ @code{YYYY-MM-DD HH:MM:SS[+|-]ZZ:ZZ}です。
+
+@var{T}は GMTタイムゾーンで1900年1月1日0時から測定された秒です。
+
+@var{tz_offset}はGMTからのタイムゾーンのオフセット時間です。
+東が正で西が負です。
+@var{tz_offset}は-24以上24以下の整数か有理数か浮動小数点でなければいけません。
+もし @var{tz_offset}が1/60の倍数でなければ、
+それは最も近い1/60の倍数に丸められます。
+
+@code{timedate(@var{T})}は
+ローカルタイムゾーンのオフセットに等しい @var{tz_offset}での
+@code{timedate(@var{T}, @var{tz_offset})}と同値です。
+
+@code{timedate()}は @code{timedate(absolute_real_time())}と同値です。
+すなわち、ローカルタイムゾーンで現在時刻を返します。
+
+例:
+
+引数なしの @code{timedate()}は現在時刻と日付を表す文字列を返します。
+
+@c ===beg===
+@c d : timedate ();
+@c print ("timedate reports current time", d)$
+@c ===end===
+@example
+(%i1) d : timedate ();
+(%o1)                      2010-06-08 04:08:09+01:00
+(%i2) print ("timedate reports current time", d) $
+timedate reports current time 2010-06-08 04:08:09+01:00
+@end example
+
+引数ありの @code{timedate}は引数を表す文字列を返します。
+
+@c ===beg===
+@c timedate (0);
+@c timedate (absolute_real_time () - 7*24*3600);
+@c ===end===
+@example
+(%i1) timedate (0);
+(%o1)                      1900-01-01 01:00:00+01:00
+(%i2) timedate (absolute_real_time () - 7*24*3600);
+(%o2)                      2010-06-01 04:19:51+01:00
+@end example
+
+オプションのタイムゾーンオフセットありの @code{timedate}。
+
+@c ===beg===
+@c timedate (1000000000, -9.5);
+@c ===end===
+@example
+(%i1) timedate (1000000000, -9.5);
+(%o1)               1931-09-09 16:16:40-09:30
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{parse_timedate}
+@deffn  {関数} parse_timedate @
+@fname{parse_timedate} (@var{S})
+
+日付や日時を表す文字列 @var{S}をパースし、GMT 1900年1月1日零時からの秒数を返します。
+もしゼロでない小数部があれば戻り値は有理数で、そうでなければ整数です。
+もし許されるフォーマットのどれによっても @var{S}をパースできなければ、
+@code{parse_timedate}は @code{false}を返します。
+
+文字列 @var{S}は、オプションとしてタイムゾーン指定が続くような
+以下のフォーマットのいずれかでなければいけません:
+
+@itemize @bullet
+@item
+@code{YYYY-MM-DD[ T]hh:mm:ss[,.]nnn}
+@item
+@code{YYYY-MM-DD[ T]hh:mm:ss}
+@item
+@code{YYYY-MM-DD}
+@end itemize
+
+ここで、フィールドは年、月、日、時、分、秒、少数で、
+カギ括弧は可能な代替文字を示します。
+小数は1つ以上の数字を含むかもしれません。
+
+秒の小数を除いてそれぞれの欄は指定の数字数を持たなければいけません:
+年は4つの数字、月、日、時間、分、秒は2つの数字。
+
+タイムゾーン指定は以下の形式のどれかでなくてはいけません:
+
+@itemize @bullet
+@item
+@code{[+-]hh:mm}
+@item
+@code{[+-]hhmm}
+@item
+@code{[+-]hh}
+@item
+@code{Z}
+@end itemize
+
+ここで @code{hh}と @code{mm}は時刻と分です
+符号はGMTの東 (@code{+})か西 (@code{-})です。
+タイムゾーンは+24時間から-24時間までです。
+
+文字 @code{Z}は @code{+00:00}やその変形と同値で、
+GMTを示します。
+
+もしタイムゾーン指定がないなら、
+時刻はローカルタイムゾーンと仮定されます。
+
+頭やお尻の空白文字(スペース, タブ, 改行, キャリッジリターン)は無視されますが、
+他の文字は @code{parse_timedate}が失敗して @code{false}を返す原因となります。
+
+@mref{timedate}と @mref{absolute_real_time}も参照してください。
+
+例:
+
+可能なフォーマットそれぞれでのローカルタイムゾーンでの 1900年1月1日零時。
+結果はローカルタイムゾーンでの秒数です。
+GMTに先行する場合マイナスでGMTに遅れる場合プラスされます。
+この例ではローカルタイムゾーンはGMTに遅れること8時間です。
+
+@c ===beg===
+@c parse_timedate ("1900-01-01 00:00:00,000");
+@c parse_timedate ("1900-01-01 00:00:00.000");
+@c parse_timedate ("1900-01-01T00:00:00,000");
+@c parse_timedate ("1900-01-01T00:00:00.000");
+@c parse_timedate ("1900-01-01 00:00:00");
+@c parse_timedate ("1900-01-01T00:00:00");
+@c parse_timedate ("1900-01-01");
+@c ===end===
+@example
+(%i1) parse_timedate ("1900-01-01 00:00:00,000");
+(%o1)                         28800
+(%i2) parse_timedate ("1900-01-01 00:00:00.000");
+(%o2)                         28800
+(%i3) parse_timedate ("1900-01-01T00:00:00,000");
+(%o3)                         28800
+(%i4) parse_timedate ("1900-01-01T00:00:00.000");
+(%o4)                         28800
+(%i5) parse_timedate ("1900-01-01 00:00:00");
+(%o5)                         28800
+(%i6) parse_timedate ("1900-01-01T00:00:00");
+(%o6)                         28800
+(%i7) parse_timedate ("1900-01-01");
+(%o7)                         28800
+@end example
+
+異なる指定のタイムゾーンでの 1900年1月1日零時。
+Midnight, January 1, 1900, GMT, in different indicated time zones.
+
+@c ===beg===
+@c parse_timedate ("1900-01-01 19:00:00+19:00");
+@c parse_timedate ("1900-01-01 07:00:00+07:00");
+@c parse_timedate ("1900-01-01 01:00:00+01:00");
+@c parse_timedate ("1900-01-01Z");
+@c parse_timedate ("1899-12-31 21:00:00-03:00");
+@c parse_timedate ("1899-12-31 13:00:00-11:00");
+@c parse_timedate ("1899-12-31 08:00:00-16:00");
+@c ===end===
+@example
+(%i1) parse_timedate ("1900-01-01 19:00:00+19:00");
+(%o1)                           0
+(%i2) parse_timedate ("1900-01-01 07:00:00+07:00");
+(%o2)                           0
+(%i3) parse_timedate ("1900-01-01 01:00:00+01:00");
+(%o3)                           0
+(%i4) parse_timedate ("1900-01-01Z");
+(%o4)                           0
+(%i5) parse_timedate ("1899-12-31 21:00:00-03:00");
+(%o5)                           0
+(%i6) parse_timedate ("1899-12-31 13:00:00-11:00");
+(%o6)                           0
+(%i7) parse_timedate ("1899-12-31 08:00:00-16:00");
+(%o7)                           0
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{encode_time}
+@deffn {関数} encode_time @
+@fname{encode_time} (@var{year}, @var{month}, @var{day}, @var{hours}, @var{minutes}, @var{seconds}, @var{tz_offset}) @
+@fname{encode_time} (@var{year}, @var{month}, @var{day}, @var{hours}, @var{minutes}, @var{seconds})
+
+@var{year}, @var{month}, @var{day}, @var{hours}, @var{minutes}, @var{seconds}
+で指定された時刻と日にちを与えると、
+@code{encode_time}は(場合によって少数部を含む)
+GMT 1900年1月1日0時からの秒数を返します。
+
+@var{year}は1899以上の整数でなければいけません。
+しかし、1899年は、エンコード時刻の結果が0以上の場合だけ許されます。
+
+@var{month}は1から12までの整数でなければいけません。
+
+@var{day}は1から @var{n}までの整数でなければいけません。
+ここで @var{n}は @var{month}が指定する月の日数です。
+
+@var{hours}は0から23までの整数でなければいけません。
+
+@var{minutes}は0から59までの整数でなければいけません。
+
+@var{seconds}は0以上60未満の整数、有理数、少数でなければいけません。
+@var{seconds}が整数でない時、
+@code{encode_time}は
+戻り値の少数部が @var{seconds}の少数部に等しい有理数を返します。
+そうでなければ、 @var{seconds}は整数であり、戻り値も同様に整数です。
+
+@var{tz_offset}は時間単位でタイムゾーンのオフセットを示します。
+GMTの東が正で西が負です。
+@var{tz_offset}は-24から24までの整数、有理数、少数でなければいけません。
+もし @var{tz_offset}は 1/3600の倍数でなければ、
+最も近い1/3600の倍数に丸められます。
+
+もし @var{tz_offset}が存在しなければ、
+オフセットにはローカル時刻が仮定されます。
+
+@mref{decode_time}も参照してください。
+
+例:
+
+@c ===beg===
+@c encode_time (1900, 1, 1, 0, 0, 0, 0);
+@c encode_time (1970, 1, 1, 0, 0, 0, 0);
+@c encode_time (1970, 1, 1, 8, 30, 0, 8.5);
+@c encode_time (1969, 12, 31, 16, 0, 0, -8);
+@c encode_time (1969, 12, 31, 16, 0, 1/1000, -8);
+@c % - 2208988800;
+@c ===end===
+@example
+(%i1) encode_time (1900, 1, 1, 0, 0, 0, 0);
+(%o1)                           0
+(%i2) encode_time (1970, 1, 1, 0, 0, 0, 0);
+(%o2)                      2208988800
+(%i3) encode_time (1970, 1, 1, 8, 30, 0, 8.5);
+(%o3)                      2208988800
+(%i4) encode_time (1969, 12, 31, 16, 0, 0, -8);
+(%o4)                      2208988800
+(%i5) encode_time (1969, 12, 31, 16, 0, 1/1000, -8);
+                          2208988800001
+(%o5)                     -------------
+                              1000
+(%i6) % - 2208988800;
+                               1
+(%o6)                         ----
+                              1000
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{decode_time}
+@deffn {関数} decode_time @
+@fname{decode_time} (@var{T}, @var{tz_offset}) @
+@fname{decode_time} (@var{T})
+
+GMT 1900年1月1日0時からの(場合によって少数部を含む)秒数を与えると、
+年、月、月の日、時、分、秒、タイムゾーンオフセットからなるリストで表現された
+日にちと時刻を返します。
+
+@var{tz_offset}は時間単位でタイムゾーンのオフセットを示します。
+GMTの東が正で西が負です。
+@var{tz_offset}は-24から24までの整数、有理数、少数でなければいけません。
+もし @var{tz_offset}は 1/3600の倍数でなければ、
+最も近い1/3600の倍数に丸められます。
+
+もし @var{tz_offset}が存在しなければ、
+オフセットにはローカル時刻が仮定されます。
+
+@mref{encode_time}も参照ください。
+
+例:
+
+@c ===beg===
+@c decode_time (0, 0);
+@c decode_time (0);
+@c decode_time (2208988800, 9.25);
+@c decode_time (2208988800);
+@c decode_time (2208988800 + 1729/1000, -6);
+@c decode_time (2208988800 + 1729/1000);
+@c ===end===
+@example
+(%i1) decode_time (0, 0);
+(%o1)               [1900, 1, 1, 0, 0, 0, 0]
+(%i2) decode_time (0);
+(%o2)             [1899, 12, 31, 16, 0, 0, - 8]
+(%i3) decode_time (2208988800, 9.25);
+                                          37
+(%o3)              [1970, 1, 1, 9, 15, 0, --]
+                                          4
+(%i4) decode_time (2208988800);
+(%o4)             [1969, 12, 31, 16, 0, 0, - 8]
+(%i5) decode_time (2208988800 + 1729/1000, -6);
+                                      1729
+(%o5)           [1969, 12, 31, 18, 0, ----, - 6]
+                                      1000
+(%i6) decode_time (2208988800 + 1729/1000);
+                                      1729
+(%o6)           [1969, 12, 31, 16, 0, ----, - 8]
+                                      1000
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{absolute_real_time}
+@deffn {関数} absolute_real_time ()
+
+GMTで1900年1月1日0時からの秒数を返します。
+戻り値は整数です。
+
+@mref{elapsed_real_time}と @mref{elapsed_run_time}も参照してください。
+
+例:
+
+@c ===beg===
+@c absolute_real_time ();
+@c 1900 + absolute_real_time () / (365.25 * 24 * 3600);
+@c ===end===
+@example
+(%i1) absolute_real_time ();
+(%o1)                      3385045277
+(%i2) 1900 + absolute_real_time () / (365.25 * 24 * 3600);
+(%o2)                   2007.265612087104
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{elapsed_real_time}
+@deffn {関数} elapsed_real_time ()
+
+Maximaがもっとも最近スタートしたか再スタートして以来の
+(1秒の小数を含む)秒数を返します。
+戻り値は浮動小数点数です。
+
+@mref{absolute_real_time}と @mref{elapsed_run_time}も参照してください。
+
+例:
+
+@c ===beg===
+@c elapsed_real_time ();
+@c expand ((a + b)^500)$
+@c elapsed_real_time ();
+@c ===end===
+@example
+(%i1) elapsed_real_time ();
+(%o1)                       2.559324
+(%i2) expand ((a + b)^500)$
+(%i3) elapsed_real_time ();
+(%o3)                       7.552087
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{elapsed_run_time}
+@deffn {関数} elapsed_run_time ()
+
+Maximaがもっとも最近スタートしたか再スタートして以来
+Maximaが計算に費やした(1秒の小数を含む)秒数の概算を返します。
+戻り値は浮動小数点数です。
+
+@mref{absolute_real_time}と @mref{elapsed_real_time}も参照してください。
+
+例:
+
+@c ===beg===
+@c elapsed_run_time ();
+@c expand ((a + b)^500)$
+@c elapsed_run_time ();
+@c ===end===
+@example
+(%i1) elapsed_run_time ();
+(%o1)                         0.04
+(%i2) expand ((a + b)^500)$
+(%i3) elapsed_run_time ();
+(%o3)                         1.26
+@end example
+
+@opencatbox
+@category{Time and date functions}
+@closecatbox
+@end deffn

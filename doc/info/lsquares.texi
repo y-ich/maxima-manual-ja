@@ -1,0 +1,746 @@
+@menu
+* Introduction to lsquares::
+* Functions and Variables for lsquares::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Introduction to lsquares, Functions and Variables for lsquares, lsquares-pkg, lsquares-pkg
+@section Introduction to lsquares
+@c -----------------------------------------------------------------------------
+
+@code{lsquares}は数値データからモデルのパラメータを見積もる最小二乗法を実装するための
+関数のコレクションです。
+
+@opencatbox
+@category{Statistical estimation} @category{Share packages} @category{Package lsquares}
+@closecatbox
+
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for lsquares,  , Introduction to lsquares, lsquares-pkg
+@section Functions and Variables for lsquares
+@c -----------------------------------------------------------------------------
+
+@anchor{lsquares_estimates}
+@deffn {関数} lsquares_estimates @
+@fname{lsquares_estimates} (@var{D}, @var{x}, @var{e}, @var{a}) @
+
+最小二乗の方法で決定されるような変数 @var{x}と @var{a}の方程式 @var{e}をデータ
+@var{D}に最良フィットするパラメータ @var{a}を見積もります。
+@code{lsquares_estimates}は最初に厳密な解を探し、それが失敗したら近似的な解を探します。
+
+戻り値は形式 @code{[a = ..., b = ..., c = ...]}の等式のリストのリストです。
+リストのそれぞれの要素は二乗平均誤差の、個別の等価な最小です。
+
+データ @var{D}は行列でなければいけません。
+行それぞれは(文脈によって「レコード」とか「ケース」とか呼ばれる)1つのデータで、
+列それぞれはすべてのデータに関するある変数の値を含みます。
+変数のリスト @var{x}は @var{D}の列それぞれの名前を与えます。
+解析をしない列にも名前を与えます。
+
+パラメータのリスト @var{a}は見積もられるパラメータの名前を与えます。
+方程式 @var{e}は変数 @var{x}と @var{a}に関する式か等式です;
+もし @var{e}が等式でないなら @code{@var{e} = 0}と同様に扱われます。
+
+@code{lsquares_estimates}の付加引数は等式として指定され、
+厳密な結果が見つからなかった時、数値方法で見積もりを見つけるためにコールされる関数
+@code{lbfgs}へそのまま渡されます。
+
+もしある厳密解が (@code{solve}を介して)見つけることができるなら、データ
+@var{D}は非数値を含むかもしれません。
+しかし、もし厳密解が見つからないなら @var{D}の要素それぞれは数値でなければいけません。
+これは数リテラル(整数、有理数、通常の浮動小数点、多倍長浮動小数点)はもちろん、
+@code{%pi}や @code{%e}のような数値定数を含みます。
+数値計算は通常の浮動小数点算出で実行されます。
+他の種類の数値は計算のため、すべて通常の浮動小数点に変換されます。
+
+もし @code{lsquares_estimates}が過剰な時間を必要としたりメモリを食いつくするなら、
+@mref{lsquares_estimates_approximate}はまだ成功するかもしれません。
+これは厳密解を探す試みをスキップします。
+
+@code{load(lsquares)}はこの関数をロードします。
+
+@mref{lsquares_estimates_exact},
+@mref{lsquares_estimates_approximate},@*
+@mref{lsquares_mse},
+@mref{lsquares_residuals},
+@mref{lsquares_residual_mse}も参照してください。
+
+例:
+
+厳密解が見つかる問題。
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c lsquares_estimates (
+@c          M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+        [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+@group
+(%i3) lsquares_estimates (
+         M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+                  59        27      10921        107
+(%o3)     [[A = - --, B = - --, C = -----, D = - ---]]
+                  16        16      1024         32
+@end group
+@end example
+
+厳密解が見つからない問題。
+だから @code{lsquares_estimates}は数値近似に頼ります。
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix ([1, 1], [2, 7/4], [3, 11/4], [4, 13/4]);
+@c lsquares_estimates (
+@c   M, [x,y], y=a*x^b+c, [a,b,c], initial=[3,3,3], iprint=[-1,0]);
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix ([1, 1], [2, 7/4], [3, 11/4], [4, 13/4]);
+                            [ 1  1  ]
+                            [       ]
+                            [    7  ]
+                            [ 2  -  ]
+                            [    4  ]
+                            [       ]
+(%o2)                       [    11 ]
+                            [ 3  -- ]
+                            [    4  ]
+                            [       ]
+                            [    13 ]
+                            [ 4  -- ]
+                            [    4  ]
+@group
+(%i3) lsquares_estimates (
+  M, [x,y], y=a*x^b+c, [a,b,c], initial=[3,3,3], iprint=[-1,0]);
+(%o3) [[a = 1.375751433061394, b = 0.7148891534417651,
+                                       c = - 0.4020908910062951]]
+@end group
+@end example
+
+指数関数は最小二乗法フィッティングにはよい条件ではありません。
+それらにフィッティングする場合、対数を使って指数関数を避けられるかもしれません。
+
+@c ===beg===
+@c load ("lsquares")$
+@c yvalues:[1,3,5,60,200,203,80]$
+@c time:[1,2,4,5,6,8,10]$
+@c f:y=a*exp(b*t);
+@c yvalues_log:log(yvalues)$
+@c f_log:log(subst(y=exp(y),f));
+@c lsquares_estimates(
+@c     transpose(matrix(yvalues_log,time)),
+@c     [y,t],
+@c     f_log,
+@c     [a,b]
+@c  );
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) yvalues:[1,3,5,60,200,203,80]$
+(%i3) time:[1,2,4,5,6,8,10]$
+@group
+(%i4) f:y=a*exp(b*t);
+                                   b t
+(%o4)                      y = a %e
+@end group
+(%i5) yvalues_log:log(yvalues)$
+@group
+(%i6) f_log:log(subst(y=exp(y),f));
+                                    b t
+(%o6)                   y = log(a %e   )
+@end group
+@group
+(%i7) lsquares_estimates(
+    transpose(matrix(yvalues_log,time)),
+    [y,t],
+    f_log,
+    [a,b]
+ );
+*************************************************
+  N=    2   NUMBER OF CORRECTIONS=25
+       INITIAL VALUES
+ F=  6.802906290754687D+00   GNORM=  2.851243373781393D+01
+*************************************************
+
+   I  NFN     FUNC                    GNORM                   STEPLENGTH
+
+   1    3     1.141838765593467D+00   1.067358003667488D-01   1.390943719972406D-02
+   2    5     1.141118195694385D+00   1.237977833033414D-01   5.000000000000000D+00
+   3    6     1.136945723147959D+00   3.806696991691383D-01   1.000000000000000D+00
+   4    7     1.133958243220262D+00   3.865103550379243D-01   1.000000000000000D+00
+   5    8     1.131725773805499D+00   2.292258231154026D-02   1.000000000000000D+00
+   6    9     1.131625585698168D+00   2.664440547017370D-03   1.000000000000000D+00
+   7   10     1.131620564856599D+00   2.519366958715444D-04   1.000000000000000D+00
+
+ THE MINIMIZATION TERMINATED WITHOUT DETECTING ERRORS.
+ IFLAG = 0
+(%o7)   [[a = 1.155904145765554, b = 0.5772666876959847]]
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares} @category{Numerical methods}
+@closecatbox
+
+@end deffn
+
+@anchor{lsquares_estimates_exact}
+@deffn {関数} lsquares_estimates_exact (@var{MSE}, @var{a})
+
+方程式系を構成し、@code{solve}を介して記号的にそれらを解くことを試みることで、平均二乗誤差
+@var{MSE}を最小化するパラメータ @var{a}を見積もります。
+平均二乗誤差は @code{lsquares_mse}が返すようなパラメータ @var{a}の式です。
+
+戻り値は形式 @code{[a = ..., b = ..., c = ...]}の等式のリストのリストです。
+戻り値は、 0個か 1個、 2以上の要素を含むかもしれません。
+もし複数の要素が返されたら、それぞれは個別の、平均二乗誤差の等価最小を表します。
+
+@mref{lsquares_estimates},
+@mref{lsquares_estimates_approximate},
+@mref{lsquares_mse},@*
+@mref{lsquares_residuals},
+@mref{lsquares_residual_mse}も参照してください。
+
+例:
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c          [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+@c lsquares_estimates_exact (mse, [A, B, C, D]);
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+(%i3) mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+         5
+        ====
+        \                                         2     2
+         >    ((- B M    ) - A M     + (M     + D)  - C)
+        /            i, 3       i, 2     i, 1
+        ====
+        i = 1
+(%o3)   -------------------------------------------------
+                                5
+@group
+(%i4) lsquares_estimates_exact (mse, [A, B, C, D]);
+                  59        27      10921        107
+(%o4)     [[A = - --, B = - --, C = -----, D = - ---]]
+                  16        16      1024         32
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares}
+@closecatbox
+
+@end deffn
+
+@anchor{lsquares_estimates_approximate}
+@deffn {関数} lsquares_estimates_approximate (@var{MSE}, @var{a}, initial = @var{L}, tol = @var{t})
+
+平均二乗誤差 @var{MSE}を最小化するパラメータ @var{a}を数値最小化関数
+@code{lbfgs}を介して見積もります。
+平均二乗誤差は @code{lsquares_mse}が返すようなパラメータ @var{a}の式です。
+
+
+@code{lsquares_estimates_approximate}が返す解は平均二乗誤差の
+(たぶん大域ですが)局所最小値です。
+@code{lsquares_estimates_exact}との一貫性のため、戻り値は要素 1つ、すなわち、形式
+@code{[a = ..., b = ..., c = ...]}の等式のリストを持つ入れ子のリストです。
+
+@code{lsquares_estimates_approximate}の付加引数は等式として指定され、
+数値方法で見積もりを見つけるためにコールされる関数 @code{lbfgs}へそのまま渡されます。
+
+パラメータが数値が割り当てられた時 @var{MSE}は数に評価されなければいけません。
+これは @var{MSE}を構成するデータが @code{%pi}や@code{%e}、数リテラル
+(整数、有理数、通常の浮動小数点、多倍長浮動小数点)のような数値定数だけを含むことを
+要求します。
+数値計算は通常の浮動小数点算出で実行されます。
+他の種類の数値は計算のため、すべて通常の浮動小数点に変換されます。
+
+@code{load(lsquares)}はこの関数をロードします。
+
+@mref{lsquares_estimates},
+@mref{lsquares_estimates_exact},
+@mref{lsquares_mse},
+@mref{lsquares_residuals},
+@mref{lsquares_residual_mse}も参照してください。
+
+例:
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c          [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+@c lsquares_estimates_approximate (
+@c         mse, [A, B, C, D], iprint = [-1, 0]);
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+(%i3) mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+         5
+        ====
+        \                                         2     2
+         >    ((- B M    ) - A M     + (M     + D)  - C)
+        /            i, 3       i, 2     i, 1
+        ====
+        i = 1
+(%o3)   -------------------------------------------------
+                                5
+@group
+(%i4) lsquares_estimates_approximate (
+        mse, [A, B, C, D], iprint = [-1, 0]);
+(%o4) [[A = - 3.678504947401971, B = - 1.683070351177937,
+                 C = 10.63469950148714, D = - 3.340357993175297]]
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares} @category{Numerical methods}
+@closecatbox
+
+@end deffn
+
+@anchor{lsquares_mse}
+@deffn {関数} lsquares_mse (@var{D}, @var{x}, @var{e})
+
+平均二乗誤差 (MSE)、すなわち、変数 @var{x}の 方程式@var{e}に関するデータ
+@var{D}の和の式を返します。
+
+MSEは以下のように定義されます:
+
+@tex
+$${1 \over n} \, \sum_{i=1}^n \left[{\rm lhs}\left(e_i\right) - {\rm rhs}\left(e_i\right)\right]^2,$$
+@end tex
+@ifnottex
+@example
+                    n
+                   ====
+               1   \                        2
+               -    >    (lhs(e ) - rhs(e ))
+               n   /           i         i
+                   ====
+                   i = 1
+@end example
+@end ifnottex
+
+ここで、 @var{n}はデータ数で、
+@code{@var{e}[i]}は、 @code{i}番目のデータ
+@code{@var{D}[i]}から値を割り当てられた
+@var{x}の中の変数に対して評価された方程式 @var{e}です。
+
+@code{load(lsquares)}はこの関数をロードします。
+
+例:
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c          [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+@c diff (mse, D);
+@c ''mse, nouns;
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+(%i3) mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+         5
+        ====
+        \                                         2     2
+         >    ((- B M    ) - A M     + (M     + D)  - C)
+        /            i, 3       i, 2     i, 1
+        ====
+        i = 1
+(%o3)   -------------------------------------------------
+                                5
+(%i4) diff (mse, D);
+(%o4)
+      5
+     ====
+     \                                                     2
+   4  >    (M     + D) ((- B M    ) - A M     + (M     + D)  - C)
+     /       i, 1             i, 3       i, 2     i, 1
+     ====
+     i = 1
+   --------------------------------------------------------------
+                                 5
+@group
+(%i5) ''mse, nouns;
+               2                 2         9 2               2
+(%o5) (((D + 3)  - C - 2 B - 2 A)  + ((D + -)  - C - B - 2 A)
+                                           4
+           2               2         3 2               2
+ + ((D + 2)  - C - B - 2 A)  + ((D + -)  - C - 2 B - A)
+                                     2
+           2             2
+ + ((D + 1)  - C - B - A) )/5
+@end group
+@end example
+@example
+(%i3) mse : lsquares_mse (M, [z, x, y], (z + D)^2 = A*x + B*y + C);
+           5
+          ====
+          \                 2                         2
+           >    ((D + M    )  - C - M     B - M     A)
+          /            i, 1          i, 3      i, 2
+          ====
+          i = 1
+(%o3)     ---------------------------------------------
+                                5
+@end example
+@example
+(%i4) diff (mse, D);
+         5
+        ====
+        \                             2
+      4  >    (D + M    ) ((D + M    )  - C - M     B - M     A)
+        /           i, 1         i, 1          i, 3      i, 2
+        ====
+        i = 1
+(%o4) ----------------------------------------------------------
+                                  5
+@end example
+@example
+(%i5) ''mse, nouns;
+@group
+               2                 2         9 2               2
+(%o5) (((D + 3)  - C - 2 B - 2 A)  + ((D + -)  - C - B - 2 A)
+                                           4
+           2               2         3 2               2
+ + ((D + 2)  - C - B - 2 A)  + ((D + -)  - C - 2 B - A)
+                                     2
+           2             2
+ + ((D + 1)  - C - B - A) )/5
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares}
+@closecatbox
+
+@end deffn
+
+@anchor{lsquares_residuals}
+@deffn {関数} lsquares_residuals (@var{D}, @var{x}, @var{e}, @var{a})
+
+指定されたパラメータ @var{a}とデータ @var{D}での方程式 @var{e}に関する残差を返します。
+
+
+@var{D}は行列で、 @var{x}は変数のリスト、 @var{e}は方程式か一般式です;
+もし方程式でないなら、 @var{e}は @code{@var{e} = 0}であるかのように扱われます。
+@var{a}は @var{x}を除いた @var{e}の任意の自由変数に値を指定する方程式のリストです。
+
+残差は以下のように定義されます:
+
+@tex
+$${\rm lhs}\left(e_i\right) - {\rm rhs}\left(e_i\right),$$
+@end tex
+@ifnottex
+@example
+                        lhs(e ) - rhs(e )
+                             i         i
+@end example
+@end ifnottex
+
+ここで、 @code{@var{e}[i]}は、
+@var{a}から任意の残りの自由変数を割り当てて、
+@code{i}番目のデータ @code{@var{D}[i]}から値を割り当てられた
+@var{x}の中の変数に対して評価された方程式 @var{e}です。
+
+@code{load(lsquares)}はこの関数をロードします。
+
+例:
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c          [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c a : lsquares_estimates (
+@c           M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+@c lsquares_residuals (
+@c           M, [z,x,y], (z+D)^2 = A*x+B*y+C, first(a));
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+@group
+(%i3) a : lsquares_estimates (
+          M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+                  59        27      10921        107
+(%o3)     [[A = - --, B = - --, C = -----, D = - ---]]
+                  16        16      1024         32
+@end group
+@group
+(%i4) lsquares_residuals (
+          M, [z,x,y], (z+D)^2 = A*x+B*y+C, first(a));
+                     13    13    13  13  13
+(%o4)               [--, - --, - --, --, --]
+                     64    64    32  64  64
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares}
+@closecatbox
+
+@end deffn
+
+@anchor{lsquares_residual_mse}
+@deffn {関数} lsquares_residual_mse (@var{D}, @var{x}, @var{e}, @var{a})
+
+指定されたパラメータ @var{a}とデータ @var{D}での方程式
+@var{e}に関する残差平均二乗誤差を返します。
+
+残差 MSEは以下のように定義されます:
+
+@tex
+$${1 \over n} \, \sum_{i=1}^n \left[{\rm lhs}\left(e_i\right) - {\rm rhs}\left(e_i\right)\right]^2,$$
+@end tex
+@ifnottex
+@example
+                    n
+                   ====
+               1   \                        2
+               -    >    (lhs(e ) - rhs(e ))
+               n   /           i         i
+                   ====
+                   i = 1
+@end example
+@end ifnottex
+
+ここで、
+@code{@var{e}[i]}は、
+@var{a}から任意の残りの自由変数を割り当てて、
+@code{i}番目のデータ @code{@var{D}[i]}から値を割り当てられた
+@var{x}の中の変数に対して評価された方程式 @var{e}です。
+
+@code{load(lsquares)}はこの関数をロードします。
+
+例:
+
+@c ===beg===
+@c load ("lsquares")$
+@c M : matrix (
+@c          [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+@c a : lsquares_estimates (
+@c        M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+@c lsquares_residual_mse (
+@c        M, [z,x,y], (z + D)^2 = A*x + B*y + C, first (a));
+@c ===end===
+@example
+(%i1) load ("lsquares")$
+(%i2) M : matrix (
+         [1,1,1], [3/2,1,2], [9/4,2,1], [3,2,2], [2,2,1]);
+                           [ 1  1  1 ]
+                           [         ]
+                           [ 3       ]
+                           [ -  1  2 ]
+                           [ 2       ]
+                           [         ]
+(%o2)                      [ 9       ]
+                           [ -  2  1 ]
+                           [ 4       ]
+                           [         ]
+                           [ 3  2  2 ]
+                           [         ]
+                           [ 2  2  1 ]
+@group
+(%i3) a : lsquares_estimates (
+       M, [z,x,y], (z+D)^2 = A*x+B*y+C, [A,B,C,D]);
+                  59        27      10921        107
+(%o3)     [[A = - --, B = - --, C = -----, D = - ---]]
+                  16        16      1024         32
+@end group
+@group
+(%i4) lsquares_residual_mse (
+       M, [z,x,y], (z + D)^2 = A*x + B*y + C, first (a));
+                              169
+(%o4)                         ----
+                              2560
+@end group
+@end example
+
+@opencatbox
+@category{Package lsquares}
+@closecatbox
+
+@end deffn
+
+@anchor{plsquares}
+@deffn {関数} plsquares @
+@fname{plsquares} (@var{Mat},@var{VarList},@var{depvars}) @
+@fname{plsquares} (@var{Mat},@var{VarList},@var{depvars},@var{maxexpon}) @
+@fname{plsquares} (@var{Mat},@var{VarList},@var{depvars},@var{maxexpon},@var{maxdegree})
+「最小二乗」法によるデータ表の多変数多項式調整。
+@var{Mat}はデータを含む行列であり、
+@var{VarList}は変数名 (Mat列それぞれの名前ですが、
+Mat列を無視する際には変数名の代わりに"-")のリストであり、
+@var{depvars}は従属変数の名前か、
+従属変数の1つ以上の名前(その名前 @var{VarList}の中になければいけません)のリストであり、
+@var{maxexpon}はオプションの、独立変数それぞれの最大指数(デフォルト1)であり、
+@var{maxdegree}はオプションの最大多項式次数(デフォルトで @var{maxexpon})です;
+それぞれの項の指数の和は @var{maxdegree}以下でなければいけないことに注意してください。
+もし @code{maxdgree = 0}なら制限は適用されません。
+
+もし @var{depvars}が(リストではなく)従属変数の名前なら、
+@code{plsquares}は調整された多項式を返します。
+もし @var{depvars}が1つ以上の従属変数のリストなら、
+@code{plsquares}は調整された多項式のリストを返します。
+適合度について知らせるために決定係数が表示されます。
+それは 0(無相関)から 1(厳密相関)までの範囲です。
+これらの値はグローバル変数 @var{DETCOEF}(もし
+@var{depvars}がリストならリスト)にも保管されます。
+
+
+多変数線形調整の簡単な例:
+@example
+(%i1) load("plsquares")$
+
+(%i2) plsquares(matrix([1,2,0],[3,5,4],[4,7,9],[5,8,10]),
+                [x,y,z],z);
+     Determination Coefficient for z = .9897039897039897
+                       11 y - 9 x - 14
+(%o2)              z = ---------------
+                              3
+@end example
+
+次数制限のない同じ例:
+@example
+(%i3) plsquares(matrix([1,2,0],[3,5,4],[4,7,9],[5,8,10]),
+                [x,y,z],z,1,0);
+     Determination Coefficient for z = 1.0
+                    x y + 23 y - 29 x - 19
+(%o3)           z = ----------------------
+                              6
+@end example
+
+N面ポリゴンは何本の対角線を持ちますか？
+いくつの多項式次数を使うべきですか？
+@example
+(%i4) plsquares(matrix([3,0],[4,2],[5,5],[6,9],[7,14],[8,20]),
+                [N,diagonals],diagonals,5);
+     Determination Coefficient for diagonals = 1.0
+                                2
+                               N  - 3 N
+(%o4)              diagonals = --------
+                                  2
+(%i5) ev(%, N=9);   /* Testing for a 9 sides polygon */
+(%o5)                 diagonals = 27
+@end example
+
+何通りの方法でn掛けnのチェス盤に2つのクィーンを取られないように置けますか？
+@example
+(%i6) plsquares(matrix([0,0],[1,0],[2,0],[3,8],[4,44]),
+                [n,positions],[positions],4);
+     Determination Coefficient for [positions] = [1.0]
+@group
+                         4       3      2
+                      3 n  - 10 n  + 9 n  - 2 n
+(%o6)    [positions = -------------------------]
+                                  6
+@end group
+(%i7) ev(%[1], n=8); /* Testing for a (8 x 8) chessboard */
+(%o7)                positions = 1288
+@end example
+
+6つの従属変数を持つ例:
+@example
+(%i8) mtrx:matrix([0,0,0,0,0,1,1,1],[0,1,0,1,1,1,0,0],
+                  [1,0,0,1,1,1,0,0],[1,1,1,1,0,0,0,1])$
+(%i8) plsquares(mtrx,[a,b,_And,_Or,_Xor,_Nand,_Nor,_Nxor],
+                     [_And,_Or,_Xor,_Nand,_Nor,_Nxor],1,0);
+      Determination Coefficient for
+[_And, _Or, _Xor, _Nand, _Nor, _Nxor] =
+[1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+(%o2) [_And = a b, _Or = - a b + b + a,
+_Xor = - 2 a b + b + a, _Nand = 1 - a b,
+_Nor = a b - b - a + 1, _Nxor = 2 a b - b - a + 1]
+@end example
+
+この関数を使うには最初に @code{load("lsquares")}と書いてください。
+
+@opencatbox
+@category{Package lsquares} @category{Numerical methods}
+@closecatbox
+
+@end deffn

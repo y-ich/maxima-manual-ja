@@ -1,0 +1,499 @@
+パッケージ @code{bitwise}は整数定数のビット操作を可能にする関数を提供します。
+通常通り、知られているかもしれない変数の属性を考慮してもし定数の実際の値が未知なら、
+maximaは演算の結果を整理しようとします。
+@mref{declare}メカニズムを参照してください。
+
+@menu
+* Functions and Variables for bitwise::
+@end menu
+
+@node Functions and Variables for bitwise, , Top, Top
+@section Functions and Variables for bitwise
+
+@anchor{bit_not}
+@deffn {関数} bit_not (@var{int})
+
+符号付き整数のすべてのビットを反転させます。
+この操作の結果は @code{-int - 1}です。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_not(i);
+@c bit_not(bit_not(i));
+@c bit_not(3);
+@c bit_not(100);
+@c bit_not(-101);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_not(i);
+(%o2)                      bit_not(i)
+@end group
+@group
+(%i3) bit_not(bit_not(i));
+(%o3)                           i
+@end group
+@group
+(%i4) bit_not(3);
+(%o4)                          - 4
+@end group
+@group
+(%i5) bit_not(100);
+(%o5)                         - 101
+@end group
+@group
+(%i6) bit_not(-101);
+(%o6)                          100
+@end group
+@end example
+
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+@anchor{bit_and}
+@deffn {関数} bit_and (@var{int1}, ...)
+
+この関数は、2つ以上の符号付き整数のビット毎の @code{and}を計算します。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_and(i,i);
+@c bit_and(i,i,i);
+@c bit_and(1,3);
+@c bit_and(-7,7);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_and(i,i);
+(%o2)                           i
+@end group
+@group
+(%i3) bit_and(i,i,i);
+(%o3)                           i
+@end group
+@group
+(%i4) bit_and(1,3);
+(%o4)                           1
+@end group
+@group
+(%i5) bit_and(-7,7);
+(%o5)                           1
+@end group
+@end example
+
+もし @code{bit_and}のパラメータの1つが偶数かどうかわかっているなら、
+関数はこの情報を考慮します。
+@c ===beg===
+@c load("bitwise")$
+@c declare(e,even,o,odd);
+@c bit_and(1,e);
+@c bit_and(1,o);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) declare(e,even,o,odd);
+(%o2)                         done
+@end group
+@group
+(%i3) bit_and(1,e);
+(%o3)                           0
+@end group
+@group
+(%i4) bit_and(1,o);
+(%o4)                           1
+@end group
+@end example
+
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+@anchor{bit_or}
+@deffn {関数} bit_or (@var{int1}, ...)
+
+この関数は2つ以上の符号付き整数のビット毎の @code{or}を計算します。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_or(i,i);
+@c bit_or(i,i,i);
+@c bit_or(1,3);
+@c bit_or(-7,7);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_or(i,i);
+(%o2)                           i
+@end group
+@group
+(%i3) bit_or(i,i,i);
+(%o3)                           i
+@end group
+@group
+(%i4) bit_or(1,3);
+(%o4)                           3
+@end group
+@group
+(%i5) bit_or(-7,7);
+(%o5)                          - 1
+@end group
+@end example
+
+もし @code{bit_or}のパラメータの1つが偶数かどうかわかっているなら、
+関数はこの情報を考慮します。
+@c ===beg===
+@c load("bitwise")$
+@c declare(e,even,o,odd);
+@c bit_or(1,e);
+@c bit_or(1,o);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) declare(e,even,o,odd);
+(%o2)                         done
+@end group
+@group
+(%i3) bit_or(1,e);
+(%o3)                         e + 1
+@end group
+@group
+(%i4) bit_or(1,o);
+(%o4)                           o
+@end group
+@end example
+
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+@anchor{bit_xor}
+@deffn {関数} bit_xor (@var{int1}, ...)
+
+この関数は2つ以上の符号付き整数のビット毎の @code{xor}を計算します。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_xor(i,i);
+@c bit_xor(i,i,i);
+@c bit_xor(1,3);
+@c bit_xor(-7,7);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_xor(i,i);
+(%o2)                           0
+@end group
+@group
+(%i3) bit_xor(i,i,i);
+(%o3)                           i
+@end group
+@group
+(%i4) bit_xor(1,3);
+(%o4)                           2
+@end group
+@group
+(%i5) bit_xor(-7,7);
+(%o5)                          - 2
+@end group
+@end example
+
+もし @code{bit_xor}のパラメータの1つが偶数かどうかわかっているなら、
+関数はこの情報を考慮します。
+@c ===beg===
+@c load("bitwise")$
+@c declare(e,even,o,odd);
+@c bit_xor(1,e);
+@c bit_xor(1,o);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) declare(e,even,o,odd);
+(%o2)                         done
+@end group
+@group
+(%i3) bit_xor(1,e);
+(%o3)                         e + 1
+@end group
+@group
+(%i4) bit_xor(1,o);
+(%o4)                         o - 1
+@end group
+@end example
+
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+
+@anchor{bit_lsh}
+@deffn {関数} bit_lsh (@var{int}, @var{nBits})
+
+この関数は符号付き整数 @code{int}のすべてのビットを @code{nBits}だけ左へシフトさせます。
+この操作で整数の幅は @code{nBits}だけ拡張されます。
+なので、@code{bit_lsh}の結果は @code{int * 2}です(原文に従う)。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_lsh(0,1);
+@c bit_lsh(1,0);
+@c bit_lsh(1,1);
+@c bit_lsh(1,i);
+@c bit_lsh(-3,1);
+@c bit_lsh(-2,1);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_lsh(0,1);
+(%o2)                           0
+@end group
+@group
+(%i3) bit_lsh(1,0);
+(%o3)                           1
+@end group
+@group
+(%i4) bit_lsh(1,1);
+(%o4)                           2
+@end group
+@group
+(%i5) bit_lsh(1,i);
+(%o5)                     bit_lsh(1, i)
+@end group
+@group
+(%i6) bit_lsh(-3,1);
+(%o6)                          - 6
+@end group
+@group
+(%i7) bit_lsh(-2,1);
+(%o7)                          - 4
+@end group
+@end example
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+
+@anchor{bit_rsh}
+@deffn {関数} bit_rsh (@var{int}, @var{nBits})
+
+この関数は符号付き整数 @code{int}のすべてのビットを @code{nBits}だけ右へシフトさせます。
+この操作で整数の幅は @code{nBits}だけ減らされます。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_rsh(0,1);
+@c bit_rsh(2,0);
+@c bit_rsh(2,1);
+@c bit_rsh(2,2);
+@c bit_rsh(-3,1);
+@c bit_rsh(-2,1);
+@c bit_rsh(-2,2);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_rsh(0,1);
+(%o2)                           0
+@end group
+@group
+(%i3) bit_rsh(2,0);
+(%o3)                           2
+@end group
+@group
+(%i4) bit_rsh(2,1);
+(%o4)                           1
+@end group
+@group
+(%i5) bit_rsh(2,2);
+(%o5)                           0
+@end group
+@group
+(%i6) bit_rsh(-3,1);
+(%o6)                          - 2
+@end group
+@group
+(%i7) bit_rsh(-2,1);
+(%o7)                          - 1
+@end group
+@group
+(%i8) bit_rsh(-2,2);
+(%o8)                          - 1
+@end group
+@end example
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+@anchor{bit_length}
+@deffn {関数} bit_length (@var{int})
+
+変数が数 @code{int}を保持するために何ビット長必要か調べます。
+この関数は正整数上のみに演算します。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_length(0);
+@c bit_length(1);
+@c bit_length(7);
+@c bit_length(8);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_length(0);
+(%o2)                           0
+@end group
+@group
+(%i3) bit_length(1);
+(%o3)                           1
+@end group
+@group
+(%i4) bit_length(7);
+(%o4)                           3
+@end group
+@group
+(%i5) bit_length(8);
+(%o5)                           4
+@end group
+@end example
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn
+
+@anchor{bit_onep}
+@deffn {関数} bit_onep (@var{int}, @var{nBit})
+
+符号付き整数 @code{int}でビット @code{nBit}がセットされているかどうか調べます。
+
+@c ===beg===
+@c load("bitwise")$
+@c bit_onep(85,0);
+@c bit_onep(85,1);
+@c bit_onep(85,2);
+@c bit_onep(85,3);
+@c bit_onep(85,100);
+@c bit_onep(i,100);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_onep(85,0);
+(%o2)                         true
+@end group
+@group
+(%i3) bit_onep(85,1);
+(%o3)                         false
+@end group
+@group
+(%i4) bit_onep(85,2);
+(%o4)                         true
+@end group
+@group
+(%i5) bit_onep(85,3);
+(%o5)                         false
+@end group
+@group
+(%i6) bit_onep(85,100);
+(%o6)                         false
+@end group
+@group
+(%i7) bit_onep(i,100);
+(%o7)                   bit_onep(i, 100)
+@end group
+@end example
+
+符号付き数では、符号ビットは2の補数相当です。
+(原文: For signed numbers the sign bit is interpreted to be more than @code{nBit} to the
+left of the leftmost bit of @code{int} that reads @code{1}.)
+@c ===beg===
+@c load("bitwise")$
+@c bit_onep(-2,0);
+@c bit_onep(-2,1);
+@c bit_onep(-2,2);
+@c bit_onep(-2,3);
+@c bit_onep(-2,4);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) bit_onep(-2,0);
+(%o2)                         false
+@end group
+@group
+(%i3) bit_onep(-2,1);
+(%o3)                         true
+@end group
+@group
+(%i4) bit_onep(-2,2);
+(%o4)                         true
+@end group
+@group
+(%i5) bit_onep(-2,3);
+(%o5)                         true
+@end group
+@group
+(%i6) bit_onep(-2,4);
+(%o6)                         true
+@end group
+@end example
+
+
+もしテストする数が偶数かどうかわかっているなら、
+関数はこの情報を考慮します。
+@c ===beg===
+@c load("bitwise")$
+@c declare(e,even,o,odd);
+@c bit_onep(e,0);
+@c bit_onep(o,0);
+@c ===end===
+@example
+(%i1) load("bitwise")$
+@group
+(%i2) declare(e,even,o,odd);
+(%o2)                         done
+@end group
+@group
+(%i3) bit_onep(e,0);
+(%o3)                         false
+@end group
+@group
+(%i4) bit_onep(o,0);
+(%o4)                         true
+@end group
+@end example
+
+@opencatbox
+@category{Number theory}
+@category{Binary operations}
+@category{Package bitwise}
+@closecatbox
+@end deffn

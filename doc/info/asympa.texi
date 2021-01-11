@@ -1,0 +1,25 @@
+@menu
+* Introduction to asympa::
+* Functions and variables for asympa::
+@end menu
+
+@node Introduction to asympa, Functions and variables for asympa, asympa-pkg, asympa-pkg
+@section Introduction to asympa
+
+@deffn {関数} asympa
+@code{asympa}は漸近解析パッケージです。
+パッケージは、
+複雑性解析と数値解析で広く使われている ``ビッグ O''と
+``リトル o''関数を含む漸近解析のための式整理関数を含みます。
+
+@code{load ("asympa")}はこのパッケージをロードします。
+
+@opencatbox
+@category{Package asympa}
+@closecatbox
+@end deffn
+
+@node Functions and variables for asympa, ,Introduction to asympa, asympa-pkg
+@section Functions and variables for asympa
+
+@c No contents yet.

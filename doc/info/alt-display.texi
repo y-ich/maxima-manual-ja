@@ -1,0 +1,337 @@
+@menu
+* Introduction to alt-display::
+* Functions and Variables for alt-display::
+@end menu
+
+@node Introduction to alt-display, Functions and Variables for alt-display, alt-display-pkg, alt-display-pkg
+@section Introduction to alt-display
+
+@emph{alt-display}パッケージは、 Maximaが出力を表示する方法を変える手段を提供します。
+2002年に @var{*alt-display1d*}と @var{*alt-display2d*} Lispフックが Maximaに導入されましたが、
+このパッケージの導入まで Maxima REPLから容易にアクセスできませんでした。
+
+パッケージは、代わりの表示関数を定義する汎用の関数と表示関数を設定する別の関数を提供します。
+パッケージは、 @TeX{}, Texinfo, XML, Texinfo内の3つの出力フォーマットすべてで出力を生成するカスタマイズされた表示関数も提供します。
+
+以下はサンプルのやり取りです:
+
+@c (linenum:1,display2d:true,reset_displays());
+@example
+(%i1) load("alt-display.mac")$
+(%i2) set_alt_display(2,tex_display)$
+
+(%i3) x/(x^2+y^2) = 1;
+\mbox@{\tt\red(@{\it \%o_3@}) \black@}$$@{@{x@}\over@{y^2+x^2@}@}=1$$
+
+(%i4) set_alt_display(2,mathml_display)$
+
+(%i5) x/(x^2+y^2) = 1;
+<math xmlns="http://www.w3.org/1998/Math/MathML"> <mi>mlabel</mi>
+<mfenced separators=""><msub><mi>%o</mi> <mn>5</mn></msub>
+<mo>,</mo><mfrac><mrow><mi>x</mi> </mrow> <mrow><msup><mrow>
+<mi>y</mi> </mrow> <mn>2</mn> </msup> <mo>+</mo> <msup><mrow>
+<mi>x</mi> </mrow> <mn>2</mn> </msup> </mrow></mfrac> <mo>=</mo>
+<mn>1</mn> </mfenced> </math>
+
+(%i6) set_alt_display(2,multi_display_for_texinfo)$
+
+(%i7) x/(x^2+y^2) = 1;
+
+@@iftex
+@@tex
+\mbox@{\tt\red(@{\it \%o_7@}) \black@}$$@{@{x@}\over@{y^2+x^2@}@}=1$$
+@@end tex
+@@end iftex
+@@ifhtml
+@@html
+
+<math xmlns="http://www.w3.org/1998/Math/MathML"> <mi>mlabel</mi>
+<mfenced separators=""><msub><mi>%o</mi> <mn>7</mn></msub>
+<mo>,</mo><mfrac><mrow><mi>x</mi> </mrow> <mrow><msup><mrow>
+<mi>y</mi> </mrow> <mn>2</mn> </msup> <mo>+</mo> <msup><mrow>
+<mi>x</mi> </mrow> <mn>2</mn> </msup> </mrow></mfrac> <mo>=</mo>
+<mn>1</mn> </mfenced> </math>
+@@end html
+@@end ifhtml
+@@ifinfo
+@@example
+(%o7) x/(y^2+x^2) = 1
+@@end example
+@@end ifinfo
+@end example
+
+もし代わりの表示関数がエラーを起こしたら、エラーが捕捉され、表示関数はデフォルトの表示にリセットされます。
+以下の例では、出力を表示するように関数 @code{error}を設定します。
+これはエラーをスローし、2d表示をデフォルトにリセットすることでエラーをハンドリングします。
+
+@example
+(%i8) set_alt_display(2,?error)$
+
+(%i9) x;
+
+Error in *alt-display2d*.
+Messge: Condition designator ((MLABEL) $%O9 $X) is not of type (OR SYMBOL STRING
+                                                             FUNCTION).
+*alt-display2d* reset to nil.
+ -- an error. To debug this try: debugmode(true);
+
+(%i10) x;
+(%o10)                                 x
+@end example
+
+@node Functions and Variables for alt-display,  , Introduction to alt-display, alt-display-pkg
+@section Functions and Variables for alt-display
+
+@deffn {関数} define_alt_display (@var{function}(@var{input}), @var{expr})
+この関数は @code{define}に似ています:
+引数を評価し、関数定義に展開します。
+@var{function}は、入力(@var{input})が1つの関数です。
+Lisp変数名に簡単にアクセスできるように便宜上、代入は評価の後に @var{expr}に適用されます。
+
+プロンプトそれぞれでタイムスタンプを設定する:
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) display2d:false$
+
+(%i3) define_alt_display(time_stamp(x),
+                   block([alt_display1d:false,alt_display2d:false],
+                         prompt_prefix:printf(false,"~a~%",timedate()),
+                         displa(x)));
+
+(%o3) time_stamp(x):=block([\*alt\-display1d\*:false,
+                            \*alt\-display2d\*:false],
+                 \*prompt\-prefix\*:printf(false,"~a~%",timedate()),displa(x))
+(%i4) set_alt_display(1,time_stamp);
+
+(%o4) done
+2017-11-27 16:15:58-06:00
+(%i5) 
+@end example
+
+入力行 @code{%i3}は、 @code{define_alt_display}を使って @code{time_stamp}を定義しています。
+出力行 @code{%o3}は、
+@code{displa}が @code{?displa}(表示関数)に置き換えられるのと同様に
+Maxima変数名 @code{alt_display1d}, @code{alt_display2d}, @code{prompt_prefix}がそれらのLisp解釈に置き換わっていることを示しています。
+
+表示変数 @code{alt_display1d}, @code{alt_display2d}は、
+@code{displa}内で無限再帰を抑制するために
+@code{time_stamp}の本体の中で両方 @code{false}に束縛されます。
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@anchor{info_display}
+@deffn {関数} info_display (@var{form})
+これはデフォルトの1-d 表示関数のエーリアスです。
+代わりの1-dか2-d表示間数として使えます。
+
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) set_alt_display(2,info_display);
+
+(%o2) done
+(%i3) x/y;
+
+(%o3) x/y
+@end example
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@anchor{mathml_display}
+@deffn {関数} mathml_display (@var{form})
+MathML出力を生成します。
+
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) set_alt_display(2,mathml_display);
+<math xmlns="http://www.w3.org/1998/Math/MathML"> <mi>mlabel</mi>
+ <mfenced separators=""><msub><mi>%o</mi> <mn>2</mn></msub>
+ <mo>,</mo><mi>done</mi> </mfenced> </math>
+@end example
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@anchor{tex_display}
+@deffn {関数} tex_display (@var{form})
+TeX出力を生成します。
+
+@example
+(%i2) set_alt_display(2,tex_display);
+\mbox@{\tt\red(@{\it \%o_2@}) \black@}$$\mathbf@{done@}$$
+(%i3) x/(x^2+y^2);
+\mbox@{\tt\red(@{\it \%o_3@}) \black@}$$@{@{x@}\over@{y^2+x^2@}@}$$
+@end example
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@deffn {関数} multi_display_for_texinfo (@var{form})
+3つの表示関数すべてを使ってTexinfo出力を生成します。
+
+@example
+(%i2) set_alt_display(2,multi_display_for_texinfo)$
+
+(%i3) x/(x^2+y^2);
+
+@@iftex
+@@tex
+\mbox@{\tt\red(@{\it \%o_3@}) \black@}$$@{@{x@}\over@{y^2+x^2@}@}$$
+@@end tex
+@@end iftex
+@@ifhtml
+@@html
+
+   <math xmlns="http://www.w3.org/1998/Math/MathML"> <mi>mlabel</mi>
+   <mfenced separators=""><msub><mi>%o</mi> <mn>3</mn></msub>
+   <mo>,</mo><mfrac><mrow><mi>x</mi> </mrow> <mrow><msup><mrow>
+   <mi>y</mi> </mrow> <mn>2</mn> </msup> <mo>+</mo> <msup><mrow>
+   <mi>x</mi> </mrow> <mn>2</mn> </msup> </mrow></mfrac> </mfenced> </math>
+@@end html
+@@end ifhtml
+@@ifinfo
+@@example
+(%o3) x/(y^2+x^2)
+@@end example
+@@end ifinfo
+@end example
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@deffn {関数} reset_displays ()
+プロンプトプレフィックスとサフィックスを空の文字列にリセットし、
+1-dと2-d表示関数を両方デフォルトに設定します。
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@anchor{set_alt_display}
+@deffn {関数} set_alt_display (@var{num}, @var{display-function})
+入力 @var{num}は設定される表示です: 1もしくは2です。
+2番目の入力 @var{display-function}は使われる表示関数です。
+表示関数は Maxima関数か @code{lambda}式のいずれかです。
+
+以下は表示関数が @code{lambda}式の例です;
+ただ @TeX{}として結果を表示します。
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) set_alt_display(2, lambda([form], tex(?caddr(form))))$
+
+(%i3) integrate(exp(-t^2),t,0,inf);
+$$@{@{\sqrt@{\pi@}@}\over@{2@}@}$$
+@end example
+
+ユーザー定義の表示関数は、出力を @emph{印刷する}ように気をつけなければいけません。
+文字列を返す表示関数は何も表示しないように見え、エラーも起こしません。
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@anchor{set_prompt}
+@deffn {関数} set_prompt (@var{fix}, @var{expr})
+プロンプトプレフィックスかサフィックスを @var{expr}に設定します。
+入力 @var{fix}は、 @code{prefix}, @code{suffix}, @code{general},
+@code{prolog}, @code{epilog}のいずれか1つに評価されなければいけません。
+@var{expr}は文字列もしくは @code{false}に評価されなければいけません;
+もし @code{false}なら、 @var{fix}はデフォルト値にリセットされます。
+
+@example
+(%i1) load("alt-display.mac")$
+(%i2) set_prompt('prefix,printf(false,"It is now: ~a~%",timedate()))$
+
+It is now: 2014-01-07 15:23:23-05:00
+(%i3)
+@end example
+
+以下の例は、 @code{prolog}を除くそれぞれのオプションの効果を示します。
+@code{epilog}プロンプトは Maximaが閉めるように印刷されることに注意してください。
+入力行が @code{$}で終了しない限り、@code{general}が入力の終わりと出力の間に印刷されます。
+
+以下はプロンプト文字列が置かれる場所を示す例です。
+
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) set_prompt(prefix,"<<prefix>> ",suffix,"<<suffix>> ",general,
+           printf(false,"<<general>>~%"),epilog,printf(false,"<<epilog>>~%"));
+
+(%o2)                                done
+<<prefix>> (%i3) <<suffix>> x/y;
+<<general>>
+                                       x
+(%o3)                                  -
+                                       y
+<<prefix>> (%i4) <<suffix>> quit();
+<<general>>
+<<epilog>>
+@end example
+
+以下は、
+Maximaが、端末か、Emacs@footnote{@code{Emacs}の中の @code{info}リーダを使っている読者は実際のプロンプト文字列を見るでしょう;
+他の読者は群生化した出力を見るでしょう}のような端末エミュレータ内で走っている時、
+入力と出力を群生化させる方法を示す例です。
+
+@ifinfo
+@c  (%i2) set_prompt('prefix,"[1;31m",'suffix,"[0;32m",'general,"[1;34m",'epilog,"[00;m")$
+@example
+(%i1) load("alt-display.mac")$
+
+(%i2) cs(s) := printf(false,"~c[~am",ascii(27),s)$
+
+(%i3) set_prompt(prefix,cs("1;31"),suffix,cs("0;32"),general,cs("1;34"),epilog,cs("00;"));
+(%o3)                                done
+[1;31m(%i4)[0;32m integrate(exp(-x^2),x,0,inf);[1;34m
+                                   sqrt(%pi)
+(%o4)                              ---------
+                                       2
+[1;31m(%i5)[00;m
+@end example
+@end ifinfo
+@ifnotinfo
+@figure{color_terminal}
+@end ifnotinfo
+
+それぞれのプロンプト文字列は ASCIIエスケープ文字 (27) で始まり、開カギ括弧 (91)が続きます;
+それぞれの文字列は小文字のm (109) で終わります。
+ウェブページ
+@url{http://misc.flogisoft.com/bash/tip_colors_and_formatting} と
+@url{http://www.tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html} は
+端末の色を設定するために制御文字列を使う方法に関して情報を提供します。
+
+@opencatbox
+@category{Package alt-display}
+@closecatbox
+
+@end deffn
+
+@c Local Variables:
+@c mode: texinfo
+@c TeX-master: "include-maxima"
+@c End:

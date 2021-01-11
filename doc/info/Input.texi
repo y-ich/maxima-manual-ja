@@ -1,0 +1,1335 @@
+@menu
+* Comments::
+* Files::
+* Functions and Variables for File Input and Output::
+* Functions and Variables for TeX Output::
+* Functions and Variables for Fortran Output::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Comments, Files, File Input and Output, File Input and Output
+@section Comments
+@c -----------------------------------------------------------------------------
+
+Maximaの入力中 @code{/*}と @code{*/}の間のテキストはどんなものでもコメントです。
+です。
+
+Maximaのパーサはコメントを入力ストリームでのトークンを見つけるための空白として扱います;
+コメントで常にトークンは終わります。
+@code{a/* foo */b}のような入力は１つのトークン@code{ab}ではなく、２つのトークン
+@code{a}と@code{b}を含みます。
+ほかの点ではMaximaはコメントを無視します;
+コメントの中身も位置もパースされた入力式に残りません。
+
+コメントは任意の深さに入れ子にすることができます。
+@code{/*}と @code{*/}の区切り記号はマッチングペアを形作ります。
+@code{/*}の数は @code{*/}と同じでなければいけません。
+
+例:
+
+@c ===beg===
+@c /* aa is a variable of interest */  aa : 1234;
+@c /* Value of bb depends on aa */  bb : aa^2;
+@c /* User-defined infix operator */  infix ("b");
+@c /* Parses same as a b c, not abc */  a/* foo */b/* bar */c;
+@c /* Comments /* can be nested /* to any depth */ */ */  1 + xyz;
+@c ===end===
+@example
+(%i1) /* aa is a variable of interest */  aa : 1234;
+(%o1)                         1234
+(%i2) /* Value of bb depends on aa */  bb : aa^2;
+(%o2)                        1522756
+(%i3) /* User-defined infix operator */  infix ("b");
+(%o3)                           b
+(%i4) /* Parses same as a b c, not abc */  a/* foo */b/* bar */c;
+(%o4)                         a b c
+(%i5) /* Comments /* can be nested /* to any depth */ */ */  1 + xyz;
+(%o5)                        xyz + 1
+@end example
+
+@opencatbox
+@category{Syntax}
+@closecatbox
+
+@c -----------------------------------------------------------------------------
+@node Files, Functions and Variables for File Input and Output, Comments, File Input and Output
+@section Files
+@c -----------------------------------------------------------------------------
+
+簡単に言えば、ファイルはデータやテキスト含む個々のストレージデバイス上のある領域です。
+ディスク上のファイルは比喩的に「名簿(ディレクトリ)」の中にグループ化されます。
+簡単に言えば、ディレクトリはファイルのリストです。
+ファイルを扱うコマンドは以下の通りです:
+
+@verbatim
+   appendfile           batch                 batchload
+   closefile            file_output_append    filename_merge
+   file_search          file_search_maxima    file_search_lisp
+   file_search_demo     file_search_usage     file_search_tests
+   file_type            file_type_lisp        file_type_maxima
+   load                 load_pathname         loadfile
+   loadprint            pathname_directory    pathname_name
+   pathname_type        printfile             save
+   stringout            with_stdout           writefile
+@end verbatim
+
+ファイル名が @mref{plot2d}や @mref{save}, @mref{writefile}のような関数に渡され、
+ファイル名がパスを含まない時
+Maximaは現在のワーキングディレクトリにファイルを保存します。
+現在のワーキングディレクトリは Windowsや Linuxのようなシステムとインストールに依存します。
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for File Input and Output, Functions and Variables for TeX Output, Files, File Input and Output
+@section Functions and Variables for File Input and Output
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+@anchor{appendfile}
+@deffn {関数} appendfile (@var{filename})
+
+コンソールの筆記録を @var{filename}に追加します。
+筆記録ファイルが存在すればいつも追加されることを除いて、
+@code{appendfile}は @code{writefile}と同じです。
+
+@mref{closefile}は @code{appendfile}や
+@code{writefile}が開いた筆記録ファイルを閉じます。
+
+@opencatbox
+@category{File output} @category{Console interaction}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{batch}
+@deffn  {関数} batch @
+@fname{batch} (@var{filename}) @
+@fname{batch} (@var{filename}, @code{option})
+
+@code{batch(@var{filename})}は Maximaの式を @var{filename}から読み込んで評価します。
+@code{batch}はリスト @mref{file_search_maxima}の中から @var{filename}を検索します。
+@mref{file_search}も参照してください。
+
+@code{batch(@var{filename}, @code{demo})}は
+@code{demo(@var{filename})}ようなものです。
+この場合、@code{batch}はリスト @mref{file_search_demo}の中から
+@var{filename}を検索します。
+@mref{demo}を参照してください。
+
+@code{batch(@var{filename}, @code{test})}はオプション
+@code{display_all=true}を付けた @code{run_testsuite}ようなものです。
+この場合、@code{batch}は
+@code{run_testsuite}のようにリスト @code{file_search_tests}ではなく、
+リスト @code{file_search_maxima}の中で @var{filename}を検索します。
+更に @code{run_testsuite}はリスト
+@code{testsuite_files}の中にあるテストを実行します。
+@code{batch}を使うとどんなファイルもテストモードで実行することが可能です。
+ファイルはリスト @code{file_search_maxima}の中であってもいいです。
+これはテストファイルを書いている時に便利です。
+
+@var{filename}は一連の Maximaの式からなり、それぞれの式は
+@code{;}か @code{$}で終了します。
+特殊変数 @mref{%}と関数 @mref{%th}はファイル内での前の結果を参照します。
+ファイルは @code{:lisp}構成子を含むかもしれません。
+ファイルの中の空白、タブ、改行は無視されます。
+必要な入力ファイルはテキストエディタもしくは @mref{stringout}関数で作ることができます。
+
+@code{batch}はそれぞれの入力式を @var{filename}から読み込み、
+入力をコンソールに表示し、対応する出力式を計算し、出力式を表示します。
+入力ラベルは入力式に割り当てられ、出力ラベルは出力式に割り当てられます。
+@code{batch}はエラーがない限りファイルの中のすべての入力式を評価します。
+もしユーザー入力が（例えば、 @mref{asksign}や @mref{askinteger}によって）要求されたら、
+@code{batch}は必要な入力を入手するためポーズして、入手後評価を続けます。
+
+@c CTRL-C BREAKS batch IN CMUCL, BUT CLISP (ALTHOUGH IT SHOWS "User break")
+@c KEEPS GOING !!! DON'T KNOW ABOUT GCL !!!
+コンソールで @code{control-C}をタイプすると
+@code{batch}を停止させることが可能な場合があります。
+@code{control-C}の効果は基礎となる Lispの実装に依存します。
+
+@code{batch}にはいくつか用法があります。
+役立つコマンドラインの蓄積を供給したり、エラーのないデモンストレーションを与えたり、
+複雑な問題を解く時人の考えを整理するのを助けたり。
+
+@code{batch}は引数を評価します。
+第二引数なしで呼び出されたり、オプション @code{demo}で呼び出された時、
+@code{batch}は @code{filename}のパスを文字列として返します。
+オプション @code{test}で呼び出された時、
+戻り値は空のリスト@code{[]}か @var{filename}と失敗したテストの数を含むリストです。
+
+@mref{load}, @mref{batchload}, @mref{demo}も参照してください。
+
+@opencatbox
+@category{Session management} @category{File input}
+@closecatbox
+
+@end deffn
+
+@c RECOMMEND CUTTING THIS ITEM, AS THE load SUBSUMES FUNCTIONALITY OF batchload
+
+@c -----------------------------------------------------------------------------
+@anchor{batchload}
+@deffn {関数} batchload (@var{filename})
+
+@var{filename}から Maximaの式を読み込んで評価します。
+入力式や出力式を表示しません。
+ラベルを出力式に割り当てません。
+しかし (@code{print}や @code{describe}が生成するような)プリント文の出力は表示されます。
+
+特殊変数 @mref{%}や関数 @mref{%th}は
+ファイルの中の結果ではなく対話インタープリタからの以前の結果を参照します。
+ファイルは@code{:lisp}構成子を含むことはできません。
+
+@code{batchload}は @var{filename}のパスを文字列として返します。
+@code{batchload}は引数を評価します。
+
+@mref{batch}や @mref{load}も参照してください。
+@c batchload APPEARS TO HAVE THE SAME EFFECT AS load. WHY NOT GET RID OF batchload ???
+
+@opencatbox
+@category{Session management} @category{File input}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{closefile}
+@deffn {関数} closefile ()
+
+@mref{writefile}や @mref{appendfile}で開いたトランスクリプトファイルを閉じます。
+
+@opencatbox
+@category{File output} @category{Console interaction}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{file_output_append}
+@defvr {オプション変数} file_output_append
+デフォルト値: @code{false}
+
+@code{file_output_append}は
+ファイル出力関数が出力ファイルに追加するかファイルを新たに書き換えるか(truncate)決めます。
+@code{file_output_append}が@code{true}の時
+ファイル出力関数は出力ファイルに追加します。
+そうでないなら出力ファイルは書き換えられます。
+
+@mref{save}, @mref{stringout}, @mref{with_stdout}は
+@code{file_output_append}に関係します。
+出力ファイルを書き出す他の関数は @code{file_output_append}に関係しません。
+特に、プロット関数や変換関数は常に出力ファイルを書き換え、
+@mref{tex}や @mref{appendfile}はいつも追加します。
+@c WHAT ABOUT WRITEFILE ??
+
+@opencatbox
+@category{File output} @category{Global flags}
+@closecatbox
+@end defvr
+
+
+@c NEEDS EXAMPLES
+
+@c -----------------------------------------------------------------------------
+mo@anchor{filename_merge}
+@deffn {関数} filename_merge (@var{path}, @var{filename})
+
+@var{path}と @var{filename}から限定された(modified)パスを構成します。
+もし @var{path}の最後の構成要素が @code{###.@var{something}}の形なら、
+構成要素は @code{@var{filename}.@var{something}}に置き換えられます。
+そうでないなら最後の構成要素は単に @var{filename}に置き換えられます。
+
+結果はLispのパス名オブジェクトです。
+
+@opencatbox
+@category{File input} @category{File output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{file_search}
+@deffn  {関数} file_search @
+@fname{file_search} (@var{filename}) @
+@fname{file_search} (@var{filename}, @var{pathlist})
+
+@code{file_search}はファイル @var{filename}を検索し、
+もし見つかったら（文字列として）ファイルへのパスを返します;
+見つからないなら @code{file_search}は @code{false}を返します。
+@code{file_search (@var{filename})}はデフォルトのサーチディレクトリを検索します。
+デフォルトのサーチディレクトリは @mref{file_search_maxima},
+@mref{file_search_lisp}, @mref{file_search_demo}変数によって指定されます。
+
+@code{file_search}は、
+名前を「ワイルドカード」ファイルサーチパターンにマッチさせようとする前に、
+最初に、渡された実際の名前が存在するかチェックします。
+ファイルサーチパターンに関連した @mref{file_search_maxima}を参照してください。
+
+引数 @var{filename}は、パスとファイル名、もしくは単にファイル名、もしくは、
+もしファイルサーチディレクトリがファイルサーチパターンを含むなら
+単にファイル名のベース（拡張子なし）のいずれかです。
+例えば、
+
+@example
+file_search ("/home/wfs/special/zeta.mac");
+file_search ("zeta.mac");
+file_search ("zeta");
+@end example
+
+ファイルが存在していて、
+@code{/home/wfs/special/###.mac}が
+@code{file_search_maxima}に中にあるという仮定の下で
+上記すべては同じファイルを見つけます。
+
+@code{file_search (@var{filename}, @var{pathlist})}は
+@var{pathlist}が指定するディレクトリの中だけを検索します。
+ここで @var{pathlist}は文字列のリストです。
+引数 @var{pathlist}はデフォルトの検索ディレクトリに取って代わります。
+なので、もしパスリストが与えられたら
+@code{file_search}は指定されたところだけを検索し、
+デフォルトの検索ディレクトリのいずれも検索しません。
+@var{pathlist}の中に１つのディレクトリだけしかない場合でも
+要素１つのリストとして与えなければいけません。
+
+ユーザーはデフォルト検索ディレクトリを変更できます。
+@mref{file_search_maxima}を参照してください。
+
+@mref{load}は
+@code{file_search_maxima}と @mref{file_search_lisp}を
+を検索ディレクトリとして指定して @code{file_search}を呼び出します。
+
+@opencatbox
+@category{File input}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{file_search_maxima}
+@anchor{file_search_lisp}
+@anchor{file_search_demo}
+@anchor{file_search_usage}
+@anchor{file_search_tests}
+@defvr  {オプション変数} file_search_maxima
+@defvrx {オプション変数} file_search_lisp
+@defvrx {オプション変数} file_search_demo
+@defvrx {オプション変数} file_search_usage
+@defvrx {オプション変数} file_search_tests
+
+これらの変数は @mref{load}や, @mref{demo}, 他のいくつかの
+Maximaの関数が検索するディレクトリのリストを指定します。
+これらの変数のデフォルト値は Maximaインストレーションの様々なディレクトリを指名します。
+
+ユーザーは
+デフォルト値を置き換えるかディレクトリを追加することでこれらの変数を変更できます
+例えば、
+
+@example
+file_search_maxima: ["/usr/local/foo/###.mac",
+    "/usr/local/bar/###.mac"]$
+@end example
+
+は @code{file_search_maxima}のデフォルト値を置き換えますし、
+
+@example
+file_search_maxima: append (file_search_maxima,
+    ["/usr/local/foo/###.mac", "/usr/local/bar/###.mac"])$
+@end example
+
+は２つのディレクトリを追加します。
+ファイル @code{maxima-init.mac}に
+Maximaが起動した時にファイル検索パスが自動的に割り当てられるような式を入れておくと便利かもしれません。
+@ref{Introduction for Runtime Environment}も参照してください。
+
+特別な「ワイルドカード」構造によってファイル名の拡張子やパスを多重にしてすることができます。
+文字列 @code{###}は求められている名前に拡張される一方、
+カーリー括弧 @code{@{foo,bar,baz@}}で囲まれ、コンマで分離されたリストは
+多重文字列に拡張されます。
+例えば、求められてる名前が @code{neumann}とすると
+
+@example
+"/home/@{wfs,gcj@}/###.@{lisp,mac@}"
+@end example
+
+@flushleft
+は @code{/home/wfs/neumann.lisp}, @code{/home/gcj/neumann.lisp},
+@code{/home/wfs/neumann.mac}, @code{/home/gcj/neumann.mac}に展開されます。
+@end flushleft
+
+@opencatbox
+@category{File input} @category{Global variables}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{file_type}
+@deffn {関数} file_type (@var{filename})
+
+ファイル名拡張子に基づいて @var{filename}の中身について推測を返します。
+@var{filename}は実際のファイルを参照する必要はありません;
+ファイルを開いたり中身を探索したりはしません。
+
+戻り値はシンボルであり、 @code{object}, @code{lisp}, @code{maxima}のいずれかです。
+もし拡張子が @code{file_type_maxima}の中の値の1つと一致したら、
+@code{file_type}は @code{maxima}を返します。
+もし拡張子が @code{file_type_lisp}の中の値の1つと一致したら、
+@code{file_type}は @code{lisp}を返します。
+上のいずれでもないなら、@code{file_type}は @code{object}を返します。
+
+@mref{pathname_type}も参照してください。
+
+デフォルト値に関しては @mref{file_type_maxima}と @mref{file_type_lisp}を
+参照してください。
+
+例:
+
+@c === beg ===
+@c map('file_type,
+@c     ["test.lisp", "test.mac", "test.dem", "test.txt"]);
+@c === end ===
+@example
+(%i2) map('file_type,
+          ["test.lisp", "test.mac", "test.dem", "test.txt"]);
+(%o2)            [lisp, maxima, maxima, object]
+@end example
+
+@opencatbox
+@category{File input}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{file_type_lisp}
+@defvr {オプション変数} file_type_lisp
+デフォルト値:  @code{[l, lsp, lisp]}
+
+@code{file_type_lisp}は
+maximaが Lispソースファイルの印として認識するファイル拡張子のリストです。
+
+@mref{file_type}も参照してください。
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{file_type_maxima}
+@defvr {オプション変数} file_type_maxima
+デフォルト値:  @code{[mac, mc, demo, dem, dm1, dm2, dm3, dmt, wxm]}
+
+@code{file_type_maxima}は、
+maximaが Maximaソースファイルの印として認識するファイル拡張子のリストです。
+
+@mref{file_type}も参照してください。
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{load}
+@deffn {関数} load (@var{filename})
+
+@var{filename}の中の式を評価します。
+そして変数、関数、他のオブジェクトをMaximaにもたらします。
+@var{filename}から再生されたバインドは存在するオブジェクトのバインドを上書きします(clobber)。
+ファイルを見つけるために
+@code{load}は、探索ディレクトリとして
+@code{file_search_maxima}と
+@code{file_search_lisp}を引数に与えて @code{file_search}をコールします。
+もし @code{load}が成功したらファイルの名前を返します。
+そうでないなら @code{load}はエラーメッセージを出力します。
+
+@code{load}は Lispコードでも Maximaコードでも等しく機能します。
+@mref{save}, @mref{translate_file}, @mref{compile_file}
+―これらはLispコードを生成します―
+が生成したファイルはすべて @code{load}によって処理できます。
+@code{load}は Lispファイルをロードするために @code{loadfile}をコールし、
+Maximaファイルをロードするために @mref{batchload}をコールします。
+
+@code{load}は Maximaファイルの中で @code{:lisp}構成子を認識しません。
+@var{filename}を処理する時
+グローバル変数 @code{_}, @code{__}, @code{%}, @code{%th}は
+@code{load}がコールされた時バインドされていた値を持ちます。
+
+@code{load}コマンドが呼ばれる前に @code{defstruct}が構造体を定義しているなら、
+それらは構造体として再読み込みされるだけということも注意してください。
+
+@mref{loadfile}, @mref{batch}, @mref{batchload}, @mref{demo}も参照してください。
+@code{loadfile}はLispファイルを処理します;
+@code{batch}, @code{batchload}, @code{demo}は Maximaファイルを処理します。
+
+ファイル探索メカニズムについてもっと詳しいことは @mref{file_search}を参照してください。
+
+@code{load}は引数を評価します。
+
+@opencatbox
+@category{Session management} @category{File input}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{load_pathname}
+@defvr {システム変数} load_pathname
+デフォルト値: @code{false}
+
+関数 @mref{load}や @mref{loadfile},
+@mref{batchload}を使ってファイルがロードされる時、
+システム変数 @code{load_pathname}は処理するファイルのパス名を示します。
+
+変数 @code{load_pathname}はロード中にファイルからアクセスすることができます。
+
+例:
+
+ディレクトリ
+@flushleft
+@code{"/home/dieter/workspace/mymaxima/temp/"}
+@end flushleft
+に以下のコマンドを含むバッチファイル @code{test.mac}があるとしましょう。
+
+@example
+print("The value of load_pathname is: ", load_pathname)$
+print("End of batchfile")$
+@end example
+
+すると以下の出力を得ます。
+
+@example
+(%i1) load("/home/dieter/workspace/mymaxima/temp/test.mac")$
+The value of load_pathname is:
+                   /home/dieter/workspace/mymaxima/temp/test.mac
+End of batchfile
+@end example
+
+@opencatbox
+@category{File input}
+@closecatbox
+@end defvr
+
+@c RECOMMEND CUTTING THIS ITEM, AS THE load SUBSUMES FUNCTIONALITY OF loadfile
+
+@c -----------------------------------------------------------------------------
+@anchor{loadfile}
+@deffn {関数} loadfile (@var{filename})
+
+@var{filename}の中の Lisp式を評価します。
+@code{loadfile}は @code{file_search}を呼び出しません。
+なのでファイル拡張子とファイルを見つけるのに
+@code{filename}は必要なパスも含まなければいけません。
+
+@code{loadfile}は @mref{save}, @mref{translate_file},
+@mref{compile_file}によって生成されたファイルを処理できます。
+ユーザーは @code{loadfile}の代わりに @mref{load}を使うほうが便利だと気づくでしょう。
+
+@opencatbox
+@category{Session management} @category{File input}
+@closecatbox
+@end deffn
+
+@c loadprint DOESN'T EXACTLY WORK LIKE THIS, BUT IT HARDLY SEEMS WORTH FIXING
+@c I GUESS THIS COULD BE UPDATED TO DESCRIBE THE WAY IT ACTUALLY WORKS
+
+@c -----------------------------------------------------------------------------
+@anchor{loadprint}
+@defvr {オプション変数} loadprint
+デフォルト値: @code{true}
+
+@code{loadprint}はファイルがロードされた時メッセージを表示するかどうか告げます。
+
+@itemize @bullet
+@item
+@code{loadprint}が @code{true}の時いつもメッセージを表示します。
+@item
+@code{loadprint}が @code{'loadfile}の時ファイルが関数
+@code{loadfile}によってロードされた時だけメッセージを表示します。
+@item
+@code{loadprint}が @code{'autoload}の時
+ファイルが自動的にロードされた時だけメッセージを表示します。
+@mref{setup_autoload}を参照してください。
+@item
+@code{loadprint}が @code{false}の時メッセージは決して表示されません。
+@end itemize
+
+@opencatbox
+@category{File input} @category{Global flags}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{directory}
+@deffn {関数} directory (@var{path})
+
+ファイルシステムの @var{path}の中のファイルとディレクトリのリストを返します。
+
+@var{path}はワイルドカード文字(すなわち、パスの未指定部分を表す文字)を含むかもしれません。
+それはほとんどのシステム上で少なくともアスタリスクを含み、システムによっては可能な他の文字も含みます。
+
+@code{ディレクトリ} はLisp関数 DIRECTORYを頼りにしていて、実装依存の振る舞いがあるかもしれません。
+
+@opencatbox
+@category{File input}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{pathname_directory}
+@anchor{pathname_name}
+@anchor{pathname_type}
+@deffn  {関数} pathname_directory (@var{pathname})
+@deffnx {関数} pathname_name (@var{pathname})
+@deffnx {関数} pathname_type (@var{pathname})
+
+これらの関数は@var{pathname}の構成要素を返します。
+
+例:
+
+@c === beg ===
+@c pathname_directory("/home/dieter/maxima/changelog.txt");
+@c pathname_name("/home/dieter/maxima/changelog.txt");
+@c pathname_type("/home/dieter/maxima/changelog.txt");
+@c === end ===
+@example
+(%i1) pathname_directory("/home/dieter/maxima/changelog.txt");
+(%o1)                 /home/dieter/maxima/
+(%i2) pathname_name("/home/dieter/maxima/changelog.txt");
+(%o2)                       changelog
+(%i3) pathname_type("/home/dieter/maxima/changelog.txt");
+(%o3)                          txt
+@end example
+
+@opencatbox
+@category{File input}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{printfile}
+@deffn {関数} printfile (@var{path})
+
+@var{path}という名前のファイルをコンソールに表示します。
+@var{path}は文字列かシンボルです;
+もしシンボルなら文字列に変換されます。
+
+もし @var{path}が現在のワーキングディレクトリからアクセス可能なファイル名なら
+そのファイルがコンソールに表示されます。
+そうでないなら
+@code{printfile}は
+@mref{filename_merge}を介して @mref{file_search_usage}の要素のそれぞれに
+@var{path}を追加することでファイルを見つけようとします。
+
+もし @var{path}が存在しているファイルを示しているなら、
+@code{printfile}は @var{path}を返し、
+そうでないなら成功したファイル名マージの結果を返します。
+
+@opencatbox
+@category{File input} @category{Console interaction}
+@closecatbox
+@end deffn
+
+@c NEEDS EXAMPLES
+@c -----------------------------------------------------------------------------
+@anchor{save}
+@deffn  {関数} save @
+@fname{save} (@var{filename}, @var{name_1}, @var{name_2}, @var{name_3}, @dots{}) @
+@fname{save} (@var{filename}, values, functions, labels, @dots{}) @
+@fname{save} (@var{filename}, [@var{m}, @var{n}]) @
+@fname{save} (@var{filename}, @var{name_1}=@var{expr_1}, @dots{}) @
+@fname{save} (@var{filename}, all) @
+@fname{save} (@var{filename}, @var{name_1}=@var{expr_1}, @var{name_2}=@var{expr_2}, @dots{})
+
+@var{filename}に @var{name_1}, @var{name_2}, @var{name_3}, @dots{}
+の現在値を保存します。
+引数は変数、関数、他のオブジェクトの名前です。
+もし名前が関連づけられた値や関数を持たないなら無視されます。
+@code{save}は @var{filename}を返します。
+
+@code{save}はデータを Lisp式の形式で保存します。
+もし @var{filename}が @code{.lisp}で終わるなら、
+@code{save}で保存されたデータは @code{load (@var{filename})}によって回復できます。
+@mref{load}を参照してください。
+
+グローバルフラグ @mref{file_output_append}は、
+@code{save}が出力ファイルに追加するか、書き換えるか決めます。
+@code{file_output_append}が @code{true}の時、
+@code{save}は出力ファイルに追加します。
+そうでないなら @code{save}は出力ファイルを切り詰めます。
+どちらの場合も、もしファイルが存在しないなら @code{save}はファイルを生成します。
+
+特殊形式 @code{save (@var{filename}, values, functions, labels, ...)}は
+@mref{values}, @mref{functions}, @mref{labels}, などと指名された項目を保存します。
+名前は変数 @mref{infolists}によって指定された任意のものです。
+@mref{values}はユーザー定義変数すべてを含みます。
+
+特殊形式 @code{save (@var{filename}, [@var{m}, @var{n}])}は、
+@var{m}から @var{n}までの入力ラベル、出力ラベルの値を保存します。
+@var{m}と @var{n}は整数リテラルでなければならないことに注意してください。
+例えば、@code{save ("foo.1", %i42, %o42)}のように、
+入力ラベル、出力ラベルは１つ１つ保存することもできます。
+@code{save (@var{filename}, labels)}は入力ラベル出力ラベルすべてを保存します。
+保存されたラベルが回復された時、それらは存在していたラベルは変更されます。
+
+特殊形式 @code{save (@var{filename}, @var{name_1}=@var{expr_1}, @var{name_2}=@var{expr_2}, ...)}は、
+@var{expr_1}, @var{expr_2}, @dots{},の値を@var{name_1}, @var{name_2}, @dots{}という名前で保存します。
+例えば、 @code{save ("foo.1", aa=%o88)}のように、
+この形式を入力ラベル出力ラベルに適用することは便利です。
+この形式の等式の右辺は任意の式であり、その式は評価されます。
+この形式は、新しい名前を現在のMaximaの環境に導入はせず、
+ただ、 @var{filename}にそれらを保存します。
+
+これらの特殊形式と @code{save}の一般形式は自由に混在させることができます。
+例えば、 @code{save (@var{filename}, aa, bb, cc=42, functions, [11, 17])}。
+
+特殊形式 @code{save (@var{filename}, all)}はMaximaの現在の状態を保存します。
+これは、自動的に定義された項目はもちろん、ユーザー定義の変数、関数、配列などすべてを
+含みます。
+もしユーザーが @mref{file_search_maxima}や
+@mref{showtime}のようなシステム変数に新しい値を割り当てていたなら、
+保存項目はそれらを含みます。
+@mref{myoptions}を参照してください。
+
+@code{save}は @var{filename}を評価し、他の引数すべてをクォートします。
+
+@opencatbox
+@category{Session management} @category{File output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{stringout}
+@deffn  {関数} stringout @
+@fname{stringout} (@var{filename}, @var{expr_1}, @var{expr_2}, @var{expr_3}, @dots{}) @
+@fname{stringout} (@var{filename}, [@var{m}, @var{n}]) @
+@fname{stringout} (@var{filename}, input) @
+@fname{stringout} (@var{filename}, functions) @
+@fname{stringout} (@var{filename}, values)
+
+@code{stringout}は、式が入力としてタイプされたのと同じ形式で式をファイルに書き込みます。
+なので、ファイルは @mref{batch}や @mref{demo}コマンドの入力として使えますし、
+どんな目的のためでも編集できます。
+@code{stringout}は @mref{writefile}が進行中の間に実行することができます。
+
+グローバルフラグ @mref{file_output_append}は、
+@code{stringout}が出力ファイルに追加するか書き換えるか決めます。
+@code{file_output_append}が @code{true}の時、
+@code{stringout}は出力ファイルに追加します。
+そうでないなら @code{stringout}は出力ファイルを切り詰めます。
+どちらの場合も、もしファイルが存在しなければ @code{stringout}はファイルを生成します。
+
+@code{stringout}の一般形式は１つ以上の式の値を出力ファイルに書き込みます。
+もし式が変数なら、変数の値だけが書き込まれ変数名は書き込まれないことに注意してください。
+役に立つ特殊な場合として、式は
+入力ラベル (@code{%i1}, @code{%i2}, @code{%i3}, @dots{})
+もしくは出力ラベル (@code{%o1}, @code{%o2}, @code{%o3}, @dots{})でもよいです。
+）
+
+もし @mref{grind}が @code{true}なら、
+@code{stringout}は @code{grind}フォーマットを使って出力をフォーマットします。
+そうでないなら @code{string}フォーマットが使われます。
+@code{grind}と @code{string}を参照してください。
+
+特別な形 @code{stringout (@var{filename}, [@var{m}, @var{n}])}は
+mからnまでの入力ラベルの値を書き込みます。
+
+特別な形 @code{stringout (@var{filename}, input)}は
+入力ラベルすべてをファイルに書き込みます。
+
+特別な形 @code{stringout (@var{filename}, functions)}は
+（グローバルリスト @mref{functions}で指定される）
+ユーザー定義関数すべてをファイルに書き込みます。
+
+特別な形 @code{stringout (@var{filename}, values)}は、
+（グローバルリスト @mref{values}で指定される）
+ユーザーが割り当てた変数すべてをファイルに書き込みます。
+変数それぞれは変数名とコロンとその値という割り当て文として出力されます。
+@code{stringout}の一般形は変数を割り当て文として出力しないことに注意してください。
+
+@opencatbox
+@category{Session management} @category{File output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{with_stdout}
+@deffn  {関数} with_stdout @
+@fname{with_stdout} (@var{f}, @var{expr_1}, @var{expr_2}, @var{expr_3}, @dots{}) @
+@fname{with_stdout} (@var{s}, @var{expr_1}, @var{expr_2}, @var{expr_3}, @dots{})
+
+@var{expr_1}, @var{expr_2}, @var{expr_3}, ...を評価し、
+生成された出力すべてをファイル @var{f}か出力ストリーム @var{s}に書き込みます。
+評価される式は出力に書き込まれません。
+出力は @mref{print}, @mref{display}, @mref{grind}や他の関数が生成したものです。
+
+グローバルフラグ @mref{file_output_append}は、
+@code{with_stdout}が出力ファイル @var{f}に追加するか書き換えるかを決めます。
+@code{file_output_append}が @code{true}の時、
+@code{with_stdout}は出力ファイルに追加します。
+そうでないなら @code{with_stdout}は出力ファイルを書き換えます。
+どちらの場合も、もしファイルが存在しないなら @code{with_stdout}はファイルを生成します。
+
+@code{with_stdout}は最後の引数の値を返します。
+
+@mref{writefile}も参照してください。
+
+@c THIS DOESN'T SEEM VERY IMPORTANT TO MENTION ...
+@c Note the binding of display2d to be
+@c false, otherwise the printing will have things like "- 3" instead
+@c of "-3".
+@c
+@example
+@c THIS EXAMPLE USES SOME UNIX-ISH CONSTRUCTS -- WILL IT WORK IN WINDOWS ???
+@c ALSO IT'S SORT OF COMPLICATED AND THE SIMPLER SECOND EXAMPLE ILLUSTRATES with_stdout BETTER !!!
+@c mygnuplot (f, var, range, number_ticks) :=
+@c  block ([numer:true, display2d:false],
+@c  with_stdout("tmp.out",
+@c    dx: (range[2]-range[1])/number_ticks,
+@c    for x: range[1] thru range[2] step dx
+@c       do print (x, at (f, var=x))),
+@c  system ("echo \"set data style lines; set title '", f,"' ;plot '/tmp/gnu'
+@c ;pause 10 \" | gnuplot"))$
+(%i1) with_stdout ("tmp.out", for i:5 thru 10 do
+      print (i, "! yields", i!))$
+(%i2) printfile ("tmp.out")$
+5 ! yields 120
+6 ! yields 720
+7 ! yields 5040
+8 ! yields 40320
+9 ! yields 362880
+10 ! yields 3628800
+@end example
+
+@opencatbox
+@category{File output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{writefile}
+@deffn {関数} writefile (@var{filename})
+
+Maximaセッションのトランスクリプトを @var{filename}に書き込むことを開始します。
+ユーザーと Maximaの間の対話すべてが
+ちょうどコンソールに現れるようにこのファイルに記録されます。
+@c FOLLOWING CLAIM PROBABLY NEEDS TO BE QUALIFIED
+
+トランスクリプトはコンソール出力フォーマットで出力されるので、
+Maximaに再ロードすることはできません。
+再ロード可能な式を含むファイルを作るには、
+@mref{save}と @mref{stringout}を参照してください。
+@code{save}は Lisp形式の式を保存する一方、@code{stringout}は
+Maxima形式の式を保存します。
+
+@var{filename}が既に存在している時、@code{writefile}の実行の効果は基礎となる
+Lisp実装に依存します;
+トランスクリプトファイルは書き換えられるかもしれませんし、追加されるかもしれません。
+@mref{appendfile}はいつもトランスクリプトファイルに追加します。
+
+以前の対話の表示を保存するためには @code{writefile}の後
+@mref{playback}を実行するのが便利かもしれません。
+@code{playback}は入力と出力変数 (@code{%i1}, @code{%o1}, など)だけを表示し、
+（戻り値と違い）関数の中のプリント文が生成した出力はいずれも
+@code{playback}によって表示されません。
+
+@mref{closefile}は @code{writefile}や
+@code{appendfile}が開いたトランスクリプトファイルを閉じます。
+
+@opencatbox
+@category{File output} @category{Console interaction}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for TeX Output, Functions and Variables for Fortran Output, Functions and Variables for File Input and Output, File Input and Output
+@section Functions and Variables for TeX Output
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+
+wxMaximaの組み込みの TeX出力機能はここで記述する関数を使いませんが、
+代わりにそれ自身用の実装を使うことに注意してください。
+
+@anchor{tex}
+@deffn  {関数} tex @
+@fname{tex} (@var{expr}) @
+@fname{tex} (@var{expr}, @var{destination}) @
+@fname{tex} (@var{expr}, false) @
+@fname{tex} (@var{label}) @
+@fname{tex} (@var{label}, @var{destination}) @
+@fname{tex} (@var{label}, false)
+
+TeXドキュメントの準備に適した式の表現を出力します。
+結果はドキュメントの断片です。
+それはより大きなドキュメントにコピーすることができますが、それ自身では処理できません。
+
+@code{tex (@var{expr})}は @var{expr}のTeX表現をコンソールに出力します。
+
+@code{tex (@var{label})}は @var{label}で名付けられた式のTeX表現を出力し、
+（式の左に表示されるよう）等式ラベルをそれに割り当てます。
+TeX等式ラベルは Maximaラベルと同じです。
+
+@var{destination}は出力ストリームもしくはファイル名です。
+@var{destination}がファイル名の時、
+@code{tex}はファイルに出力を追加します。
+関数 @code{openw}と @code{opena}は出力ストリームを生成します。
+
+@code{tex (@var{expr}, false)}と @code{tex (@var{label}, false)}は
+TeX出力を文字列として返します。
+
+@code{tex}は一番目の引数をテストしてラベルかどうか確認した後、引数を評価します。
+クォートクォート@code{''}は引数の評価を強制します。
+それによってテストを無効にしてラベルの表示を妨げます。
+
+@mref{texput}も参照してください。
+
+例:
+
+@example
+(%i1) integrate (1/(1+x^3), x);
+                                    2 x - 1
+                  2            atan(-------)
+             log(x  - x + 1)        sqrt(3)    log(x + 1)
+(%o1)      - --------------- + ------------- + ----------
+                    6             sqrt(3)          3
+(%i2) tex (%o1);
+$$-@{@{\log \left(x^2-x+1\right)@}\over@{6@}@}+@{@{\arctan \left(@{@{2\,x-1
+ @}\over@{\sqrt@{3@}@}@}\right)@}\over@{\sqrt@{3@}@}@}+@{@{\log \left(x+1\right)
+ @}\over@{3@}@}\leqno@{\tt (\%o1)@}$$
+(%o2)                          (\%o1)
+(%i3) tex (integrate (sin(x), x));
+$$-\cos x$$
+(%o3)                           false
+(%i4) tex (%o1, "foo.tex");
+(%o4)                          (\%o1)
+@end example
+
+@code{tex (@var{expr}, false)}はTeX出力を文字列として返します。
+
+@c ===beg===
+@c S : tex (x * y * z, false);
+@c S;
+@c ===end===
+@example
+(%i1) S : tex (x * y * z, false);
+(%o1) $$x\,y\,z$$
+(%i2) S;
+(%o2) $$x\,y\,z$$
+@end example
+
+@opencatbox
+@category{TeX output} @category{File output}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{tex1}
+@deffn {関数} tex1 (@var{e})
+
+式 @var{e}のTeX出力を表す文字列を返します。
+等式や他の任意の環境のため TeX出力を区切り記号で囲みません。
+
+例:
+
+@c ===beg===
+@c tex1 (sin(x) + cos(x));
+@c ===end===
+@example
+(%i1) tex1 (sin(x) + cos(x));
+(%o1)                     \sin x+\cos x
+@end example
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{texput}
+@deffn  {関数} texput @
+@fname{texput} (@var{a}, @var{s}) @
+@fname{texput} (@var{a}, @var{f}) @
+@fname{texput} (@var{a}, @var{s}, @var{operator_type}) @
+@fname{texput} (@var{a}, [@var{s_1}, @var{s_2}], matchfix) @
+@fname{texput} (@var{a}, [@var{s_1}, @var{s_2}, @var{s_3}], matchfix)
+
+アトム @var{a}にTeX出力を割り当てます。
+ここで @var{a}はシンボルもしくは演算子名です。
+
+@code{texput (@var{a}, @var{s})}とすると、
+@code{tex}関数は @var{a}の代わりに文字列 @var{s}をTeX出力に書き足します。
+
+@code{texput (@var{a}, @var{f})}とすると、
+@code{tex}関数は TeX出力を生成するために関数 @var{f}をコールします。
+@var{f}は引数を1つ受け入れなければいけません。
+ここで、引数は演算子 @var{a}を持つ式で、文字列（TeX出力）を返さなければいけません。
+@var{f}は @code{tex1}をコールし、入力式の引数のためにTeX出力を生成するかもしれません。
+
+@code{texput (@var{a}, @var{s}, @var{operator_type})}とすると、
+@code{tex}関数は @var{a}の代わりに @var{s}をTeX出力に書き足し、
+適切な位置に書き足されたテキストを配置します。
+ここで @var{operator_type}は @code{prefix}か, @code{infix}, @code{postfix},
+@code{nary}, @code{nofix}のいずれかです。
+
+@code{texput (@var{a}, [@var{s_1}, @var{s_2}], matchfix)}とすると、
+@code{tex}関数は TeX出力の @var{a}の引数の両側に @var{s_1}と
+@var{s_2}を書き足します。
+（もし複数なら）引数はコンマで分離します。
+
+@code{texput (@var{a}, [@var{s_1}, @var{s_2}, @var{s_3}], matchfix)}とすると、
+@code{tex}関数は TeX出力の @var{a}の引数の両側に @var{s_1}と
+ @var{s_2}を書き足します。
+引数は @var{s_3}で分離します。
+
+例:
+
+変数に TeX出力を割り当てます。
+
+@c ===beg===
+@c texput (me,"\\mu_e");
+@c tex (me);
+@c ===end===
+@example
+(%i1) texput (me,"\\mu_e");
+(%o1)                         \mu_e
+(%i2) tex (me);
+$$\mu_e$$
+(%o2)                         false
+@end example
+
+任意の関数（演算子ではない）に TeX出力を割り当てます。
+
+@c ===beg===
+@c texput (lcm, "\\mathrm{lcm}");
+@c tex (lcm (a, b));
+@c ===end===
+@example
+(%i1) texput (lcm, "\\mathrm@{lcm@}");
+(%o1)                     \mathrm@{lcm@}
+(%i2) tex (lcm (a, b));
+$$\mathrm@{lcm@}\left(a , b\right)$$
+(%o2)                         false
+@end example
+
+TeX出力を生成する関数をコールします。
+
+@c ===beg===
+@c texfoo (e) := block ([a, b], [a, b] : args (e),
+@c   concat ("\\left[\\stackrel{",tex1(b),"}{",tex1(a),"}\\right]"))$
+@c texput (foo, texfoo);
+@c tex (foo (2^x, %pi));
+@c ===end===
+@example
+(%i1) texfoo (e) := block ([a, b], [a, b] : args (e),
+  concat ("\\left[\\stackrel@{",tex1(b),"@}@{",tex1(a),"@}\\right]"))$
+(%i2) texput (foo, texfoo);
+(%o2)                        texfoo
+(%i3) tex (foo (2^x, %pi));
+$$\left[\stackrel@{\pi@}@{2^@{x@}@}\right]$$
+(%o3)                         false
+@end example
+
+前置演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c prefix ("grad");
+@c texput ("grad", " \\nabla ", prefix);
+@c tex (grad f);
+@c ===end===
+@example
+(%i1) prefix ("grad");
+(%o1)                         grad
+(%i2) texput ("grad", " \\nabla ", prefix);
+(%o2)                        \nabla
+(%i3) tex (grad f);
+$$ \nabla f$$
+(%o3)                         false
+@end example
+
+中置演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c infix ("~");
+@c texput ("~", " \\times ", infix);
+@c tex (a ~ b);
+@c ===end===
+@example
+(%i1) infix ("~");
+(%o1)                           ~
+(%i2) texput ("~", " \\times ", infix);
+(%o2)                        \times
+(%i3) tex (a ~ b);
+$$a \times b$$
+(%o3)                         false
+@end example
+
+後置演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c postfix ("##");
+@c texput ("##", "!!", postfix);
+@c tex (x ##);
+@c ===end===
+@example
+(%i1) postfix ("##");
+(%o1)                          ##
+(%i2) texput ("##", "!!", postfix);
+(%o2)                          !!
+(%i3) tex (x ##);
+$$x!!$$
+(%o3)                         false
+@end example
+
+n項演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c nary ("@@");
+@c texput ("@@", " \\circ ", nary);
+@c tex (a @@ b @@ c @@ d);
+@c ===end===
+@example
+(%i1) nary ("@@@@");
+(%o1)                          @@@@
+(%i2) texput ("@@@@", " \\circ ", nary);
+(%o2)                         \circ
+(%i3) tex (a @@@@ b @@@@ c @@@@ d);
+$$a \circ b \circ c \circ d$$
+(%o3)                         false
+@end example
+
+無項演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c nofix ("foo");
+@c texput ("foo", "\\mathsc{foo}", nofix);
+@c tex (foo);
+@c ===end===
+@example
+(%i1) nofix ("foo");
+(%o1)                          foo
+(%i2) texput ("foo", "\\mathsc@{foo@}", nofix);
+(%o2)                     \mathsc@{foo@}
+(%i3) tex (foo);
+$$\mathsc@{foo@}$$
+(%o3)                         false
+@end example
+
+マッチフィックス演算子に TeX出力を割り当てます。
+
+@c ===beg===
+@c matchfix ("<<", ">>");
+@c texput ("<<", [" \\langle ", " \\rangle "], matchfix);
+@c tex (<<a>>);
+@c tex (<<a, b>>);
+@c texput ("<<", [" \\langle ", " \\rangle ", " \\, | \\,"],
+@c       matchfix);
+@c tex (<<a>>);
+@c tex (<<a, b>>);
+@c ===end===
+@example
+(%i1) matchfix ("<<", ">>");
+(%o1)                          <<
+(%i2) texput ("<<", [" \\langle ", " \\rangle "], matchfix);
+(%o2)                [ \langle ,  \rangle ]
+(%i3) tex (<<a>>);
+$$ \langle a \rangle $$
+(%o3)                         false
+(%i4) tex (<<a, b>>);
+$$ \langle a , b \rangle $$
+(%o4)                         false
+(%i5) texput ("<<", [" \\langle ", " \\rangle ", " \\, | \\,"],
+      matchfix);
+(%o5)           [ \langle ,  \rangle ,  \, | \,]
+(%i6) tex (<<a>>);
+$$ \langle a \rangle $$
+(%o6)                         false
+(%i7) tex (<<a, b>>);
+$$ \langle a \, | \,b \rangle $$
+(%o7)                         false
+@end example
+
+@opencatbox
+@category{TeX output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{get_tex_environment}
+@deffn  {関数} get_tex_environment (@var{op})
+@deffnx {関数} set_tex_environment (@var{op}, @var{before}, @var{after})
+
+@code{tex}が出力する TeX環境をカスタマイズします。
+これらの関数が保持するように、 TeX環境は２つの文字列から構成されます;
+１つは他の任意のTeX出力に前もって出力されるもの、もう１つは後に出力されるものです。
+
+式のトップレベル演算子の TeX環境だけが出力されます;
+他の演算子に関連づけられた TeX環境は無視されます。
+
+@code{get_tex_environment}は演算子 @var{op}に適用された TeX環境を返します;
+もし他の環境が割り当てられていないならデフォルトを返します。
+
+@code{set_tex_environment}は演算子 @var{op}のための TeX環境を割り当てます。
+
+例:
+
+@c ===beg===
+@c get_tex_environment (":=");
+@c tex (f (x) := 1 - x);
+@c set_tex_environment (":=", "$$", "$$");
+@c tex (f (x) := 1 - x);
+@c ===end===
+@example
+(%i1) get_tex_environment (":=");
+(%o1) [
+\begin@{verbatim@}
+, ;
+\end@{verbatim@}
+]
+(%i2) tex (f (x) := 1 - x);
+
+\begin@{verbatim@}
+f(x):=1-x;
+\end@{verbatim@}
+
+(%o2)                         false
+(%i3) set_tex_environment (":=", "$$", "$$");
+(%o3)                       [$$, $$]
+(%i4) tex (f (x) := 1 - x);
+$$f(x):=1-x$$
+(%o4)                         false
+@end example
+
+@opencatbox
+@category{TeX output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{get_tex_enviroment_default}
+@deffn  {関数} get_tex_environment_default ()
+@deffnx {関数} set_tex_environment_default (@var{before}, @var{after})
+
+@code{tex}が出力する TeX環境をカスタマイズします。
+これらの関数が保持するように、TeX環境は２つの文字列から構成されます;
+１つは他の任意のTeX出力に前もって出力されるもの、もう１つは後に出力されるものです。
+
+@code{get_tex_environment_default}は、
+トップレベル演算子が（@code{set_tex_environment}が割り当てたような）特定の
+TeX環境を持たない式に適用された TeX環境を返します。
+
+@code{set_tex_environment_default}はデフォルトのTeX環境を割り当てます。
+
+例:
+
+@c ===beg===
+@c get_tex_environment_default ();
+@c tex (f(x) + g(x));
+@c set_tex_environment_default ("\\begin{equation}
+@c ", "
+@c \\end{equation}");
+@c tex (f(x) + g(x));
+@c ===end===
+@example
+(%i1) get_tex_environment_default ();
+(%o1)                       [$$, $$]
+(%i2) tex (f(x) + g(x));
+$$g\left(x\right)+f\left(x\right)$$
+(%o2)                         false
+(%i3) set_tex_environment_default ("\\begin@{equation@}
+", "
+\\end@{equation@}");
+(%o3) [\begin@{equation@}
+,
+\end@{equation@}]
+(%i4) tex (f(x) + g(x));
+\begin@{equation@}
+g\left(x\right)+f\left(x\right)
+\end@{equation@}
+(%o4)                         false
+@end example
+
+@opencatbox
+@category{TeX output}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for Fortran Output, , Functions and Variables for TeX Output, File Input and Output
+@section Functions and Variables for Fortran Output
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+@anchor{fortindent}
+@defvr {オプション変数} fortindent
+デフォルト値: 0
+
+@code{fortindent}は
+@code{fortran}コマンドが表示する式の左マージンインデントを制御します。
+0は標準のプリントアウト(すなわち6スペース)を与え、
+正の値は式を更に右に印字するようにします。
+
+@opencatbox
+@category{Translation and compilation}
+@closecatbox
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@anchor{fortran}
+@deffn {関数} fortran (@var{expr})
+
+Fortran文として @var{expr}を印字します。
+出力行はスペースでインデントされます。
+もし行が長過ぎるなら、
+@code{fortran}は継続行を印字します。
+@code{fortran}は指数演算子 @code{^}を @code{**}として印字し、
+複素数 @code{a + b %i}を形式 @code{(a,b)}で印字します。
+
+@var{expr}は等式も取り、もしそうなら @code{fortran}は、
+等式の右辺を左辺に割り当てる割り当て文を印字します。
+特にもし @var{expr}の右辺が行列名なら、
+@code{fortran}は行列の要素それぞれに対する割り当て文を印字します。
+
+もし @var{expr}が @code{fortran}が認識する何かでないなら、
+クレームすることなく式を @code{grind}フォーマットで印字します。
+@code{fortran}はリスト、配列、関数について知りません。
+
+@code{fortindent}は
+@code{fortran}コマンドが表示する式の左マージンインデントを制御します。
+0は標準のプリントアウト(すなわち6スペース)を与え、
+正の値は式を更に右に印字するようにします。
+
+@code{fortspaces}が @code{true}の時、
+@code{fortran}は印字行それぞれを80カラムまでスペースで埋めます。
+
+@code{fortran}は引数を評価します;
+引数のクォートは評価を無効にします。
+@code{fortran}はいつも @code{done}を返します。
+
+例:
+
+@verbatim
+(%i1) expr: (a + b)^12$
+(%i2) fortran (expr);
+      (b+a)**12
+(%o2)                         done
+(%i3) fortran ('x=expr);
+      x = (b+a)**12
+(%o3)                         done
+(%i4) fortran ('x=expand (expr));
+      x = b**12+12*a*b**11+66*a**2*b**10+220*a**3*b**9+495*a**4*b**8+792
+     1   *a**5*b**7+924*a**6*b**6+792*a**7*b**5+495*a**8*b**4+220*a**9*b
+     2   **3+66*a**10*b**2+12*a**11*b+a**12
+(%o4)                         done
+(%i5) fortran ('x=7+5*%i);
+      x = (7,5)
+(%o5)                         done
+(%i6) fortran ('x=[1,2,3,4]);
+      x = [1,2,3,4]
+(%o6)                         done
+(%i7) f(x) := x^2$
+(%i8) fortran (f);
+      f
+(%o8)                         done
+@end verbatim
+
+@opencatbox
+@category{Translation and compilation}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{fortspaces}
+@defvr {オプション変数} fortspaces
+デフォルト値: @code{false}
+
+@code{fortspaces}が @code{true}の時、
+@code{fortran}は印字行それぞれを80カラムまでスペースで埋めます。
+
+@opencatbox
+@category{Translation and compilation}
+@closecatbox
+@end defvr

@@ -1,0 +1,2181 @@
+@c -----------------------------------------------------------------------------
+@page
+@node Lists, Arrays, Constants, Data Types and Structures
+@section Lists
+@c -----------------------------------------------------------------------------
+
+@menu
+* Introduction to Lists::
+* Functions and Variables for Lists::
+* Performance considerations for Lists::
+@end menu
+
+@c -----------------------------------------------------------------------------
+@node Introduction to Lists, Functions and Variables for Lists, Lists, Lists
+@subsection Introduction to Lists
+@c -----------------------------------------------------------------------------
+
+リストはMaximaとLispにとって基本的な構成要素です。
+配列、 @mref{hashed arrays}、数以外のデータタイプすべてはLispのリストとして表現されます。
+これらのLispのリストは
+式 @code{a+2}を示すために以下の形式を取ります。
+
+@example
+((MPLUS) $A 2)
+@end example
+
+@noindent
+
+Maximaレベルでは中置表記@code{a+2}を見ることになるでしょう。
+Maximaには、以下のようにプリントされるリストもあります。
+
+@example
+[1, 2, 7, x+y]
+@end example
+
+@noindent
+これは4要素のリストの場合の例です。
+内部的には、これは以下の形式のLispのリストに対応します。
+
+@example
+((MLIST) 1 2 7 ((MPLUS) $X $Y))
+@end example
+
+@noindent
+
+Maxima式のタイプフィールドを意味するフラグはそれ自体リストです。
+整理器を通った後、上のリストは以下のようになるでしょう。
+
+@example
+((MLIST SIMP) 1 2 7 ((MPLUS SIMP) $X $Y))
+@end example
+
+@noindent
+
+@c -----------------------------------------------------------------------------
+@node Functions and Variables for Lists, Performance considerations for Lists ,Introduction to Lists, Lists
+@subsection Functions and Variables for Lists
+@c -----------------------------------------------------------------------------
+
+@c -----------------------------------------------------------------------------
+@anchor{[}
+@anchor{]}
+@fnindex List delimiters
+@fnindex Subscript operator
+
+@defvr  {演算子} [
+@defvrx {演算子} ]
+
+@code{[}と @code{]}は、それぞれ、リストの始まりと終わりをマークします。
+
+@code{[}と@code{]}は、リスト、配列、 @mrefcomma{hashed array}、 @mref{memoizing function}の添字もくくります。
+配列と違い、リストの @code{n}番目の要素にアクセスすることは
+おおよそ @code{n}に比例する時間が必要かもしれないことに注意してください。
+@xref{Performance considerations for Lists}.
+
+もし添字された変数の要素がこの名前のリストか配列が宣言される前に書き込まれたら、
+リストではなく、 @mref{hashed array} @xref{Arrays})が生成されることに注意してください。
+
+例:
+
+@c ===beg===
+@c x: [a, b, c];
+@c x[3];
+@c array (y, fixnum, 3);
+@c y[2]: %pi;
+@c y[2];
+@c z['foo]: 'bar;
+@c z['foo];
+@c g[k] := 1/(k^2+1);
+@c g[10];
+@c ===end===
+@example
+@group
+(%i1) x: [a, b, c];
+(%o1)                       [a, b, c]
+@end group
+@group
+(%i2) x[3];
+(%o2)                           c
+@end group
+@group
+(%i3) array (y, fixnum, 3);
+(%o3)                           y
+@end group
+@group
+(%i4) y[2]: %pi;
+(%o4)                          %pi
+@end group
+@group
+(%i5) y[2];
+(%o5)                          %pi
+@end group
+@group
+(%i6) z['foo]: 'bar;
+(%o6)                          bar
+@end group
+@group
+(%i7) z['foo];
+(%o7)                          bar
+@end group
+@group
+(%i8) g[k] := 1/(k^2+1);
+                                  1
+(%o8)                     g  := ------
+                           k     2
+                                k  + 1
+@end group
+@group
+(%i9) g[10];
+                                1
+(%o9)                          ---
+                               101
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Operators}
+@closecatbox
+@end defvr
+
+@c NEED ANOTHER deffn FOR GENERAL EXPRESSIONS ARGUMENTS
+@c NEEDS CLARIFICATION AND EXAMPLES
+
+@c -----------------------------------------------------------------------------
+@anchor{append}
+@deffn {関数} append (@var{list_1}, @dots{}, @var{list_n})
+@var{list_1}の要素のあとに
+@var{list_2}の要素が続き、@dots{}
+という１つのリストを返します。
+@code{append}は一般式上でも機能します。
+例えば、 @code{append (f(a,b), f(c,d,e));}は
+@code{f(a,b,c,d,e)}をもたらします。
+
+@mref{addrow}, @mref{addcol}, @mref{join}も参照してください。
+
+例を見るには、 @code{example(append);}を実行してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c NEEDS CLARIFICATION AND EXAMPLES
+
+@c -----------------------------------------------------------------------------
+@anchor{assoc}
+@deffn {関数} assoc @
+@fname{assoc} (@var{key}, @var{list}, @var{default}) @
+@fname{assoc} (@var{key}, @var{list})
+
+この関数は入力 @var{list}の左辺の中で @var{key}を探します。
+@var{list}引数はリストでなければならず、その要素のそれぞれは正確に２つの部分を持つ式です。
+最も普通には、@var{list}の要素はそれ自身リストで、それぞれが2つの要素を持ちます。
+
+@code{assoc}関数は @var{list}に従って、それぞれの要素の最初の部分が @var{key}と等しいかチェックを
+繰り返します。
+もし比較が真になる要素が見つかったら、 @code{assoc}はその要素の二番目の部分を返します。
+もしリストの中にそんな要素が存在しなければ、
+@code{assoc}は @code{false}か、もし与えられていれば @var{default}を返します。
+
+例えば、 式 @code{assoc (y, [[x,1], [y,2], [z,3]])}の場合、
+@code{assoc}関数はリスト @code{[[y,1],[x,2]]}の左辺に @code{y}を探して、第二項にそれを見つけて、 @code{2}を返します。
+@code{assoc (z, [[x,1], [z,2], [z,3]])}の場合、
+探索は @code{z}で始まる最初の項で止まり、 @code{2}を返します。
+@code{assoc(x, [[y,1]])}の場合、マッチする要素がないので、 @code{assoc}は @code{false}を返します。
+
+@c ===beg===
+@c assoc (y, [[x,1], [y,2],[z,3]]);
+@c assoc (z, [[x,1], [z,2], [z,3]]);
+@c assoc (x, [[y,1]]);
+@c ===end===
+@example
+@group
+(%i1) assoc (y, [[x,1], [y,2],[z,3]]);
+(%o1)                           2
+@end group
+@group
+(%i2) assoc (z, [[x,1], [z,2], [z,3]]);
+(%o2)                           2
+@end group
+@group
+(%i3) assoc (x, [[y,1]]);
+(%o3)                         false
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+
+@c -----------------------------------------------------------------------------
+@anchor{cons}
+@deffn {関数} cons @
+@fname{cons} (@var{expr}, @var{list}) @
+@fname{cons} (@var{expr_1}, @var{expr_2})
+
+@code{cons (@var{expr}, @var{list})} は
+要素 @var{expr}を一番目の要素とし、@var{list}の要素が続くように構成された新しいリストを返します。
+これは Lisp言語の構成演算 "cons"に類似したものです。
+
+Maxima 関数 @code{cons}は二番目の引数がリストとは別のものであるような使い方もでき、役に立つかもしれません。
+この場合、 @code{cons (@var{expr_1}, @var{expr_2})}は
+@var{expr_2}と同じ演算子に引数 @code{cons(expr_1, args(expr_2))}を渡した式を返します。
+例:
+
+@c ===beg===
+@c cons(a,[b,c,d]);
+@c cons(a,f(b,c,d));
+@c ===end===
+@example
+@group
+(%i1) cons(a,[b,c,d]);
+(%o1)                     [a, b, c, d]
+@end group
+@group
+(%i2) cons(a,f(b,c,d));
+(%o2)                     f(a, b, c, d)
+@end group
+@end example
+
+一般的にはリストでないものに適用した @code{cons}は意味がありません。
+例えば、'^'は3つの引数を取れないので @code{cons(a,b^c)}は違法な式になります。
+
+@code{inflag}が真の時、 @code{cons}は式の内部構造上に演算し、そうでなければ
+@code{cons}は表示形式上に演算します。
+特に @code{inflag}が真の時、リストでないものに適用されあt @code{cons}は時々驚くべき結果を与えます;
+例えば
+
+@c ===beg===
+@c cons(a,-a), inflag : true;
+@c cons(a,-a), inflag : false;
+@c ===end===
+@example
+@group
+(%i1) cons(a,-a), inflag : true;
+                                 2
+(%o1)                         - a
+@end group
+@group
+(%i2) cons(a,-a), inflag : false;
+(%o2)                           0
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{copylist}
+@deffn {関数} copylist (@var{list})
+
+リスト @var{list}のコピーを返します。
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{create_list}
+@deffn {関数} create_list (@var{form}, @var{x_1}, @var{list_1}, @dots{}, @var{x_n}, @var{list_n})
+
+@var{list_1}の要素それぞれにバインドされた @var{x_1}で、
+また、それぞれのバインドに対して、
+@var{x_2}を @var{list_2}の要素それぞれにバインドして、...
+それらのバインドを使って @var{form}を評価することによって
+リストを生成します。
+結果の要素の数はそれぞれのリストの要素の数の積です。
+それぞれの変数 @var{x_i}は実際に、シンボルでなければいけません。ーそれは評価されません。
+リスト引数は繰り返しの始めに一度だけ評価されます。
+
+@c ===beg===
+@c create_list (x^i, i, [1, 3, 7]);
+@c ===end===
+@example
+@group
+(%i1) create_list(x^i,i,[1,3,7]);
+                 3   7
+(%o1)       [x, x , x ]
+@end group
+@end example
+
+@noindent
+二重の繰り返しで:
+
+@c ===beg===
+@c create_list ([i, j], i, [a, b], j, [e, f, h]);
+@c ===end===
+@example
+@group
+(%i1) create_list([i,j],i,[a,b],j,[e,f,h]);
+(%o1) [[a, e], [a, f], [a, h], [b, e], [b, f], [b, h]]
+@end group
+@end example
+
+@var{list_i}の代わりに、
+それぞれが数に評価される２つの引数を供給することもできます。
+これらは繰り返しの下限と上限になります。
+
+@c ===beg===
+@c create_list ([i, j], i, [1, 2, 3], j, 1, i);
+@c ===end===
+@example
+@group
+(%i1) create_list([i,j],i,[1,2,3],j,1,i);
+(%o1) [[1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3]]
+@end group
+@end example
+
+@code{j}変数の範囲やリストは @code{i}の現在値に依存することができることに注意してください。
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{delete}
+@deffn  {関数} delete @
+@fname{delete} (@var{expr_1}, @var{expr_2}) @
+@fname{delete} (@var{expr_1}, @var{expr_2}, @var{n})
+
+@code{delete(@var{expr_1}, @var{expr_2})}は、
+@var{expr_2}から
+そのトップレベル演算子の引数のうち、
+@var{expr_1}と("="で決定される意味で)同じ引数を取り除きます。
+"="は、同値ではなく、形式的な同一をテストすることに注意してください。
+部分式の引数には影響しないことにも注意してください。
+
+@var{expr_1}はアトムか、非アトムの式を取り得ます。
+@var{expr_2}は任意の非アトムの式を取り得ます。
+@code{delete}は新しい式を返します;
+@var{expr_2}を変更しません。
+
+@code{delete(@var{expr_1}, @var{expr_2}, @var{n})}は、
+
+@var{expr_2}から
+そのトップレベル演算子の引数のうち、
+@var{expr_1}と同じ最初の
+@var{n}個の引数を取り除きます。
+もしそんな引数が @var{n}個より少ないなら、
+該当するすべての引数が取り除かれます。
+
+例:
+
+リストから要素を削除。
+
+@c ===beg===
+@c delete (y, [w, x, y, z, z, y, x, w]);
+@c ===end===
+@example
+@group
+(%i1) delete (y, [w, x, y, z, z, y, x, w]);
+(%o1)                  [w, x, z, z, x, w]
+@end group
+@end example
+
+和から項を削除。
+
+@c ===beg===
+@c delete (sin(x), x + sin(x) + y);
+@c ===end===
+@example
+@group
+(%i1) delete (sin(x), x + sin(x) + y);
+(%o1)                         y + x
+@end group
+@end example
+
+積から因子を削除。
+
+@c ===beg===
+@c delete (u - x, (u - w)*(u - x)*(u - y)*(u - z));
+@c ===end===
+@example
+@group
+(%i1) delete (u - x, (u - w)*(u - x)*(u - y)*(u - z));
+(%o1)                (u - w) (u - y) (u - z)
+@end group
+@end example
+
+任意の式から引数を削除。
+
+@c ===beg===
+@c delete (a, foo (a, b, c, d, a));
+@c ===end===
+@example
+@group
+(%i1) delete (a, foo (a, b, c, d, a));
+(%o1)                     foo(b, c, d)
+@end group
+@end example
+
+削除する引数の数を制限。
+
+@c ===beg===
+@c delete (a, foo (a, b, a, c, d, a), 2);
+@c ===end===
+@example
+@group
+(%i1) delete (a, foo (a, b, a, c, d, a), 2);
+(%o1)                    foo(b, c, d, a)
+@end group
+@end example
+
+引数が @var{expr_1}と同じかどうかは"="で決定されます。
+@code{equal}ですが、"="でない引数は取り除かれません。
+
+@c ===beg===
+@c [is (equal (0, 0)), is (equal (0, 0.0)), is (equal (0, 0b0))];
+@c [is (0 = 0), is (0 = 0.0), is (0 = 0b0)];
+@c delete (0, [0, 0.0, 0b0]);
+@c is (equal ((x + y)*(x - y), x^2 - y^2));
+@c is ((x + y)*(x - y) = x^2 - y^2);
+@c delete ((x + y)*(x - y), [(x + y)*(x - y), x^2 - y^2]);
+@c ===end===
+@example
+@group
+(%i1) [is(equal(0, 0)), is(equal(0, 0.0)), is(equal(0, 0b0))];
+(%o1)                  [true, true, true]
+@end group
+@group
+(%i2) [is (0 = 0), is (0 = 0.0), is (0 = 0b0)];
+(%o2)                 [true, false, false]
+@end group
+@group
+(%i3) delete (0, [0, 0.0, 0b0]);
+(%o3)                     [0.0, 0.0b0]
+@end group
+@group
+(%i4) is (equal ((x + y)*(x - y), x^2 - y^2));
+(%o4)                         true
+@end group
+@group
+(%i5) is ((x + y)*(x - y) = x^2 - y^2);
+(%o5)                         false
+@end group
+@group
+(%i6) delete ((x + y)*(x - y), [(x + y)*(x - y), x^2 - y^2]);
+                              2    2
+(%o6)                       [x  - y ]
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{eighth}
+@deffn {関数} eighth (@var{expr})
+
+式またはリスト @var{expr}の8番目の項を返します。
+詳細は @code{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+
+@c -----------------------------------------------------------------------------
+@anchor{endcons}
+@deffn  {関数} endcons @
+@fname{endcons} (@var{expr}, @var{list}) @
+@fname{endcons} (@var{expr_1}, @var{expr_2})
+
+@code{endcons (@var{expr}, @var{list})}は@var{list}の要素に @var{expr}が続くように構成された新しいリストを返します。
+Maxima 関数 @code{endcons}は二番目の引数がリストとは別のものであるような使い方もでき、役に立つかもしれません。 この場合、
+@code{endcons (@var{expr_1}, @var{expr_2})}は @var{expr_2}と同じ演算子に引数  @code{endcons(expr_1, args(expr_2))}を渡した式を返します。
+例:
+
+@c ===beg===
+@c endcons(a,[b,c,d]);
+@c endcons(a,f(b,c,d));
+@c ===end===
+@example
+@group
+(%i1) endcons(a,[b,c,d]);
+(%o1)                     [b, c, d, a]
+@end group
+@group
+(%i2) endcons(a,f(b,c,d));
+(%o2)                     f(b, c, d, a)
+@end group
+@end example
+
+一般的にはリストでないものに適用した @code{endcons}は意味がありません。
+例えば、'^'は3つの引数を取れないので @code{endcons(a,b^c)}は違法な式になります。
+
+@code{inflag}が真の時、 @code{endcons}は式の内部構造上に演算し、そうでなければ
+@code{endcons}は表示形式上に演算します。
+特に @code{inflag}が真の時、リストでないものに適用されあt @code{endcons}は時々驚くべき結果を与えます;
+例えば
+
+@c ===beg===
+@c endcons(a,-a), inflag : true;
+@c endcons(a,-a), inflag : false;
+@c ===end===
+@example
+@group
+(%i1) endcons(a,-a), inflag : true;
+                                 2
+(%o1)                         - a
+@end group
+@group
+(%i2) endcons(a,-a), inflag : false;
+(%o2)                           0
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+
+@c -----------------------------------------------------------------------------
+@anchor{fifth}
+@deffn {関数} fifth (@var{expr})
+
+式またはリスト @var{expr}の5番目の項を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{first}
+@deffn {関数} first (@var{expr})
+
+リストの最初の要素、行列の最初の行、和の最初の項などに帰着する、
+@var{expr}の最初の部分を返します:
+
+@example
+@group
+(%i1) matrix([1,2],[3,4]);
+                                   [ 1  2 ]
+(%o1)                              [      ]
+                                   [ 3  4 ]
+(%i2) first(%);
+(%o2)                              [1,2]
+(%i3) first(%);
+(%o3)                              1
+(%i4) first(a*b/c+d+e/x);
+                                   a b
+(%o4)                              ---
+                                    c
+(%i5) first(a=b/c+d+e/x);
+(%o5)                              a
+@end group
+@end example
+
+@code{first}とその関連関数 @code{rest}と @code{last}は、
+入力時にタイプした形式ではなく、 @var{expr}の表示形式上で機能することに注意してください。
+しかしながら、もし変数 @code{inflag}が @code{true}に設定されているなら、
+これらの関数は @var{expr}の内部形式を見ます。
+これが違いを生む理由の1つは、整理器が式を並べ替えするからです:
+
+@example
+@group
+(%i1) x+y;
+(%o1)                              y+1
+(%i2) first(x+y),inflag : true;
+(%o2)                              x
+(%i3) first(x+y),inflag : false;
+(%o3)                              y
+@end group
+@end example
+
+関数 @code{second} @dots{} @code{tenth}は
+入力引数の二番目から十番目の部分をもたらします。
+
+@mref{firstn}, @mref{part}も参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{firstn}
+@deffn {関数} firstn (@var{expr}, @var{count})
+
+もし @var{expr}が少なくとも @var{count}個の引数を持つなら、
+@var{expr}の、先頭から @var{count}個のの引数を返します。
+もし @var{expr} @var{count}個より少ないの引数を持つなら、
+@var{expr}を返します。
+
+@var{expr}はノンアトミックな任意の式です。
+@var{expr}がリスト以外の何かの時、
+@code{firstn}は
+@var{expr}と同じ演算子を持つ式を返します。
+@var{count}は非負整数でなければいけません。
+
+@code{firstn}は、
+式の内部形式が処理されるか(@code{inflag}がtrueの時)、
+表示形式が処理されるか(@code{inflag}がfalseの時)を決定する
+大域フラグ @code{inflag}に従います。
+
+
+@code{firstn(@var{expr}, 1)}は最初の引数を含むノンアトミックな式を返しますが、
+それは、
+最初の引数そのものを返す @code{first(@var{expr})}とは同じでないことに
+注意してください。
+
+@mref{lastn}, @mref{rest}も参照してください。
+
+例:
+
+もし @var{expr}が少なくとも @var{count}個の引数を持つなら、
+@code{firstn}は
+、@var{expr}の先頭から @var{count}個の要素を返します。
+
+@c ===beg===
+@c mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+@c firstn (mylist, 0);
+@c firstn (mylist, 1);
+@c firstn (mylist, 2);
+@c firstn (mylist, 7);
+@c ===end===
+@example
+@group
+(%i1) mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+(%o1)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@group
+(%i2) firstn (mylist, 0);
+(%o2)                          []
+@end group
+@group
+(%i3) firstn (mylist, 1);
+(%o3)                          [1]
+@end group
+@group
+(%i4) firstn (mylist, 2);
+(%o4)                        [1, a]
+@end group
+@group
+(%i5) firstn (mylist, 7);
+(%o5)               [1, a, 2, b, 3, x, 4 - y]
+@end group
+@end example
+
+もし @var{expr} @var{count}個より少ないの引数を持つなら、
+@var{expr}を返します。
+
+@c ===beg===
+@c mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+@c firstn (mylist, 100);
+@c ===end===
+@example
+@group
+(%i1) mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+(%o1)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@group
+(%i2) firstn (mylist, 100);
+(%o2)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@end example
+
+@var{expr}はノンアトミックな任意の式です。
+
+@c ===beg===
+@c myfoo : foo(1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+@c firstn (myfoo, 4);
+@c mybar : bar[m, n](1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+@c firstn (mybar, 4);
+@c mymatrix : genmatrix (lambda ([i, j], 10*i + j), 10, 4) $
+@c firstn (mymatrix, 3);
+@c ===end===
+@example
+@group
+(%i1) myfoo : foo(1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+(%o1)      foo(1, a, 2, b, 3, x, 4 - y, 2 z + sin(u))
+@end group
+@group
+(%i2) firstn (myfoo, 4);
+(%o2)                    foo(1, a, 2, b)
+@end group
+@group
+(%i3) mybar : bar[m, n](1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+(%o3)    bar    (1, a, 2, b, 3, x, 4 - y, 2 z + sin(u))
+            m, n
+@end group
+@group
+(%i4) firstn (mybar, 4);
+(%o4)                  bar    (1, a, 2, b)
+                          m, n
+@end group
+(%i5) mymatrix : genmatrix (lambda ([i, j], 10*i + j), 10, 4) $
+@group
+(%i6) firstn (mymatrix, 3);
+                       [ 11  12  13  14 ]
+                       [                ]
+(%o6)                  [ 21  22  23  24 ]
+                       [                ]
+                       [ 31  32  33  34 ]
+@end group
+@end example
+
+@code{firstn}は大域フラグ @code{inflag}に従います。
+
+@c ===beg===
+@c myexpr : a + b + c + d + e;
+@c firstn (myexpr, 3), inflag=true;
+@c firstn (myexpr, 3), inflag=false;
+@c ===end===
+@example
+@group
+(%i1) myexpr : a + b + c + d + e;
+(%o1)                   e + d + c + b + a
+@end group
+@group
+(%i2) firstn (myexpr, 3), inflag=true;
+(%o2)                       c + b + a
+@end group
+@group
+(%i3) firstn (myexpr, 3), inflag=false;
+(%o3)                       e + d + c
+@end group
+@end example
+
+@code{firstn(@var{expr}, 1)}は
+@code{first(@var{expr})}と同じじゃないことに注意してください。。
+
+@c ===beg===
+@c firstn ([w, x, y, z], 1);
+@c first ([w, x, y, z]);
+@c ===end===
+@example
+@group
+(%i1) firstn ([w, x, y, z], 1);
+(%o1)                          [w]
+@end group
+@group
+(%i2) first ([w, x, y, z]);
+(%o2)                           w
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{fourth}
+@deffn {関数} fourth (@var{expr})
+
+式またはリスト @var{expr}の4番目の項を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{join}
+@deffn {関数} join (@var{l}, @var{m})
+
+リスト@var{l}と@var{m}の要素を交互に含む新しいリストを生成します。
+結果は、要素 @code{[@var{l}[1], @var{m}[1], @var{l}[2], @var{m}[2], ...]}を持ちます。
+リスト @var{l}と @var{m}は、任意のタイプの要素を含めます。
+
+もしリストの長さが違ったら、
+@code{join}は長いリストの要素を無視します。
+
+もし @var{l}か @var{m}がリストでなかったら、
+Maximaは文句を言います。
+
+@mref{append}も参照してください。
+
+例:
+
+@c ===beg===
+@c L1: [a, sin(b), c!, d - 1];
+@c join (L1, [1, 2, 3, 4]);
+@c join (L1, [aa, bb, cc, dd, ee, ff]);
+@c ===end===
+@example
+@group
+(%i1) L1: [a, sin(b), c!, d - 1];
+(%o1)                [a, sin(b), c!, d - 1]
+@end group
+@group
+(%i2) join (L1, [1, 2, 3, 4]);
+(%o2)          [a, 1, sin(b), 2, c!, 3, d - 1, 4]
+@end group
+@group
+(%i3) join (L1, [aa, bb, cc, dd, ee, ff]);
+(%o3)        [a, aa, sin(b), bb, c!, cc, d - 1, dd]
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c NEEDS EXAMPLES
+@c HOW IS "LAST" PART DETERMINED ??
+
+@c -----------------------------------------------------------------------------
+@anchor{last}
+@deffn {関数} last (@var{expr})
+@var{expr}最後の(項、行、要素など）部分を返します。
+
+@mref{lastn}も参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c NEEDS CLARIFICATION AND EXAMPLES
+
+@c -----------------------------------------------------------------------------
+@anchor{lastn}
+@deffn {関数} lastn (@var{expr}, @var{count})
+
+もし @var{expr}が少なくとも @var{count}個の引数をもつなら、
+@var{expr}の後ろから@var{count}個の引数を返します。
+もし @var{expr}が @var{count}個より少ない引数をもつなら、
+@var{expr}を返します。
+
+@var{expr}はノンアトミックな任意の式です。
+@var{expr}がリスト以外の何かの時、
+@code{lastn}は@var{expr}と同じ演算子を持つ式を返します。
+@var{count}は非負の整数でなければいけません。
+
+@code{lastn}は
+式の内部形式が処理されるか(@code{inflag}がtrueの時)、
+表示形式が処理されるか(@code{inflag}がfalseの時)を決定する
+大域フラグ @code{inflag}に従います。
+
+Note that
+@code{lastn(@var{expr}, 1)}は最後の引数を含むノンアトミックな式を返しますが、
+それは、
+最後の引数自体を返す @code{last(@var{expr})}とは同じでないことに注意してください。
+
+@mref{firstn}と @mref{rest}も参照してください。
+
+例:
+
+もし @var{expr}が少なくとも @var{count}個の引数をもつなら、
+@var{expr}の後ろから@var{count}個の要素を返します。
+
+@c ===beg===
+@c mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+@c lastn (mylist, 0);
+@c lastn (mylist, 1);
+@c lastn (mylist, 2);
+@c lastn (mylist, 7);
+@c ===end===
+@example
+@group
+(%i1) mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+(%o1)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@group
+(%i2) lastn (mylist, 0);
+(%o2)                          []
+@end group
+@group
+(%i3) lastn (mylist, 1);
+(%o3)                    [2 z + sin(u)]
+@end group
+@group
+(%i4) lastn (mylist, 2);
+(%o4)                 [4 - y, 2 z + sin(u)]
+@end group
+@group
+(%i5) lastn (mylist, 7);
+(%o5)         [a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@end example
+
+もし @var{expr}が @var{count}個より少ない引数をもつなら、
+@var{expr}を返します。
+
+@c ===beg===
+@c mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+@c lastn (mylist, 100);
+@c ===end===
+@example
+@group
+(%i1) mylist : [1, a, 2, b, 3, x, 4 - y, 2*z + sin(u)];
+(%o1)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@group
+(%i2) lastn (mylist, 100);
+(%o2)        [1, a, 2, b, 3, x, 4 - y, 2 z + sin(u)]
+@end group
+@end example
+
+@var{expr}はノンアトミックな任意の式です。
+
+@c ===beg===
+@c myfoo : foo(1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+@c lastn (myfoo, 4);
+@c mybar : bar[m, n](1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+@c lastn (mybar, 4);
+@c mymatrix : genmatrix (lambda ([i, j], 10*i + j), 10, 4) $
+@c lastn (mymatrix, 3);
+@c ===end===
+@example
+@group
+(%i1) myfoo : foo(1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+(%o1)      foo(1, a, 2, b, 3, x, 4 - y, 2 z + sin(u))
+@end group
+@group
+(%i2) lastn (myfoo, 4);
+(%o2)            foo(3, x, 4 - y, 2 z + sin(u))
+@end group
+@group
+(%i3) mybar : bar[m, n](1, a, 2, b, 3, x, 4 - y, 2*z + sin(u));
+(%o3)    bar    (1, a, 2, b, 3, x, 4 - y, 2 z + sin(u))
+            m, n
+@end group
+@group
+(%i4) lastn (mybar, 4);
+(%o4)          bar    (3, x, 4 - y, 2 z + sin(u))
+                  m, n
+@end group
+(%i5) mymatrix : genmatrix (lambda ([i, j], 10*i + j), 10, 4) $
+@group
+(%i6) lastn (mymatrix, 3);
+                     [ 81   82   83   84  ]
+                     [                    ]
+(%o6)                [ 91   92   93   94  ]
+                     [                    ]
+                     [ 101  102  103  104 ]
+@end group
+@end example
+
+@code{lastn}は大域フラグ @code{inflag}に従います。
+
+@c ===beg===
+@c myexpr : a + b + c + d + e;
+@c lastn (myexpr, 3), inflag=true;
+@c lastn (myexpr, 3), inflag=false;
+@c ===end===
+@example
+@group
+(%i1) myexpr : a + b + c + d + e;
+(%o1)                   e + d + c + b + a
+@end group
+@group
+(%i2) lastn (myexpr, 3), inflag=true;
+(%o2)                       e + d + c
+@end group
+@group
+(%i3) lastn (myexpr, 3), inflag=false;
+(%o3)                       c + b + a
+@end group
+@end example
+
+@code{lastn(@var{expr}, 1)}は @code{last(@var{expr})}と同じでないことに注意してください。
+
+@c ===beg===
+@c lastn ([w, x, y, z], 1);
+@c last ([w, x, y, z]);
+@c ===end===
+@example
+@group
+(%i1) lastn ([w, x, y, z], 1);
+(%o1)                          [z]
+@end group
+@group
+(%i2) last ([w, x, y, z]);
+(%o2)                           z
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{length}
+@deffn {関数} length (@var{expr})
+
+(デフォルトでは) @var{expr}の外部(表示)形式の部分の数を返します。
+リストに関しては、これは要素の数を返し、
+行列に関しては行数であり、
+和に関しては項数です。
+(@mref{dispform}を参照してください。)
+
+@code{length}コマンドは @mref{inflag}スイッチに影響されます。
+だから例えば、 @code{length(a/(b*c));}は、
+ (@mref{exptdispflag}が @code{true}と仮定して)
+もし @code{inflag}が @code{false}なら2を与えますが、
+もし @code{inflag}が @code{true}なら3を与えます。
+ (内部表現は本質的には @code{a*b^-1*c^-1}です。)
+
+リストの長さを決定するには通常リストの要素の数に比例する時間が必要です。
+なので、もしループの中でリストの長さを使っているなら、ループの外で長さを計算させれば
+劇的にパフォーマンスが改善されるかもしれません。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{listarith}
+@defvr {オプション変数} listarith
+デフォルト値: @code{true} - もし @code{false}なら、
+リストを伴う任意の算術演算が抑制されるようになります;
+@code{true}の時、リスト-行列演算では、
+リストが行列に変換されるようになり、いつも行列の結果をもたらすよう連鎖します。
+しかしながら、リスト-リスト演算はリストを返します。
+
+@opencatbox
+@category{Lists} @category{Global flags}
+@closecatbox
+
+@end defvr
+
+@c -----------------------------------------------------------------------------
+@deffn {関数} listp (@var{expr})
+
+もし @var{expr}がリストなら @code{true}、
+そうでなければ @code{false}を返します。
+
+@opencatbox
+@category{Lists} @category{Predicate functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{lreduce}
+@deffn {関数} lreduce @
+@fname{lreduce} (@var{F}, @var{s}) @
+@fname{lreduce} (@var{F}, @var{s}, @var{s_0})
+
+2項関数 @var{F}を合成で n項関数に拡張します。
+@var{s}はリストです。
+
+@code{lreduce(@var{F}, @var{s})}は
+@code{F(... F(F(s_1, s_2), s_3), ... s_n)}を返します。
+オプション引数 @var{s_0}を与えた時には、
+結果は @code{lreduce(@var{F}, cons(@var{s_0}, @var{s}))}と同値です。
+
+関数 @var{F}はリストの@i{leftmost}要素に最初に適用されるので
+"lreduce"という名前です。
+
+@mref{rreduce}, @mref{xreduce}, @mref{tree_reduce}も参照してください。
+
+例:
+
+オプション引数なしの @code{lreduce}。
+
+@c ===beg===
+@c lreduce (f, [1, 2, 3]);
+@c lreduce (f, [1, 2, 3, 4]);
+@c ===end===
+@example
+@group
+(%i1) lreduce (f, [1, 2, 3]);
+(%o1)                     f(f(1, 2), 3)
+@end group
+@group
+(%i2) lreduce (f, [1, 2, 3, 4]);
+(%o2)                  f(f(f(1, 2), 3), 4)
+@end group
+@end example
+
+オプション引数ありの @code{lreduce}。
+
+@c ===beg===
+@c lreduce (f, [1, 2, 3], 4);
+@c ===end===
+@example
+@group
+(%i1) lreduce (f, [1, 2, 3], 4);
+(%o1)                  f(f(f(4, 1), 2), 3)
+@end group
+@end example
+
+組み込み2項演算子に適用された @code{lreduce}。
+@code{/}は除算演算子です。
+
+@c ===beg===
+@c lreduce ("^", args ({a, b, c, d}));
+@c lreduce ("/", args ({a, b, c, d}));
+@c ===end===
+@example
+@group
+(%i1) lreduce ("^", args (@{a, b, c, d@}));
+                               b c d
+(%o1)                       ((a ) )
+@end group
+@group
+(%i2) lreduce ("/", args (@{a, b, c, d@}));
+                                a
+(%o2)                         -----
+                              b c d
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{makelist}
+@deffn  {関数} makelist @
+@fname{makelist} () @
+@fname{makelist} (@var{expr}, @var{n}) @
+@fname{makelist} (@var{expr}, @var{i}, @var{i_max}) @
+@fname{makelist} (@var{expr}, @var{i}, @var{i_0}, @var{i_max}) @
+@fname{makelist} (@var{expr}, @var{i}, @var{i_0}, @var{i_max}, @var{step}) @
+@fname{makelist} (@var{expr}, @var{x}, @var{list})
+
+一番目の形 @code{makelist ()}は空のリストを生成します。
+二番目の形 @code{makelist (@var{expr})}は
+@var{expr}を1つの要素とするリストを生成します。
+@code{makelist (@var{expr}, @var{n})}は
+@var{expr}から生成される @var{n}個の要素のリストを生成します。
+
+最も一般的な形 @code{makelist (@var{expr}, @var{i}, @var{i_0}, @var{i_max},
+@var{step})}は
+@var{i_0}から @var{i_1}に等しい @code{j}に対して
+@code{ev (@var{expr}, @var{i}=@var{j})}が以下の数列の要素 @code{j}に
+適用された時得られる要素のリストを返します:
+@var{i_0}, @var{i_0} + @var{step}, @var{i_0} + 2*@var{step}, ...,
+ただし、@var{|j|}は@var{|i_max|}以下。
+
+増分 @var{step}は(正でも負でも)数であったり、式であったりします。
+もし省略されたら、デフォルト値 1が使われます。
+もし @var{i_0}と @var{step}の両方が省略されたら、
+それらはデフォルト値 1を取ります。
+
+@code{makelist (@var{expr}, @var{x}, @var{list})}は、
+1から @code{length (@var{list})}に等しい @code{j}に対して、
+@code{j}番目の要素が @code{ev (@var{expr}, @var{x}=@var{list}[j])}に等しい
+リストを返します。
+
+例:
+
+@c ===beg===
+@c makelist (concat (x,i), i, 6);
+@c makelist (x=y, y, [a, b, c]);
+@c makelist (x^2, x, 3, 2*%pi, 2);
+@c makelist (random(6), 4);
+@c flatten (makelist (makelist (i^2, 3), i, 4));
+@c flatten (makelist (makelist (i^2, i, 3), 4));
+@c ===end===
+@example
+@group
+(%i1) makelist (concat (x,i), i, 6);
+(%o1)               [x1, x2, x3, x4, x5, x6]
+@end group
+@group
+(%i2) makelist (x=y, y, [a, b, c]);
+(%o2)                 [x = a, x = b, x = c]
+@end group
+@group
+(%i3) makelist (x^2, x, 3, 2*%pi, 2);
+(%o3)                        [9, 25]
+@end group
+@group
+(%i4) makelist (random(6), 4);
+(%o4)                     [2, 0, 2, 5]
+@end group
+@group
+(%i5) flatten (makelist (makelist (i^2, 3), i, 4));
+(%o5)        [1, 1, 1, 4, 4, 4, 9, 9, 9, 16, 16, 16]
+@end group
+@group
+(%i6) flatten (makelist (makelist (i^2, i, 3), 4));
+(%o6)         [1, 4, 9, 1, 4, 9, 1, 4, 9, 1, 4, 9]
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{member}
+@deffn {関数} member (@var{expr_1}, @var{expr_2})
+
+もし
+@code{args(@var{expr_2})}の中のある要素@var{a}に対して
+@code{is(@var{expr_1} = @var{a})}なら
+@code{true}を返し、
+そうでなければ @code{false}を返します。
+
+@code{expr_2}は通常リストです。
+その場合、 @code{args(@var{expr_2}) = @var{expr_2}}かつ
+@code{expr_2}の中のある要素 @var{a}に対して、
+@code{is(@var{expr_1} = @var{a})}であることがテストです。
+
+@code{member}は
+@code{expr_2}の引数の部分を検査しません。
+だから、
+たとえ @code{expr_1}が @code{expr_2}のある引数の部分であっても
+@code{false}を返すかもしれません。
+
+@mref{elementp}も参照してください。
+
+例:
+
+@c ===beg===
+@c member (8, [8, 8.0, 8b0]);
+@c member (8, [8.0, 8b0]);
+@c member (b, [a, b, c]);
+@c member (b, [[a, b], [b, c]]);
+@c member ([b, c], [[a, b], [b, c]]);
+@c F (1, 1/2, 1/4, 1/8);
+@c member (1/8, %);
+@c member ("ab", ["aa", "ab", sin(1), a + b]);
+@c ===end===
+@example
+@group
+(%i1) member (8, [8, 8.0, 8b0]);
+(%o1)                         true
+@end group
+@group
+(%i2) member (8, [8.0, 8b0]);
+(%o2)                         false
+@end group
+@group
+(%i3) member (b, [a, b, c]);
+(%o3)                         true
+@end group
+@group
+(%i4) member (b, [[a, b], [b, c]]);
+(%o4)                         false
+@end group
+@group
+(%i5) member ([b, c], [[a, b], [b, c]]);
+(%o5)                         true
+@end group
+@group
+(%i6) F (1, 1/2, 1/4, 1/8);
+                               1  1  1
+(%o6)                     F(1, -, -, -)
+                               2  4  8
+@end group
+@group
+(%i7) member (1/8, %);
+(%o7)                         true
+@end group
+@group
+(%i8) member ("ab", ["aa", "ab", sin(1), a + b]);
+(%o8)                         true
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions} @category{Predicate functions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{ninth}
+@deffn {関数} ninth (@var{expr})
+
+式またはリスト @var{expr}の9番目の項を返します。
+詳細は @code{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{pop}
+@deffn {関数} pop (@var{list})
+
+@code{pop}は、リスト @var{list}から最初の要素を取り除き、返します。
+引数 @var{list}は空でないリストにバインドされたmapatomでなければいけません。
+もし引数 @var{list}が空でないリストにバインドされてなければ、
+Maximaはエラーシグナルを発します。
+
+例には @mref{push}も参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{push}
+@deffn {関数} push (@var{item}, @var{list})
+
+@code{push}は項目 @var{item}をリスト @var{list}の先頭に追加し、
+新しいリストのコピーを返します。
+2番目の引数 @var{list}は空でないリストにバインドされたmapatomでなければいけません。
+1番目の引数 @var{item}は任意のMaximaシンボルや式が使えます。
+
+もし引数 @var{list}が空でないリストにバインドされてなければ、
+Maximaはエラーシグナルを発します。
+
+リストから最初の項目を取り除くには @mref{pop}を参照してください。
+
+例:
+
+@c ===beg===
+@c ll: [];
+@c push (x, ll);
+@c push (x^2+y, ll);
+@c a: push ("string", ll);
+@c pop (ll);
+@c pop (ll);
+@c pop (ll);
+@c ll;
+@c a;
+@c ===end===
+@example
+@group
+(%i1) ll: [];
+(%o1)                          []
+@end group
+@group
+(%i2) push (x, ll);
+(%o2)                          [x]
+@end group
+@group
+(%i3) push (x^2+y, ll);
+                                 2
+(%o3)                      [y + x , x]
+@end group
+@group
+(%i4) a: push ("string", ll);
+                                     2
+(%o4)                  [string, y + x , x]
+@end group
+@group
+(%i5) pop (ll);
+(%o5)                        string
+@end group
+@group
+(%i6) pop (ll);
+                                  2
+(%o6)                        y + x
+@end group
+@group
+(%i7) pop (ll);
+(%o7)                           x
+@end group
+@group
+(%i8) ll;
+(%o8)                          []
+@end group
+@group
+(%i9) a;
+                                     2
+(%o9)                  [string, y + x , x]
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{rest}
+@deffn  {関数} rest @
+@fname{rest} (@var{expr}, @var{n}) @
+@fname{rest} (@var{expr})
+
+もし @var{n}が正なら、
+頭の @var{n}個の要素を取り除いた
+@var{expr}を返し、
+もし @var{n}が負なら、
+お尻の @code{- @var{n}}個の要素を取り除いた
+@var{expr}を返します。
+もし @var{n}が1なら、省略できます。
+1番目の引数 @var{expr}は、リスト、行列、他の式を取り得ます。
+@var{expr}がアトムの時、 @code{rest}はエラーシグナルを発します;
+@var{expr}が 空のリストで @code{partswitch}が真の時、 @code{rest}は @code{end}を返します。
+
+@code{rest}を @code{f(a,b,c)}のような式に適用すると @code{f(b,c)}を返します。
+一般的には、リストでないものに @code{rest}を適用することは意味がありません。
+例えば、 '^'は2つの引数を要求するので、
+@code{rest(a^b)}はエラーメッセージを出力します。
+@code{args(a^b)}は @code{[a,b]}を返し、 @code{op(a^b)}は ^を返すので
+関数 @code{args}と @code{op}も役に立つかもしれません
+
+@mref{firstn}と @mref{lastn}も参照してください。
+
+@example
+@group
+(%i1) rest(a+b+c);
+(%o1) b+a
+(%i2) rest(a+b+c,2);
+(%o2) a
+(%i3) rest(a+b+c,-2);
+(%o3) c
+@end group
+@end example
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c NEED ANOTHER deffn FOR GENERAL EXPRESSIONS ARGUMENTS
+@c SPLIT OFF EXAMPLES INTO EXAMPLE SECTION
+
+@c -----------------------------------------------------------------------------
+@anchor{reverse}
+@deffn {関数} reverse (@var{list})
+
+@var{list} のメンバーの順序を逆にします。
+(メンバー自身は変えません。)
+ @code{reverse}は、一般式でも機能します。
+例えば、 @code{reverse(a=b);}は @code{b=a}を与えます。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{rreduce}
+@deffn {関数} rreduce @
+@fname{rreduce} (@var{F}, @var{s}) @
+@fname{rreduce} (@var{F}, @var{s}, @var{s_@{n + 1@}})
+
+2項関数 @var{F}を合成でn項関数に拡張します。
+@var{s}はリストです。
+
+@code{rreduce(@var{F}, @var{s})}は
+@code{F(s_1, ... F(s_@{n - 2@}, F(s_@{n - 1@}, s_n)))}を返します。
+オプション引数 @var{s_@{n + 1@}}を与えた時には、
+結果は
+@code{rreduce(@var{F}, endcons(@var{s_@{n + 1@}}, @var{s}))}と同値です。
+
+関数 @var{F}はリストの@i{rightmost}要素に最初に適用されるので
+"rreduce"という名前です。
+
+@mref{lreduce}, @mref{tree_reduce}, @mref{xreduce}も参照してください。
+
+例:
+
+オプション引数なしの @code{rreduce}。
+
+@c ===beg===
+@c rreduce (f, [1, 2, 3]);
+@c rreduce (f, [1, 2, 3, 4]);
+@c ===end===
+@example
+@group
+(%i1) rreduce (f, [1, 2, 3]);
+(%o1)                     f(1, f(2, 3))
+@end group
+@group
+(%i2) rreduce (f, [1, 2, 3, 4]);
+(%o2)                  f(1, f(2, f(3, 4)))
+@end group
+@end example
+
+オプション引数ありの @code{rreduce}。
+
+@c ===beg===
+@c rreduce (f, [1, 2, 3], 4);
+@c ===end===
+@example
+@group
+(%i1) rreduce (f, [1, 2, 3], 4);
+(%o1)                  f(1, f(2, f(3, 4)))
+@end group
+@end example
+
+組み込み2項演算子に適用された @code{rreduce}。
+@code{/}は除算演算子です。
+
+@c ===beg===
+@c rreduce ("^", args ({a, b, c, d}));
+@c rreduce ("/", args ({a, b, c, d}));
+@c ===end===
+@example
+@group
+(%i1) rreduce ("^", args (@{a, b, c, d@}));
+                                 d
+                                c
+                               b
+(%o1)                         a
+@end group
+@group
+(%i2) rreduce ("/", args (@{a, b, c, d@}));
+                               a c
+(%o2)                          ---
+                               b d
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{second}
+@deffn {関数} second (@var{expr})
+
+式またはリスト @var{expr}の二番目の項を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{seventh}
+@deffn {関数} seventh (@var{expr})
+
+式またはリスト @var{expr}の7番目の項を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sixth}
+@deffn {関数} sixth (@var{expr})
+
+式またはリスト @var{expr}の6番目の項を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sort}
+@deffn  {関数} sort @
+@fname{sort} (@var{L}, @var{P}) @
+@fname{sort} (@var{L})
+
+@code{sort(@var{L}, @var{P})}は
+２つの引数の述語論理@code{P}に従ってリスト@var{L}をソートします。
+@code{P}は@var{L}の要素上で厳密で弱い順序を定義します。
+もし @code{[@var{P}(a, b)}が @code{true}なら、
+結果の中で@code{a}は @code{b}より先に現れます。
+もし @code{[@var{P}(a, b)}も @code{[@var{P}(b, a)}も @code{true}でないなら、
+@code{a}と @code{b}は等価で、入力と同じ順序で結果の中に現れます。
+すなわち、 @code{sort}は安定ソートです。
+
+もし@var{L}の中のある要素で
+@code{[@var{P}(a, b)}と @code{[@var{P}(b, a)}両方とも @code{true}なら、
+@var{P}は有効なソート述語論理ではなく、結果は未定義です。
+もし @code{@var{P}(a, b)}が @code{true}でも @code{false}でもない別の何かなら、
+@code{sort}はエラーをシグナルします。
+
+述語論理は関数や２値中値演算子の名前として、@code{lambda}式として指定されるかもしれません。
+もし演算子名として指定するなら、名前を「ダブルクォート」でくくらなければいけません。
+
+ソートされたリストは新しいオブジェクトとして返されます; @var{L}は変更されません。
+
+@code{sort(@var{L})}は @code{(@var{L}, ordderlessp)}と同値です。
+
+@mref{orderlessp}が決定するように、デフォルトのソート順序は昇順です。
+述語論理 @code{ordergreatp}はリストを降順にソートします。
+
+Maximaのアトムと式すべては、@code{orderlessp}と @code{ordergreatp}の下で比較可能です。
+
+演算子 @code{<}と @code{>}は数、定数、定数式を大きさで順序付けします。
+@code{orderlessp}と
+@code{ordergreatp}は数、定数、定数式を大きさで順序付けしないことに注意してください。
+
+述語論理 @code{ordermagnitudep}は @code{<}と同じように
+数や定数、定数式の順序付けし、
+他の要素すべてを@code{orderlessp}と同じように順序付けします。
+
+例:
+
+@code{sort}は
+リストの要素上で厳密で弱い順序を定義する
+引数2つの述語論理@code{P}に従ってリスト@var{L}をソートします。
+
+@c ===beg===
+@c sort ([1, a, b, 2, 3, c], 'orderlessp);
+@c sort ([1, a, b, 2, 3, c], 'ordergreatp);
+@c ===end===
+@example
+@group
+(%i1) sort ([1, a, b, 2, 3, c], 'orderlessp);
+(%o1)                  [1, 2, 3, a, b, c]
+@end group
+@group
+(%i2) sort ([1, a, b, 2, 3, c], 'ordergreatp);
+(%o2)                  [c, b, a, 3, 2, 1]
+@end group
+@end example
+
+述語論理は関数や２値中値演算子の名前として、@code{lambda}式として指定されるかもしれません。
+もし演算子名として指定するなら、名前を「ダブルクォート」でくくらなければいけません。
+
+@c ===beg===
+@c L : [[1, x], [3, y], [4, w], [2, z]];
+@c foo (a, b) := a[1] > b[1];
+@c sort (L, 'foo);
+@c infix (">>");
+@c a >> b := a[1] > b[1];
+@c sort (L, ">>");
+@c sort (L, lambda ([a, b], a[1] > b[1]));
+@c ===end===
+@example
+@group
+(%i1) L : [[1, x], [3, y], [4, w], [2, z]];
+(%o1)           [[1, x], [3, y], [4, w], [2, z]]
+@end group
+@group
+(%i2) foo (a, b) := a[1] > b[1];
+(%o2)                 foo(a, b) := a  > b
+                                    1    1
+@end group
+@group
+(%i3) sort (L, 'foo);
+(%o3)           [[4, w], [3, y], [2, z], [1, x]]
+@end group
+@group
+(%i4) infix (">>");
+(%o4)                          >>
+@end group
+@group
+(%i5) a >> b := a[1] > b[1];
+(%o5)                  (a >> b) := a  > b
+                                    1    1
+@end group
+@group
+(%i6) sort (L, ">>");
+(%o6)           [[4, w], [3, y], [2, z], [1, x]]
+@end group
+@group
+(%i7) sort (L, lambda ([a, b], a[1] > b[1]));
+(%o7)           [[4, w], [3, y], [2, z], [1, x]]
+@end group
+@end example
+
+@code{sort(@var{L})}は @code{sort(@var{L}, orderlessp)}と同値です。
+
+@c ===beg===
+@c L : [a, 2*b, -5, 7, 1 + %e, %pi];
+@c sort (L);
+@c sort (L, 'orderlessp);
+@c ===end===
+@example
+@group
+(%i1) L : [a, 2*b, -5, 7, 1 + %e, %pi];
+(%o1)             [a, 2 b, - 5, 7, %e + 1, %pi]
+@end group
+@group
+(%i2) sort (L);
+(%o2)             [- 5, 7, %e + 1, %pi, a, 2 b]
+@end group
+@group
+(%i3) sort (L, 'orderlessp);
+(%o3)             [- 5, 7, %e + 1, %pi, a, 2 b]
+@end group
+@end example
+
+@mref{orderlessp}が決めるようにデフォルトのソート順は昇順です。
+述語論理 @code{ordergreatp}はリストを降順にソートします。
+
+@c ===beg===
+@c L : [a, 2*b, -5, 7, 1 + %e, %pi];
+@c sort (L);
+@c sort (L, 'ordergreatp);
+@c ===end===
+@example
+@group
+(%i1) L : [a, 2*b, -5, 7, 1 + %e, %pi];
+(%o1)             [a, 2 b, - 5, 7, %e + 1, %pi]
+@end group
+@group
+(%i2) sort (L);
+(%o2)             [- 5, 7, %e + 1, %pi, a, 2 b]
+@end group
+@group
+(%i3) sort (L, 'ordergreatp);
+(%o3)             [2 b, a, %pi, %e + 1, 7, - 5]
+@end group
+@end example
+
+Maximaのアトムや式すべては @code{orderlessp}や @code{ordergreatp}の下で比較可能です。
+
+@c ===beg===
+@c L : [11, -17, 29b0, 9*c, 7.55, foo(x, y), -5/2, b + a];
+@c sort (L, orderlessp);
+@c sort (L, ordergreatp);
+@c ===end===
+@example
+@group
+(%i1) L : [11, -17, 29b0, 9*c, 7.55, foo(x, y), -5/2, b + a];
+                                                 5
+(%o1)  [11, - 17, 2.9b1, 9 c, 7.55, foo(x, y), - -, b + a]
+                                                 2
+@end group
+@group
+(%i2) sort (L, orderlessp);
+                5
+(%o2)  [- 17, - -, 7.55, 11, 2.9b1, b + a, 9 c, foo(x, y)]
+                2
+@end group
+@group
+(%i3) sort (L, ordergreatp);
+                                                  5
+(%o3)  [foo(x, y), 9 c, b + a, 2.9b1, 11, 7.55, - -, - 17]
+                                                  2
+@end group
+@end example
+
+演算子 @code{<}と @code{>}は数、定数、定数式を大きさで順序付けします。
+@code{orderlessp}と
+@code{ordergreatp}は数、定数、定数式を大きさで順序付けしないことに注意してください。
+
+@c ===beg===
+@c L : [%pi, 3, 4, %e, %gamma];
+@c sort (L, ">");
+@c sort (L, ordergreatp);
+@c ===end===
+@example
+@group
+(%i1) L : [%pi, 3, 4, %e, %gamma];
+(%o1)                [%pi, 3, 4, %e, %gamma]
+@end group
+@group
+(%i2) sort (L, ">");
+(%o2)                [4, %pi, 3, %e, %gamma]
+@end group
+@group
+(%i3) sort (L, ordergreatp);
+(%o3)                [%pi, %gamma, %e, 4, 3]
+@end group
+@end example
+
+述語論理 @code{ordermagnitudep}は @code{<}と同じように
+数や定数、定数式の順序付けし、
+他の要素すべてを@code{orderlessp}と同じように順序付けします。
+
+@c ===beg===
+@c L : [%i, 1+%i, 2*x, minf, inf, %e, sin(1), 0, 1, 2, 3, 1.0, 1.0b0];
+@c sort (L, ordermagnitudep);
+@c sort (L, orderlessp);
+@c ===end===
+@example
+@group
+(%i1) L : [%i, 1+%i, 2*x, minf, inf, %e, sin(1), 0, 1, 2, 3, 1.0, 1.0b0];
+(%o1) [%i, %i + 1, 2 x, minf, inf, %e, sin(1), 0, 1, 2, 3, 1.0,
+                                                           1.0b0]
+@end group
+@group
+(%i2) sort (L, ordermagnitudep);
+(%o2) [minf, 0, sin(1), 1, 1.0, 1.0b0, 2, %e, 3, inf, %i,
+                                                     %i + 1, 2 x]
+@end group
+@group
+(%i3) sort (L, orderlessp);
+(%o3) [0, 1, 1.0, 2, 3, sin(1), 1.0b0, %e, %i, %i + 1, inf,
+                                                       minf, 2 x]
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sublist}
+@deffn {関数} sublist (@var{list}, @var{p})
+
+述語論理@code{p}が@code{true}を返す@var{list}の要素のリストを返します。
+
+例:
+
+@c ===beg===
+@c L: [1, 2, 3, 4, 5, 6];
+@c sublist (L, evenp);
+@c ===end===
+@example
+@group
+(%i1) L: [1, 2, 3, 4, 5, 6];
+(%o1)                  [1, 2, 3, 4, 5, 6]
+@end group
+@group
+(%i2) sublist (L, evenp);
+(%o2)                       [2, 4, 6]
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{sublist_indices}
+@deffn {関数} sublist_indices (@var{L}, @var{P})
+
+述語論理 @code{maybe(@var{P}(x))}が @code{true}を返す、
+リスト @var{L}の要素 @code{x}のインデックスを返します;
+これは @code{false}はもちろん @code{unknown}も除外します。
+@var{P}は関数名かラムダ式を取り得ます。
+@var{L}はリストリテラルでなければいけません。
+
+例:
+
+@c ===beg===
+@c sublist_indices ('[a, b, b, c, 1, 2, b, 3, b],
+@c                        lambda ([x], x='b));
+@c sublist_indices ('[a, b, b, c, 1, 2, b, 3, b], symbolp);
+@c sublist_indices ([1 > 0, 1 < 0, 2 < 1, 2 > 1, 2 > 0],
+@c                        identity);
+@c assume (x < -1);
+@c map (maybe, [x > 0, x < 0, x < -2]);
+@c sublist_indices ([x > 0, x < 0, x < -2], identity);
+@c ===end===
+@example
+@group
+(%i1) sublist_indices ('[a, b, b, c, 1, 2, b, 3, b],
+                       lambda ([x], x='b));
+(%o1)                     [2, 3, 7, 9]
+@end group
+@group
+(%i2) sublist_indices ('[a, b, b, c, 1, 2, b, 3, b], symbolp);
+(%o2)                  [1, 2, 3, 4, 7, 9]
+@end group
+@group
+(%i3) sublist_indices ([1 > 0, 1 < 0, 2 < 1, 2 > 1, 2 > 0],
+                       identity);
+(%o3)                       [1, 4, 5]
+@end group
+@group
+(%i4) assume (x < -1);
+(%o4)                       [x < - 1]
+@end group
+@group
+(%i5) map (maybe, [x > 0, x < 0, x < -2]);
+(%o5)                [false, true, unknown]
+@end group
+@group
+(%i6) sublist_indices ([x > 0, x < 0, x < -2], identity);
+(%o6)                          [2]
+@end group
+@end example
+
+@opencatbox
+@category{Lists}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{tenth}
+@deffn {関数} tenth (@var{expr})
+
+式かリスト @var{expr}の10番目の項目を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{third}
+@deffn {関数} third (@var{expr})
+
+式かリスト @var{expr}の3番目の項目を返します。
+詳細は @mref{first}を参照してください。
+
+@opencatbox
+@category{Lists} @category{Expressions}
+@closecatbox
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c TREE_REDUCE ACCEPTS A SET OR LIST AS AN ARGUMENT, BUT RREDUCE AND LREDUCE WANT ONLY LISTS; STRANGE
+@anchor{tree_reduce}
+@deffn {関数} tree_reduce @
+@fname{tree_reduce} (@var{F}, @var{s}) @
+@fname{tree_reduce} (@var{F}, @var{s}, @var{s_0})
+
+2項関数 @var{F}を合成で n項関数に拡張します。
+@var{s}は集合かリストです。
+
+@code{tree_reduce}は以下と同値です:
+隣同士の要素のペアに @var{F}を適用して、
+新たなリスト @code{[@var{F}(@var{s_1}, @var{s_2}), @var{F}(@var{s_3}, @var{s_4}), ...]}を形成します。
+もし要素の数が奇数なら最後の要素はそのままリストに載ります。
+そして、リストが要素1つになるまで繰り返します。その結果が戻り値です。
+
+オプション引数 @var{s_0}を与えた時には、
+結果は @code{tree_reduce(@var{F}, cons(@var{s_0}, @var{s}))}と同値です。
+
+浮動小数点数の加算に関して、
+@code{tree_reduce}は、@code{rreduce}や
+@code{lreduce}よりも小さな丸め誤差の和を返すことができます。
+
+@var{s}の要素と部分的な結果を深さ最小2分木で整理できるので、
+"tree_reduce"という名前です。
+
+例:
+
+偶数個の要素を持つリストに適用された @code{tree_reduce}。
+
+@c ===beg===
+@c tree_reduce (f, [a, b, c, d]);
+@c ===end===
+@example
+@group
+(%i1) tree_reduce (f, [a, b, c, d]);
+(%o1)                  f(f(a, b), f(c, d))
+@end group
+@end example
+
+奇数個の要素を持つリストに適用された @code{tree_reduce}。
+
+@c ===beg===
+@c tree_reduce (f, [a, b, c, d, e]);
+@c ===end===
+@example
+@group
+(%i1) tree_reduce (f, [a, b, c, d, e]);
+(%o1)               f(f(f(a, b), f(c, d)), e)
+@end group
+@end example
+
+@opencatbox
+@category{Sets} @category{Lists}
+@closecatbox
+
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@anchor{unique}
+@deffn {関数} unique (@var{L})
+
+リスト @var{L}の重複しない要素を返します。
+
+@var{L}の要素すべてが重複しない時、
+@code{unique}は、
+@var{L}自身ではなく、
+@var{L}の浅いコピーを返します。
+
+もし @var{L}がリストでないなら、
+@code{unique}は@var{L}を返します。
+
+例:
+
+@c ===beg===
+@c unique ([1, %pi, a + b, 2, 1, %e, %pi, a + b, [1]]);
+@c ===end===
+@example
+@group
+(%i1) unique ([1, %pi, a + b, 2, 1, %e, %pi, a + b, [1]]);
+(%o1)              [1, 2, %e, %pi, [1], b + a]
+@end group
+@end example
+@end deffn
+
+@c -----------------------------------------------------------------------------
+@c XREDUCE ACCEPTS A SET OR LIST AS AN ARGUMENT, BUT RREDUCE AND LREDUCE WANT ONLY LISTS; STRANGE
+@anchor{xreduce}
+@deffn {関数} xreduce @
+@fname{xreduce} (@var{F}, @var{s}) @
+@fname{xreduce} (@var{F}, @var{s}, @var{s_0})
+
+関数 @var{F}を合成で n項関数に拡張します。
+もしくはもし @var{F}が既に n項関数なら @var{F}を @var{s}に適用します。
+@var{F}がn項関数でない時、
+@code{xreduce}は @code{lreduce}と同じです。
+@var{s}は集合かリストです。
+
+n項関数と知られている関数は
+加算 @code{+}, 乗算 @code{*}, @code{and}, @code{or}, @code{max},
+@code{min}, と @code{append}です。
+@code{declare(@var{F}, nary)}で関数が宣言されているかもしれません。
+これらの関数に関して、
+@code{xreduce}は @code{rreduce}や @code{lreduce}より速いことが期待できます。
+
+オプション引数 @var{s_0}を与えた場合、
+結果は @code{xreduce(@var{s}, cons(@var{s_0}, @var{s}))}と同値です。
+
+@c NOT SURE WHAT IS THE RELEVANCE OF THE FOLLOWING COMMENT
+@c MAXIMA IS NEVER SO CAREFUL ABOUT FLOATING POINT ASSOCIATIVITY SO FAR AS I KNOW
+浮動小数点加算は厳密には結合的ではないです;
+それはともかく
+@var{s}が浮動小数点数を含む時、
+@code{xreduce}は Maximaの n項加算を適用します。
+
+例:
+
+n項関数と知られている関数へ適用された @code{xreduce}。
+@code{F}はすべての引数で1度だけ呼ばれます。
+
+@c ===beg===
+@c declare (F, nary);
+@c F ([L]) := L;
+@c xreduce (F, [a, b, c, d, e]);
+@c ===end===
+@example
+@group
+(%i1) declare (F, nary);
+(%o1)                         done
+@end group
+@group
+(%i2) F ([L]) := L;
+(%o2)                      F([L]) := L
+@end group
+@group
+(%i3) xreduce (F, [a, b, c, d, e]);
+(%o3)                    [a, b, c, d, e]
+@end group
+@end example
+
+n項関数と知られていない関数へ適用された @code{xreduce}。
+@code{G}は2つの引数を与えられながら数回呼ばれます。
+
+@c ===beg===
+@c G ([L]) := L;
+@c xreduce (G, [a, b, c, d, e]);
+@c lreduce (G, [a, b, c, d, e]);
+@c ===end===
+@example
+@group
+(%i1) G ([L]) := L;
+(%o1)                      G([L]) := L
+@end group
+@group
+(%i2) xreduce (G, [a, b, c, d, e]);
+(%o2)                 [[[[a, b], c], d], e]
+@end group
+@group
+(%i3) lreduce (G, [a, b, c, d, e]);
+(%o3)                 [[[[a, b], c], d], e]
+@end group
+@end example
+
+@opencatbox
+@category{Sets} @category{Lists}
+@closecatbox
+
+@end deffn
+
+c h-----------------------------------------------------------------------------
+@node Performance considerations for Lists, ,Functions and Variables for Lists, Lists
+@subsection Performance considerations for Lists
+@c -----------------------------------------------------------------------------
+
+リストは要素を追加したり削除したりする効率的な方法を提供します。
+最終的な次元を知ることなしに生成することができます。
+リストはリストをコピーしたり扱ったりする効率的な手段を提供します。
+また、入れ子のリストは厳格に矩形である必要はありません。
+宣言された配列に対するこれらの利点の代わりに、
+リスト内のランダムな要素へのアクセスに必要な時間がランダムな要素の頭からの距離におおよそ比例するかもしれない欠点があります。
+しかし、リストをスタックやFIFOとして使うことで、リストを効率的に横断することは可能です:
+
+@c ===beg===
+@c l:[Test,1,2,3,4];
+@c while l # [] do
+@c    disp(pop(l));
+@c ===end===
+@example
+@group
+(%i1) l:[Test,1,2,3,4];
+(%o1)                  [Test, 1, 2, 3, 4]
+@end group
+(%i2) while l # [] do
+   disp(pop(l));
+                              Test
+
+                                1
+
+                                2
+
+                                3
+
+                                4
+
+(%o2)                         done
+@end example
+別のより速い例:
+@c ===beg===
+@c l:[Test,1,2,3,4];
+@c for i in l do
+@c    disp(pop(l));
+@c ===end===
+@example
+@group
+(%i1) l:[Test,1,2,3,4];
+(%o1)                  [Test, 1, 2, 3, 4]
+@end group
+(%i2) for i in l do
+   disp(pop(l));
+                              Test
+
+                                1
+
+                                2
+
+                                3
+
+                                4
+
+(%o2)                         done
+@end example
+
+@code{reverse ()}を使ってリストを逆順にすれば、
+リストの最後の要素から横断を始められます。
+もし長いリストの要素を違った順序で処理するなら、
+初めにリストを宣言された配列に変換することで
+パフォーマンスを向上させられるかもしれません。
+
+@code{for}ループの終了条件は毎回テストされることにも注意してください。
+それは、 終了条件で @code{length}の結果が使われるなら、それはキャッシュすべきということを意味します:
+
+@c ===beg===
+@c l:makelist(i,i,1,100000)$
+@c lngth:length(l);
+@c x:1;
+@c for i:1 thru lngth do
+@c     x:x+1$
+@c x;
+@c ===end===
+@example
+(%i1) l:makelist(i,i,1,100000)$
+@group
+(%i2) lngth:length(l);
+(%o2)                        100000
+@end group
+@group
+(%i3) x:1;
+(%o3)                           1
+@end group
+@group
+(%i4) for i:1 thru lngth do
+    x:x+1$
+@end group
+@group
+(%i5) x;
+(%o5)                        100001
+@end group
+@end example
